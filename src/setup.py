@@ -4,7 +4,7 @@ Setup Function
 ## Built-in
 import os
 import sys
-import yaml
+from ruamel.yaml import YAML
 
 ## External Libraries
 from lib.cli import CLIParser
@@ -21,6 +21,9 @@ class Setup():
         Constructor
         """
         # Initialize Class
+        self.yaml = YAML()
+        self.yaml.indent(sequence=4, offset=2)
+        self.yaml.default_flow_style = False
         self.cliparser = CLIParser()
         self.fmt_Text = Text()
         self.init_defaults()
@@ -72,16 +75,16 @@ class Setup():
             "base_pkgs" : [
                 # EDIT: MODIFY THIS
                 # Add the packages you want to strap in here
-                "base"
-                "linux"
-                "linux-firmware"
-                "linux-lts"
-                "linux-lts-headers"
-                "base-devel"
-                "nano"
-                "vim"
-                "networkmanager"
-                "os-prober"
+                "base",
+                "linux",
+                "linux-firmware",
+                "linux-lts",
+                "linux-lts-headers",
+                "base-devel",
+                "nano",
+                "vim",
+                "networkmanager",
+                "os-prober",
             ],
             "location" : {
                 "Region" : "<your-region (Asia|US etc)>", # Refer to /usr/share/zoneinfo for your region
@@ -163,7 +166,7 @@ class Setup():
         """
         with open(cfg_fname, "a+") as write_config:
             # write_config.writelines(cfg)
-            yaml.dump(self.cfg, write_config) # Dump dictionary object into YAML file
+            self.yaml.dump(self.cfg, write_config) # Dump dictionary object into YAML file
             print("Config file template generated.")
             # Close file after usage
             write_config.close()
@@ -182,8 +185,11 @@ class Setup():
             """
             Read configuration file
             """
+            # Read configuration string
+            contents = read_config.read()
+
             # Load configuration into Dictionary object
-            configs = yaml.safe_load(read_config)
+            configs = self.yaml.load(contents)
 
             # Close after usage
             read_config.close()

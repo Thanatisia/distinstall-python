@@ -6,3 +6,6 @@ env/
 ## python cache folders
 __pycache__/
 
+## YAML Configuration Files
+*.yaml
+

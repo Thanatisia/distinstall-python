@@ -18,8 +18,9 @@ class CLIParser():
                 "help" : False,
                 "version" : False,
                 "generate-config" : False,
+                "print-config" : False,
                 ## Configurations
-                "CUSTOM_CONFIGURATION_FILENAME" : None,
+                "CUSTOM_CONFIGURATION_FILENAME" : "config.yaml",
                 "TARGET_DISK_NAME" : None,
                 "EDITOR" : None,
                 "MODE" : None,
@@ -114,6 +115,12 @@ class CLIParser():
 
                     # Set element into configurations file
                     configurations["optionals"]["MODE"] = mode
+                elif (curr_arg == "--print-config"):
+                    """
+                    Load/Import configuration file and print it
+                    """
+                    # Set element into configurations file
+                    configurations["optionals"]["print-config"] = True
                 elif (curr_arg == "--cfdisk"):
                     """
                     Open up cfdisk for manual partition configuration

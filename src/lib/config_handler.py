@@ -3,7 +3,8 @@ Configurations file handler
 """
 import os
 import sys
-import yaml
+from ruamel.yaml import YAML as yaml
+from ruamel.yaml.main import round_trip_load as yaml_load, round_trip_dump as yaml_dump
 
 class YAMLConfig():
     """
@@ -41,7 +42,7 @@ class YAMLConfig():
         # Check if data is not empty and file is opened
         if (data != None) and (self.file != None):
             # Dump the data
-            yaml.dump(data, file)
+            yaml.dump(data, self.file)
 
     def read_config(self):
         """
