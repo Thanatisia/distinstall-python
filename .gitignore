@@ -1,0 +1,8 @@
+# Ignore these files/folders
+
+## Virtual environment folders
+env/
+
+## python cache folders
+__pycache__/
+
