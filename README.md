@@ -9,8 +9,33 @@ Currently, this rewrite is in python as it is a good language for prototyping an
 
 ## Setup
 ### Dependencies
++ python
 - python pypi packages
-    + pyyaml : For YAML configuration file handling
+    + ruamel.yaml : For YAML configuration file handling
+
+### Pre-Requisites
+- (Optional; Recommended) Setup python Virtual Environment
+    - Install dependencies
+        + venv/virtualenv
+    - Generate virtual environment
+        ```console
+        python -m venv [virtual-environment]
+        ```
+    - Chroot/Source the virtual environment
+        - *NIX
+            ```console
+            . [virtual-environment]/bin/activate
+            ```
+        - Windows
+            ```console
+            [virtual-environment]\Scripts\activate
+            ```
+
+- Install dependencies
+    - From requirements.txt
+        ```console
+        python -m pip install -Ur requirements.txt
+        ```
 
 ## Documentation
 
