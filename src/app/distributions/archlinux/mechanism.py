@@ -52,23 +52,28 @@ class ArchLinux():
         """
         # Initialize Variables
         ret_Code = 0
+        cmd_set_NTP = "timedatectl set-ntp true"
+        cmd_check_NTP = "timedatectl status"
         success_flag = False
+
         if self.env.MODE == "DEBUG":
             # Set NTP
-            print("timedatectl set-ntp true")
+            print(cmd_set_NTP)
             # To check system clock
-            print("timedatectl status")
+            print(cmd_check_NTP)
             success_flag = True
         else:
             # Set NTP
-            ret_Code = os.system("timedatectl set-ntp true")
-            if ret_Code == 0:
+            stdout, stderr = process.subprocess_Sync(cmd_set_NTP)
+
+            if stderr == "":
                 success_flag = True
 
             if success_flag == True:
                 # To check system clock
-                ret_Code = os.system("timedatectl status")
-                if ret_Code == 0:
+                stdout, stderr = process.subprocess_Sync(cmd_check_NTP)
+
+                if stderr == "":
                     # Successfully set system clock
                     success_flag = True
                 else:
