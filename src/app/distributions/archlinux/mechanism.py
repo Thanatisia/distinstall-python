@@ -230,8 +230,9 @@ class ArchLinux():
             ### Directory does not exist
             cmd_str = "mkdir -p \"{}\"".format(mount_dir_Root)
 
+            print("Directory {} does not exist, creating directory...")
             print("Executing: {}".format(cmd_str))
-            if self.env.MODE == "DEBUG":
+            if self.env.MODE != "DEBUG":
                 ## Mount root partition
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout = process.subprocess_Line(cmd_str)
