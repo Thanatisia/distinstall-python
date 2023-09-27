@@ -24,7 +24,7 @@ class CLIParser():
                 "CUSTOM_CONFIGURATION_FILENAME" : "config.yaml",
                 "TARGET_DISK_NAME" : None,
                 "EDITOR" : None,
-                "MODE" : None,
+                "MODE" : "DEBUG",
                 "CFDISK_TARGET" : None,
                 "FDISK_TARGET" : None,
             },

@@ -52,9 +52,11 @@
         + Fixed header message: Removed quotation marks at the end
         + Utilised 'update_setup()' just before starting the installer function to update the class variables
         + Added testing user validation and cleanup
+        + Added implementation of ['-m', '--mode'] CLI options in the processing of the parsed arguments in the body
     - setup.py
         + initialized class 'lib/env.Environment()' to be used as a global reference variable during runtime.
         + Updated init_prog_Info() to have a default value of retrieving from 'env.MODE' (which takes from the environment variable 'MODE') if parameter 'program_MODE' is not specified.
+        + Removed program_Mode parameter checking and set it to as-is
     - archlinux
         + Performing initial workflow fix
         - mechanism.py
@@ -67,5 +69,7 @@
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only
+            + Updated value of configurations keyword 'MODE' to a default value of 'DEBUG'
         - env.py
             + Added environment variables 'USER' and 'SUDO_USER' for user run validation
+

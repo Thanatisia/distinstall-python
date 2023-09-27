@@ -125,14 +125,7 @@ class Setup():
         self.PROGRAM_NAME = program_appName
         self.PROGRAM_TYPE = program_Type
         self.PROGRAM_VERSION = program_Version
-        if program_Mode == "":
-            # Take the environment variable MODE 
-            self.MODE = self.env.MODE
-        else:
-            # Set mode to the specified program_Mode
-            self.MODE = program_Mode # { DEBUG | RELEASE }
-            # Set Environment Variable 'MODE' to the specified
-            self.env.MODE = program_Mode
+        self.MODE = program_Mode
         self.DISTRO = distribution
         self.cfg_name = config_Name
 

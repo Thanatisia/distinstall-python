@@ -138,7 +138,7 @@ def init_check():
     Program Name: {setup.PROGRAM_NAME}
     Program Type: {setup.PROGRAM_TYPE}
     Distro: {setup.DISTRO}
-    MODE: {env.MODE}
+    MODE: {setup.env.MODE}
           """)
 
     # Check if configuration file exists
@@ -227,6 +227,13 @@ def body():
                 for k,v in setup.cfg.items():
                     print("{} : {}".format(k,v))
                 exit(1)
+        elif (curr_opt == "MODE"):
+            if (curr_opt_val != None):
+                # Get the new mode (if any)
+                new_mode = cliparser.configurations["optionals"]["MODE"]
+
+                # Set the new mode into the Environment Variable class variable
+                setup.env.MODE = new_mode
 
     ## Switch-case CLI positionals
     for i in range(len(positionals)):
