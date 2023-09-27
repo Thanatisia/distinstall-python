@@ -230,14 +230,15 @@ class ArchLinux():
             ### Directory does not exist
             cmd_str = "mkdir -p \"{}\"".format(mount_dir_Root)
 
-            print("Directory {} does not exist, creating directory...")
+            print("Directory {} does not exist, creating directory...".format(mount_dir_Root))
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Mount root partition
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
-
+        else:
+            print("Directory {} exists.".format(mount_dir_Root))
 
         ## --- Processing
         ### Mount the volume to the path
@@ -266,24 +267,27 @@ class ArchLinux():
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
         if (curr_filesystem == "fat32"):
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, curr_part_Number, mount_dir_Root)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
-                cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
-
+            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Root)
+            cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
+                
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Check filesystem for FAT32
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
             # Any other filesystems
-            cmd_str = "mount -t \"{}\" \"{}\"{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Root)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
-                cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
-
+            """
+            mount -t ext4 /dev/sdX2 /mnt
+            mount -t ext4 /dev/sdX1 /mnt/boot 
+            mount -t ext4 /dev/sdX3 /mnt/home
+            """
+            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Root)
+            cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
+                
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Check other filesystems
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout = process.subprocess_Line(cmd_str)
@@ -301,13 +305,16 @@ class ArchLinux():
         if not (os.path.isdir(mount_dir_Boot)):
             ### Directory does not exist
             cmd_str = "mkdir -p \"{}\"".format(mount_dir_Boot)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
+
+            print("Directory {} does not exist, creating directory...".format(mount_dir_Boot))
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Mount boot partition
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
+        else:
+            print("Directory {} exists.".format(mount_dir_Root))
 
         ## --- Processing
         ### Mount the volume to the path
@@ -339,22 +346,20 @@ class ArchLinux():
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
             cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
-                cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
-
                 ## Check FAT32 partition scheme for Boot partition
                 stdout, stderr = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
             # Any other filesystems
             cmd_str = "mount -t {} \"{}\"{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
 
             print("Executing: {}".format(cmd_str))
-            if self.env.MODE == "DEBUG":
-                cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
-
+            if self.env.MODE != "DEBUG":
                 ## Check Other partition scheme for Boot partition
                 stdout, stderr = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
@@ -383,33 +388,34 @@ class ArchLinux():
                 ### Directory does not exist
                 cmd_str = "mkdir -p \"{}\"".format(part_mount_dir)
                 
+                print("Directory {} does not exist, creating directory...".format(part_mount_dir))
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
                     ## Create the other partition mount points
                     stdout, stderr = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
+            else:
+                print("Directory {} exists.".format(part_mount_dir))
 
             ## --- Processing
             ### Mount the volume to the path
             #### Check filesystem
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if part_filesystem == "fat32":
-                cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, part_ID, part_mount_dir)
+                cmd_str = "mount -t vfat {}{} {}".format(disk_Label, part_ID, part_mount_dir)
+                cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
 
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
-                    cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
-
                     ## Mount the other partition mount points using FAT32
                     stdout, stderr = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
             else:
-                cmd_str = "mount -t \"{}\" \"{}\"{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
+                cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
+                cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
                     
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
-                    cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
-
                     ## Mount the other partition mount points using other filesystem types
                     stdout, stderr = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
