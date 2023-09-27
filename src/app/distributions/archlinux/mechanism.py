@@ -972,15 +972,17 @@ class ArchLinux():
         print("(S) 1. Testing Network...")
         network_Enabled = self.verify_network()
         if network_Enabled == False:
-            cmd_str = """
-            sudo dhcpcd && \
-                echo -e "(+) Network is activated" || \
+            cmd_str = """dhcpcd &&
+                echo -e "(+) Network is activated" ||
                 echo -e "(+) Error starting Network"
             """
-            ## Begin executing commands
-            stdout, stderr = process.subprocess_Sync(cmd_str)
-            print("Standard Output: {}".format(stdout))
-            print("Standard Error: {}".format(stderr))
+            if self.env.MODE == "DEBUG":
+                print(cmd_str)
+            else:
+                ## Begin executing commands
+                stdout, stderr = process.subprocess_Sync(cmd_str)
+                print("Standard Output: {}".format(stdout))
+                print("Standard Error: {}".format(stderr))
         else:
             print("(+) Network is active")
 
