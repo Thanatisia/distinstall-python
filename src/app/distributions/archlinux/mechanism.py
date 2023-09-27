@@ -228,7 +228,7 @@ class ArchLinux():
         ## Create directories if does not exists
         if not (os.path.isdir(mount_dir_Root)):
             ### Directory does not exist
-            cmd_str = "mkdir -p \"{}\"".format(mount_dir_Root)
+            cmd_str = "mkdir -p {}".format(mount_dir_Root)
 
             print("Directory {} does not exist, creating directory...".format(mount_dir_Root))
             print("Executing: {}".format(cmd_str))
@@ -314,7 +314,7 @@ class ArchLinux():
         ## Create directories if does not exists
         if not (os.path.isdir(mount_dir_Boot)):
             ### Directory does not exist
-            cmd_str = "mkdir -p \"{}\"".format(mount_dir_Boot)
+            cmd_str = "mkdir -p {}".format(mount_dir_Boot)
 
             print("Directory {} does not exist, creating directory...".format(mount_dir_Boot))
             print("Executing: {}".format(cmd_str))
@@ -324,7 +324,7 @@ class ArchLinux():
                 stdout, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
-            print("Directory {} exists.".format(mount_dir_Root))
+            print("Directory {} exists.".format(mount_dir_Boot))
 
         ## --- Processing
         ### Mount the volume to the path
@@ -355,7 +355,7 @@ class ArchLinux():
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -371,7 +371,7 @@ class ArchLinux():
                     print("Error mounting Partition [Boot]")
         else:
             # Any other filesystems
-            cmd_str = "mount -t {} \"{}\"{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -408,7 +408,7 @@ class ArchLinux():
             ## Create directories if does not exists
             if not (os.path.isdir(part_mount_dir)):
                 ### Directory does not exist
-                cmd_str = "mkdir -p \"{}\"".format(part_mount_dir)
+                cmd_str = "mkdir -p {}".format(part_mount_dir)
                 
                 print("Directory {} does not exist, creating directory...".format(part_mount_dir))
                 print("Executing: {}".format(cmd_str))
@@ -611,14 +611,14 @@ class ArchLinux():
         # Cat commands into script file in mount root
         mount_Root="{}/root".format(dir_Mount)
         script_to_exe="chroot-comms.sh"
+        target_directory = "{}/{}".format(mount_Root, script_to_exe)
             
-        print("Executing: {}".format(cmd_str))
+        print("Writing [{}] => {}".format(cmd_str, target_directory))
         if self.env.MODE != "DEBUG":
-            cmd_copy = "echo -e \"{}\" > {}/{}".format(cmd_str, mount_Root, script_to_exe)
-
-            ## Begin executing commands
-            stdout, stderr, returncode = process.subprocess_Sync(cmd_copy)
-            print("Standard Output: {}".format(stdout))
+            with open(target_directory, "a+") as write_chroot_Commands:
+                write_chroot_Commands.write(cmd_str)
+                # Close file after usage
+                write_chroot_Commands.close()
 
         # Execute in arch-chroot
         # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
@@ -1029,18 +1029,21 @@ class ArchLinux():
         print("(S) 1. Testing Network...")
         network_Enabled = self.verify_network()
         if network_Enabled == False:
-            cmd_str = """dhcpcd &&
-                echo -e "(+) Network is activated" ||
-                echo -e "(+) Error starting Network"
-            """
+            cmd_str = "dhcpcd"
             print("")
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Begin executing commands
                 stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
                 print("Standard Error: {}".format(stderr))
+
+                if returncode == 0:
+                    # Success
+                    print("(+) Network is activated")
+                else:
+                    # Error
+                    print("(-) Error starting Network")
         else:
             print("(+) Network is active")
 

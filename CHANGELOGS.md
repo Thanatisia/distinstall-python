@@ -66,8 +66,11 @@
                 + Added '.items()' behind partition_Scheme in line 247 and line 314
                 - Replaced unsetting via '= None' (Wrong) => using .pop (Correct)
                     + Unsetting doesnt remove thee index, only remove the value and set it as None/Null
+                + Removed quotation marks surrounding the folders to be mounted
+                + Removed quotation marks surrounding the device to be mounted
             + Added the return element 'resultcode' to every subprocess the process function requires
             + Removed any error messages via bash 'echo' command and through native python via print
+            + Replaced copy function via echo to writing
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only
