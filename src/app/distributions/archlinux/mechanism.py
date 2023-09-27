@@ -229,11 +229,12 @@ class ArchLinux():
         if not (os.path.isdir(mount_dir_Root)):
             ### Directory does not exist
             cmd_str = "mkdir -p \"{}\"".format(mount_dir_Root)
+
+            print("Executing: {}".format(cmd_str))
             if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
                 ## Mount root partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
 
 
@@ -271,7 +272,8 @@ class ArchLinux():
                 cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
 
                 ## Check filesystem for FAT32
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
             # Any other filesystems
@@ -282,7 +284,8 @@ class ArchLinux():
                 cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
 
                 ## Check other filesystems
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
 
         ### Unset/Remove Root partition from mount list
@@ -301,7 +304,8 @@ class ArchLinux():
                 print(cmd_str)
             else:
                 ## Mount boot partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
 
         ## --- Processing
@@ -334,9 +338,9 @@ class ArchLinux():
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
             cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
+
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
 
                 ## Check FAT32 partition scheme for Boot partition
@@ -345,9 +349,9 @@ class ArchLinux():
         else:
             # Any other filesystems
             cmd_str = "mount -t {} \"{}\"{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
+
+            print("Executing: {}".format(cmd_str))
             if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
                 cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
 
                 ## Check Other partition scheme for Boot partition
@@ -377,9 +381,9 @@ class ArchLinux():
             if not (os.path.isdir(part_mount_dir)):
                 ### Directory does not exist
                 cmd_str = "mkdir -p \"{}\"".format(part_mount_dir)
-                if self.env.MODE == "DEBUG":
-                    print(cmd_str)
-                else:
+                
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     ## Create the other partition mount points
                     stdout, stderr = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
@@ -390,9 +394,9 @@ class ArchLinux():
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if part_filesystem == "fat32":
                 cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, part_ID, part_mount_dir)
-                if self.env.MODE == "DEBUG":
-                    print(cmd_str)
-                else:
+
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
 
                     ## Mount the other partition mount points using FAT32
@@ -400,9 +404,9 @@ class ArchLinux():
                     print("Standard Output: {}".format(stdout))
             else:
                 cmd_str = "mount -t \"{}\" \"{}\"{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
-                if self.env.MODE == "DEBUG":
-                    print(cmd_str)
-                else:
+                    
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
 
                     ## Mount the other partition mount points using other filesystem types
@@ -427,12 +431,11 @@ class ArchLinux():
 
         # --- Processing
         cmd_str = "pacstrap {} {}".format(mount_Point, ' '.join(base_packages))
-        if self.env.MODE == "DEBUG":
-            # echo pacstrap ${mount_Group["2"]} "${pkgs[@]}"
-            print(cmd_str)
-        else:
+
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
-            stdout, stderr = process.subprocess_Sync(cmd_str)
+            stdout = process.subprocess_Line(cmd_str)
             print("Standard Output: {}".format(stdout))
 
     def fstab_Generate(self):
@@ -446,9 +449,9 @@ class ArchLinux():
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
         cmd_str = "genfstab -U {} >> {}/etc/fstab".format(dir_Mount, dir_Mount)
-        if self.env.MODE == "DEBUG":
-            print(cmd_str)
-        else:
+            
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
             ## Begin generating filesystems table
             stdout, stderr = process.subprocess_Sync(cmd_str)
             print("Standard Output: {}".format(stdout))
@@ -567,9 +570,9 @@ class ArchLinux():
         # Cat commands into script file in mount root
         mount_Root="{}/root".format(dir_Mount)
         script_to_exe="chroot-comms.sh"
-        if self.env.MODE == "DEBUG":
-            print(cmd_str)
-        else:
+            
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
             cmd_copy = "echo -e \"{}\" > {}/{}".format(cmd_str, mount_Root, script_to_exe)
 
             ## Begin executing commands
@@ -584,18 +587,15 @@ class ArchLinux():
             "{}/{}".format(mount_Root, script_to_exe)
         )
 
-        if self.env.MODE == "DEBUG":
-            print("chmod +x {}/{}".format(mount_Root, script_to_exe))
-            print("arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe))
-        else:
-            cmd_copy = [
-                "chmod +x {}/{}".format(mount_Root, script_to_exe), 
-                "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
-            ]
-
+        cmd_copy = [
+            "chmod +x {}/{}".format(mount_Root, script_to_exe), 
+            "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
+        ]
+        if self.env.MODE != "DEBUG":
             # Loop through all actions
             for cmd in cmd_copy:
                 ## Begin executing commands
+                print("Executing: {}".format(cmd))
                 stdout, stderr = process.subprocess_Sync(cmd)
                 print("Standard Output: {}".format(stdout))
 

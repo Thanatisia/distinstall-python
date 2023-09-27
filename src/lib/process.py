@@ -55,7 +55,7 @@ def subprocess_Sync(cmd_str):
     stderr = ""
 
     ## Open process and Perform action
-    proc = Popen(cmd_str.split(), shell=True, stdin=PIPE, stdout=PIPE)
+    proc = Popen(cmd_str.split(), stdout=PIPE)
 
     # Execute process in sync - check if the previous command is completed before proceeding
     stdout, stderr = proc.communicate()
