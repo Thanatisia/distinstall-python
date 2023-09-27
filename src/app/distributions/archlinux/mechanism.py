@@ -613,12 +613,14 @@ class ArchLinux():
         script_to_exe="chroot-comms.sh"
         target_directory = "{}/{}".format(mount_Root, script_to_exe)
             
-        print("Writing [{}] => {}".format(cmd_str, target_directory))
+        print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
         if self.env.MODE != "DEBUG":
             with open(target_directory, "a+") as write_chroot_Commands:
                 write_chroot_Commands.write(cmd_str)
                 # Close file after usage
                 write_chroot_Commands.close()
+
+        print("")
 
         # Execute in arch-chroot
         # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
@@ -727,21 +729,15 @@ class ArchLinux():
 
         # Local Variable
         dir_Mount = self.cfg["mount_Paths"]["Root"] # Look for root/mount partition
-        postinstall_commands = []
-
-        ### Body ###
-        # =========== #
-        # Enable Sudo #
-        # =========== #
-        postinstall_commands.append("echo (+) Enable sudo")
-        postinstall_commands.append("sed -i 's/^#\s*\(%wheel\s\+ALL=(ALL:ALL)\s\+ALL\)/\1/' /etc/sudoers")				# PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
-
-        # =============== #
-        # User Management #
-        # =============== #
-        postinstall_commands.append(
-            "echo (+) User Management"
-        )
+        postinstall_commands = [
+            ### Body ###
+            # Enable Sudo
+            "echo (+) Enable sudo",
+            # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
+            "sed -i 's/^#\s*\(%wheel\s\+ALL=(ALL:ALL)\s\+ALL\)/\1/' /etc/sudoers",
+            # User Management
+            "echo (+) User Management",
+        ]
 
         # Loop through all users in user_profiles and
         # See if it exists, follow above documentation
@@ -810,11 +806,12 @@ class ArchLinux():
         # Cat commands into script file in mount root
         mount_Root = "{}/root".format(dir_Mount)
         script_to_exe = "postinstall-comms.sh"
-        if self.env.MODE == "DEBUG":
+        target_file = "{}/{}".format(mount_Root, script_to_exe)
+
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
             # echo "echo -e "$cmd_str" > $mount_Root/$script_to_exe"
-            print(cmd_str)
-        else:
-            with open("{}/{}".format(mount_Root, script_to_exe), "a+") as write_postinstall_Commands:
+            with open(target_file, "a+") as write_postinstall_Commands:
                 write_postinstall_Commands.write(cmd_str)
                 # Close file after usage
                 write_postinstall_Commands.close()
@@ -824,12 +821,18 @@ class ArchLinux():
             "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
         ]
 
-        if self.env.MODE == "DEBUG":
-            # Change Permission and Execute command
-            print(chroot_exec_Script)
-        else:
-            stdout = process.subprocess_Line(chroot_exec_Script)
-        
+        # Iterate and loop through elements of chroot_exec_Script
+        for script in chroot_exec_Script:
+            print("Executing: {}".format(script))
+            if self.env.MODE != "DEBUG":
+                # Change Permission and Execute command
+                stdout, returncode = process.subprocess_Line(chroot_exec_Script)
+
+                if returncode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+
+        # Append external script path to the default variable key "external_scripts"
         self.default_Var["external_scripts"].append(
             ### Append all external scripts used ###
             "{}/{}".format(mount_Root, script_to_exe)
