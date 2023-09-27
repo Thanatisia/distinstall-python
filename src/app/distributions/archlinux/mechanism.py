@@ -71,15 +71,15 @@ class ArchLinux():
             success_flag = True
         else:
             # Set NTP
-            stdout, stderr = process.subprocess_Sync(cmd_set_NTP)
+            stdout, stderr, returncode = process.subprocess_Sync(cmd_set_NTP)
 
             if stderr == "":
                 print("Standard Output: {}".format(stdout))
 
                 # To check system clock
-                stdout, stderr = process.subprocess_Sync(cmd_check_NTP)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_check_NTP)
 
-                if stderr == "":
+                if returncode == 0:
                     # Successfully set system clock
                     success_flag = True
                 else:
@@ -123,7 +123,7 @@ class ArchLinux():
                 # print("parted {} mklabel {}".format(device_Name, device_Label))
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
 
         print("")
@@ -160,7 +160,7 @@ class ArchLinux():
                 if self.env.MODE != "DEBUG":
                     # check if string is empty
                     # Perform Partition Table formatting
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
 
                 ## Format file system
@@ -176,7 +176,7 @@ class ArchLinux():
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
                     # Perform partitioning
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
 
                 ## Check bootable
@@ -191,7 +191,7 @@ class ArchLinux():
                     print("Executing: {}".format(cmd_str))
                     if self.env.MODE != "DEBUG":
                         # Perform Boot set
-                        stdout, stderr = process.subprocess_Sync(cmd_str)
+                        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                         print("Standard Output: {}".format(stdout))
 
                 ## Check Swap partition
@@ -202,7 +202,7 @@ class ArchLinux():
                     print("Executing: {}".format(cmd_str))
                     if self.env.MODE != "DEBUG":
                         ## Perform Swap partition formatting
-                        stdout, stderr = process.subprocess_Sync(cmd_str)
+                        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                         print("Standard Output: {}".format(stdout))
 
         print("")
@@ -215,7 +215,7 @@ class ArchLinux():
         """
         
         # --- Input
-        # Local Vairiables
+        # Local Variables
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"]
@@ -268,14 +268,19 @@ class ArchLinux():
         if (curr_filesystem == "fat32"):
             # FAT32 formatting is in vfat
             cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Root)
-            cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Check filesystem for FAT32
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout = process.subprocess_Line(cmd_str)
+                stdout, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
+                if returncode == 0:
+                    # Success
+                    print("Partition [Root] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Root]")
         else:
             # Any other filesystems
             """
@@ -284,14 +289,19 @@ class ArchLinux():
             mount -t ext4 /dev/sdX3 /mnt/home
             """
             cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Root)
-            cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Check other filesystems
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout = process.subprocess_Line(cmd_str)
+                stdout, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
+                if returncode == 0:
+                    # Success
+                    print("Partition [Root] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Root]")
 
         ### Unset/Remove Root partition from mount list
         partition_Scheme.pop(curr_part_Number)
@@ -311,7 +321,7 @@ class ArchLinux():
             if self.env.MODE != "DEBUG":
                 ## Mount boot partition
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout = process.subprocess_Line(cmd_str)
+                stdout, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
             print("Directory {} exists.".format(mount_dir_Root))
@@ -346,23 +356,35 @@ class ArchLinux():
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
             cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
-            cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Check FAT32 partition scheme for Boot partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
+
+                if returncode == 0:
+                    # Success
+                    print("Partition [Boot] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Boot]")
         else:
             # Any other filesystems
             cmd_str = "mount -t {} \"{}\"{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
-            cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Check Other partition scheme for Boot partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
+
+                if returncode == 0:
+                    # Success
+                    print("Partition [Boot] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Boot]")
 
         ### Unset/Remove Boot partition from mount list
         partition_Scheme.pop(curr_part_Number)
@@ -392,7 +414,7 @@ class ArchLinux():
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
                     ## Create the other partition mount points
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
             else:
                 print("Directory {} exists.".format(part_mount_dir))
@@ -403,22 +425,34 @@ class ArchLinux():
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if part_filesystem == "fat32":
                 cmd_str = "mount -t vfat {}{} {}".format(disk_Label, part_ID, part_mount_dir)
-                cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
 
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
                     ## Mount the other partition mount points using FAT32
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
+
+                    if returncode == 0:
+                        # Success
+                        print("Partition [{}] Mounted.".format(part_Name))
+                    else:
+                        # Error
+                        print("Error mounting Partition [{}]".format(part_Name))
             else:
                 cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
-                cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
                     
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
                     ## Mount the other partition mount points using other filesystem types
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
+
+                    if returncode == 0:
+                        # Success
+                        print("Partition [{}] Mounted.".format(part_Name))
+                    else:
+                        # Error
+                        print("Error mounting Partition [{}]".format(part_Name))
 
     def bootstrap_Install(self):
         """
@@ -460,7 +494,7 @@ class ArchLinux():
         print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
             ## Begin generating filesystems table
-            stdout, stderr = process.subprocess_Sync(cmd_str)
+            stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
             print("Standard Output: {}".format(stdout))
 
     def arch_chroot_Exec(self):
@@ -583,7 +617,7 @@ class ArchLinux():
             cmd_copy = "echo -e \"{}\" > {}/{}".format(cmd_str, mount_Root, script_to_exe)
 
             ## Begin executing commands
-            stdout, stderr = process.subprocess_Sync(cmd_copy)
+            stdout, stderr, returncode = process.subprocess_Sync(cmd_copy)
             print("Standard Output: {}".format(stdout))
 
         # Execute in arch-chroot
@@ -603,7 +637,7 @@ class ArchLinux():
             for cmd in cmd_copy:
                 ## Begin executing commands
                 print("Executing: {}".format(cmd))
-                stdout, stderr = process.subprocess_Sync(cmd)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd)
                 print("Standard Output: {}".format(stdout))
 
     # =========================== #
@@ -626,7 +660,7 @@ class ArchLinux():
             # Not Empty
             # Get the home directory of the user
             cmd_str = "su - {} -c \"echo $HOME\""
-            home_dir, stderr = process.subprocess_Sync(cmd_str)
+            home_dir, stderr, returncode = process.subprocess_Sync(cmd_str)
         return home_dir
 
     def check_user_Exists(self, user_name):
@@ -642,7 +676,7 @@ class ArchLinux():
         cmd_res_Existence="getent passwd {}".format(user_name)
 
         # Check if user exists
-        res_Existence, stderr = process.subprocess_Sync(cmd_res_Existence)
+        res_Existence, stderr, returncode = process.subprocess_Sync(cmd_res_Existence)
 
         if res_Existence != "":
             # Something is found
@@ -675,7 +709,7 @@ class ArchLinux():
         for k,_ in user_params.items():
             # Get parameter for specified keyword
             tmp_cmd_str = "useradd -D | grep {} | cut -d '=' -f2".format(k)
-            curr_keyword_default_Param, stderr = process.subprocess_Sync(tmp_cmd_str)
+            curr_keyword_default_Param, stderr, returncode = process.subprocess_Sync(tmp_cmd_str)
 
             # Map keyword to result default parameters
             user_params[k] = curr_keyword_default_Param
@@ -724,7 +758,7 @@ class ArchLinux():
                 u_Exists = ""
             else:
                 cmd_check_if_user_Exists = "arch-chroot {} /bin/bash -c \"getent passwd {}\"".format(dir_Mount, u_Name) #  Check if user exists | Empty if Not Found
-                u_Exists, stderr = process.subprocess_Sync(cmd_check_if_user_Exists)
+                u_Exists, stderr, returncode = process.subprocess_Sync(cmd_check_if_user_Exists)
 
             if u_Exists == "":
                 # 0 : Does not exist
@@ -935,8 +969,8 @@ class ArchLinux():
                     print("Executing: {}".format(cmd_to_exec[1]))
                 else:
                     # Get the home directory of the user
-                    sel_primary_group, stderr = process.subprocess_Sync(cmd_to_exec[0])
-                    sel_uhome_dir, stderr = process.subprocess_Sync(cmd_to_exec[1])
+                    sel_primary_group, stderr, returncode = process.subprocess_Sync(cmd_to_exec[0])
+                    sel_uhome_dir, stderr, returncode = process.subprocess_Sync(cmd_to_exec[1])
 
                     # Start copy
                     for i in range(number_of_external_scripts):
@@ -1004,7 +1038,7 @@ class ArchLinux():
                 print(cmd_str)
             else:
                 ## Begin executing commands
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
                 print("Standard Error: {}".format(stderr))
         else:

@@ -5,7 +5,7 @@
     > [version] | [date] [time] | [status]
     + v0.1.0 | 2023-09-26 1604H | Merged to main
     + v0.1.1 | 2023-09-26 2223H | Merged to main
-    + v0.1.2 | 2023-09-27 1539H | Development
+    + v0.2.0 | 2023-09-27 2106H | Development
 
 ## Entries
 
@@ -36,7 +36,7 @@
     + Updated YAML support in setup.py from pyyaml => ruamel.yaml
     + Fixed bug in setup.py: cfg - Added commas to the list
 
-### v0.1.2
+### v0.2.0
 - New
     + Created new file 'const.py' to place all immutable/constant variables
 - Updates
@@ -66,10 +66,14 @@
                 + Added '.items()' behind partition_Scheme in line 247 and line 314
                 - Replaced unsetting via '= None' (Wrong) => using .pop (Correct)
                     + Unsetting doesnt remove thee index, only remove the value and set it as None/Null
+            + Added the return element 'resultcode' to every subprocess the process function requires
+            + Removed any error messages via bash 'echo' command and through native python via print
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only
             + Updated value of configurations keyword 'MODE' to a default value of 'DEBUG'
         - env.py
             + Added environment variables 'USER' and 'SUDO_USER' for user run validation
+        - process.py
+            + Updated functions subprocess_Line and subprocess_Sync to return the result/exit/status code
 

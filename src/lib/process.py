@@ -17,6 +17,7 @@ def subprocess_Line(cmd_str):
     stdout = []
     stderr = ""
     line = ""
+    ret_Code = 0
 
     print(cmd_str.split())
 
@@ -36,10 +37,13 @@ def subprocess_Line(cmd_str):
 
             ## Operate data and store in list
             line = line.rstrip().lstrip().decode("utf-8")
-            print("Current Line: {}".format(line))
+            # print("Current Line: {}".format(line))
+            print(line)
             stdout.append(line)
 
-    return stdout
+            ret_Code = proc.returncode
+
+    return stdout, ret_Code
 
 def subprocess_Sync(cmd_str):
     """
@@ -69,6 +73,9 @@ def subprocess_Sync(cmd_str):
     else:
         stderr = ""
 
-    return stdout, stderr
+    # Get result code from process pipe
+    resultcode = proc.returncode
+
+    return stdout, stderr, resultcode
 
 
