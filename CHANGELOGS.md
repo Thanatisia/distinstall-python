@@ -47,12 +47,14 @@
         - Updated TODO list with new tasks: 
             + configuration file handling and support
             + Rename YAML configuration file keyword naming convention
+        - Added Synopsis/Syntax, Parameters and Usage for basic documentation
     - main.py
         + Changed initialization of class 'env.Environment()' => setup.env : Referencing of the environment class variable from 'setup.py' so that everything is in one location (unless otherwise required/specified)
         + Fixed header message: Removed quotation marks at the end
         + Utilised 'update_setup()' just before starting the installer function to update the class variables
         + Added testing user validation and cleanup
         + Added implementation of ['-m', '--mode'] CLI options in the processing of the parsed arguments in the body
+        + Updated 'begin_installer.py' with a distribution selector to iterate between the distributions and select which to install
     - setup.py
         + initialized class 'lib/env.Environment()' to be used as a global reference variable during runtime.
         + Updated init_prog_Info() to have a default value of retrieving from 'env.MODE' (which takes from the environment variable 'MODE') if parameter 'program_MODE' is not specified.
@@ -71,6 +73,7 @@
             + Added the return element 'resultcode' to every subprocess the process function requires
             + Removed any error messages via bash 'echo' command and through native python via print
             + Replaced copy function via echo to writing
+            + Added quotation wraps around echo commands
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only
@@ -79,4 +82,5 @@
             + Added environment variables 'USER' and 'SUDO_USER' for user run validation
         - process.py
             + Updated functions subprocess_Line and subprocess_Sync to return the result/exit/status code
+            + Added Variable-Length Keyword Arguments '**opts' into commands 'subprocess_Sync' and 'subprocess_Line'
 

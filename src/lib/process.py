@@ -5,7 +5,7 @@ import os
 import sys
 from subprocess import Popen, PIPE
 
-def subprocess_Line(cmd_str):
+def subprocess_Line(cmd_str, **opts):
     """
     Open a subprocess and read the stdout line by line
 
@@ -22,7 +22,7 @@ def subprocess_Line(cmd_str):
     print(cmd_str.split())
 
     # Open process and Perform action
-    with Popen(cmd_str.split(), stdout=PIPE) as proc:
+    with Popen(cmd_str.split(), stdout=PIPE, **opts) as proc:
         # Loop until there are no more lines
         while True:
             # While there are still lines
@@ -45,7 +45,7 @@ def subprocess_Line(cmd_str):
 
     return stdout, ret_Code
 
-def subprocess_Sync(cmd_str):
+def subprocess_Sync(cmd_str, **opts):
     """
     Open a subprocess and execute in sync
     - Check if the previous command is completed before proceeding
@@ -59,7 +59,7 @@ def subprocess_Sync(cmd_str):
     stderr = ""
 
     ## Open process and Perform action
-    proc = Popen(cmd_str.split(), stdout=PIPE)
+    proc = Popen(cmd_str.split(), stdout=PIPE, **opts)
 
     # Execute process in sync - check if the previous command is completed before proceeding
     stdout, stderr = proc.communicate()

@@ -123,8 +123,13 @@ class ArchLinux():
                 # print("parted {} mklabel {}".format(device_Name, device_Label))
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
-                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                print("Standard Output: {}".format(stdout))
+                stdout, returncode = process.subprocess_Line(cmd_str)
+                if returncode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error executing: {}".format(cmd_str))
 
         print("")
 
@@ -525,25 +530,25 @@ class ArchLinux():
         # Associative Array
         chroot_commands = [
             # "echo ======= Time Zones ======"												            # Step 10: Time Zones
-            "echo (+) Time Zones",
+            "echo \"(+) Time Zones\"",
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
             "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
             # "echo ======= Location ======"													        # Step 11: Localization;
-            "echo (+) Location",
+            "echo \"(+) Location\"",
             "sed -i '/{}/s/^#//g' /etc/locale.gen".format(language), 									# Step 11: Localization; Uncomment locale using sed
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
             "echo \"LANG=${}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
             # "echo ======= Network Configuration ======"										        # step 12: Network Configuration;
-            "echo (+) Network Configuration",
+            "echo \"(+) Network Configuration\"",
             "echo \"{}\" | tee -a /etc/hostname".format(hostname),										# Step 12: Network Configuration; Set Network Hostname Configuration; Create hostname file
             "echo \"127.0.0.1   localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
             # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
-            "echo (+) Making Initial Ramdisk",
+            "echo \"(+) Making Initial Ramdisk\"",
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
             # "echo ======= Change Root Password ======="										        # Step 14: User Information; Set Root Password
-            "echo (+) Change Root Password",
+            "echo \"(+) Change Root Password\"",
             "passwd || passwd",																	        # Step 14: User Information; Set Root Password
         ]
 
@@ -639,8 +644,13 @@ class ArchLinux():
             for cmd in cmd_copy:
                 ## Begin executing commands
                 print("Executing: {}".format(cmd))
-                stdout, stderr, returncode = process.subprocess_Sync(cmd)
-                print("Standard Output: {}".format(stdout))
+                stdout, stderr, returncode = process.subprocess_Sync(cmd, stdin=process.PIPE)
+                if returncode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error: {}".format(stderr))
 
     # =========================== #
     # Post-Installation Functions #
@@ -732,11 +742,11 @@ class ArchLinux():
         postinstall_commands = [
             ### Body ###
             # Enable Sudo
-            "echo (+) Enable sudo",
+            "echo \"(+) Enable sudo\"",
             # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
             "sed -i 's/^#\s*\(%wheel\s\+ALL=(ALL:ALL)\s\+ALL\)/\1/' /etc/sudoers",
             # User Management
-            "echo (+) User Management",
+            "echo \"(+) User Management\"",
         ]
 
         # Loop through all users in user_profiles and
@@ -785,7 +795,7 @@ class ArchLinux():
                 postinstall_commands.append("{}".format(u_create_Command))
                 postinstall_commands.append("echo \"\t(+) Password change for {}\"".format(u_Name))
                 postinstall_commands.append("if [[ \"$?\" == \"0\" ]]; then")
-                postinstall_commands.append("	passwd $u_name")
+                postinstall_commands.append("	passwd {}".format(u_Name))
                 postinstall_commands.append("fi")
 
         ### Footer ###
@@ -826,7 +836,7 @@ class ArchLinux():
             print("Executing: {}".format(script))
             if self.env.MODE != "DEBUG":
                 # Change Permission and Execute command
-                stdout, returncode = process.subprocess_Line(chroot_exec_Script)
+                stdout, returncode = process.subprocess_Line(script, stdin=process.PIPE)
 
                 if returncode == 0:
                     # Success

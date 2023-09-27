@@ -38,6 +38,20 @@ Currently, this rewrite is in python as it is a good language for prototyping an
         ```
 
 ## Documentation
+### Synopsis/Syntax
+- Basic Run
+    ```console
+    python main.py {options} <arguments> [positionals]
+    ```
+
+### Parameters
+- Positionals
+    + start : Confirm and Begin the installation
+- Optionals
+    - With Arguments
+    - Flags
+
+### Usage
 
 ## Wiki
 ### Project Structure

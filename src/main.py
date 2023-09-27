@@ -183,11 +183,14 @@ def begin_installer():
     """
     Begin installation process
     """
-    # Update installer one more time
-    installer_archlinux.update_setup(setup)
+    if setup.DISTRO == "ArchLinux":
+        print("Installing: {}".format(setup.DISTRO))
 
-    # Start installer
-    installer_archlinux.installer()
+        # Update installer one more time
+        installer_archlinux.update_setup(setup)
+
+        # Start installer
+        installer_archlinux.installer()
 
 def body():
     """
