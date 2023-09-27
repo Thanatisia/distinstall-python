@@ -5,7 +5,7 @@
     > [version] | [date] [time] | [status]
     + v0.1.0 | 2023-09-26 1604H | Merged to main
     + v0.1.1 | 2023-09-26 2223H | Merged to main
-    + v0.1.2 | 2023-09-27 1416H | Development
+    + v0.1.2 | 2023-09-27 1539H | Development
 
 ## Entries
 
@@ -55,9 +55,14 @@
         + initialized class 'lib/env.Environment()' to be used as a global reference variable during runtime.
         + Updated init_prog_Info() to have a default value of retrieving from 'env.MODE' (which takes from the environment variable 'MODE') if parameter 'program_MODE' is not specified.
     - archlinux
+        + Performing initial workflow fix
         - mechanism.py
             + Added function 'print_configurations'
             + Wrapped the constructor lines into a standalone event update function 'update_setup'
+            - Fixes
+                + Added '.items()' behind partition_Scheme in line 247 and line 314
+                - Replaced unsetting via '= None' (Wrong) => using .pop (Correct)
+                    + Unsetting doesnt remove thee index, only remove the value and set it as None/Null
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only

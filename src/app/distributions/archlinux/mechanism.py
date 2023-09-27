@@ -247,7 +247,7 @@ class ArchLinux():
         curr_part_Number = 1
 
         ##### Search for partition number of the Root partition
-        for k,v in partition_Scheme:
+        for k,v in partition_Scheme.items():
             # Get key-value
             part_ID = k
             part_Defn = v
@@ -257,6 +257,7 @@ class ArchLinux():
 
             # Find the Root partition
             if part_Name == target_Partition:
+                # Found
                 curr_part_Number = part_ID
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
@@ -287,7 +288,7 @@ class ArchLinux():
                 print("Standard Output: {}".format(stdout))
 
         ### Unset/Remove Root partition from mount list
-        partition_Scheme[curr_part_Number] = None
+        partition_Scheme.pop(curr_part_Number)
 
         """
         Mount boot partition
@@ -313,16 +314,17 @@ class ArchLinux():
         curr_part_Number = 1
 
         ##### Search for partition number of the Root partition
-        for k,v in partition_Scheme:
+        for k,v in partition_Scheme.items():
             # Get key-value
             part_ID = k
             part_Defn = v
 
             # Get definition
-            part_Name = v[0]
+            part_Name = part_Defn[0]
 
             # Find the Root partition
             if part_Name == target_Partition:
+                # Found
                 curr_part_Number = part_ID
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
@@ -355,11 +357,12 @@ class ArchLinux():
                 print("Standard Output: {}".format(stdout))
 
         ### Unset/Remove Boot partition from mount list
-        partition_Scheme[curr_part_Number] = None
+        partition_Scheme.pop(curr_part_Number)
 
         """
         Mount all other partitions
         """
+        print("Partition Scheme: {}".format(partition_Scheme))
         for k,v in partition_Scheme.items():
             part_ID = k
             part_Defn = v
@@ -425,7 +428,7 @@ class ArchLinux():
         mount_Point = cfg["mount_Paths"]["Root"]
 
         # --- Processing
-        cmd_str = "pacstrap {} {}".format(mount_Point, **base_packages)
+        cmd_str = "pacstrap {} {}".format(mount_Point, ' '.join(base_packages))
         if self.env.MODE == "DEBUG":
             # echo pacstrap ${mount_Group["2"]} "${pkgs[@]}"
             print(cmd_str)
@@ -469,7 +472,7 @@ class ArchLinux():
         language = cfg["location"]["Language"]
         keyboard_mapping = cfg["location"]["KeyboardMapping"]
         hostname = cfg["networkConfig_hostname"]
-        default_Kernel = cfg["default_Kernel"]
+        default_Kernel = cfg["default_kernel"]
         bootloader = cfg["bootloader"]
         bootloader_directory = cfg["bootloader_directory"]
         bootloader_optional_Params = cfg["bootloader_Params"]
@@ -712,8 +715,11 @@ class ArchLinux():
 
             # Check if user exists
             print("(+) Checking for user {}...".format(u_Name))
-            cmd_check_if_user_Exists = "arch-chroot {} /bin/bash -c \"getent passwd {}\"".format(dir_Mount, u_Name) #  Check if user exists | Empty if Not Found
-            u_Exists, stderr = process.subprocess_Sync(cmd_check_if_user_Exists)
+            if self.env.MODE == "DEBUG":
+                u_Exists = ""
+            else:
+                cmd_check_if_user_Exists = "arch-chroot {} /bin/bash -c \"getent passwd {}\"".format(dir_Mount, u_Name) #  Check if user exists | Empty if Not Found
+                u_Exists, stderr = process.subprocess_Sync(cmd_check_if_user_Exists)
 
             if u_Exists == "":
                 # 0 : Does not exist
@@ -896,7 +902,7 @@ class ArchLinux():
             if (users == "A") or (users == "All"):
                 # Loop through all users in user_profiles and
                 # See if it exists, follow above documentation
-                for u_Name, u_Defn in self.cfg["user_ProfileInfo"]:
+                for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
                     # Get individual parameters
                     u_primary_Group = u_Defn[0]         # Primary Group
                     u_secondary_Groups = u_Defn[1]      # Secondary Groups
@@ -906,7 +912,8 @@ class ArchLinux():
                     for i in range(number_of_external_scripts):
                         curr_script = self.default_Var["external_scripts"][i]
                         print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+                        if self.env.MODE != "DEBUG":
+                            shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
             elif (users == "S") or (users == "Select"):
                 # User Input
                 sel_uhome = input("User name: ")
@@ -914,19 +921,23 @@ class ArchLinux():
                 sel_uhome_dir=""
 
                 cmd_to_exec = [
-                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo \$(id -gn {})'\"".format(dir_Mount, sel_uhome, sel_uhome),
-                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo \$HOME'\"".format(dir_Mount, sel_uhome)
+                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo $(id -gn {})'\"".format(dir_Mount, sel_uhome, sel_uhome),
+                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo $HOME'\"".format(dir_Mount, sel_uhome)
                 ]
 
-                # Get the home directory of the user
-                sel_primary_group, stderr = process.subprocess_Sync(cmd_to_exec[0])
-                sel_uhome_dir, stderr = process.subprocess_Sync(cmd_to_exec[1])
+                if self.env.MODE == "DEBUG":
+                    print("Executing: {}".format(cmd_to_exec[0]))
+                    print("Executing: {}".format(cmd_to_exec[1]))
+                else:
+                    # Get the home directory of the user
+                    sel_primary_group, stderr = process.subprocess_Sync(cmd_to_exec[0])
+                    sel_uhome_dir, stderr = process.subprocess_Sync(cmd_to_exec[1])
 
-                # Start copy
-                for i in range(number_of_external_scripts):
-                    curr_script = self.default_Var["external_scripts"][i]
-                    print("Copying from [{}] : {} => {}/{}/".format(dir_Mount, curr_script, dir_Mount, sel_uhome_dir))
-                    shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir))
+                    # Start copy
+                    for i in range(number_of_external_scripts):
+                        curr_script = self.default_Var["external_scripts"][i]
+                        print("Copying from [{}] : {} => {}/{}/".format(dir_Mount, curr_script, dir_Mount, sel_uhome_dir))
+                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir))
 
             # Reset script to let user delete if they want to
             self.postinstall_sanitize()
@@ -939,7 +950,7 @@ class ArchLinux():
                 # Delete all
                 for i in range(number_of_external_scripts):
                     if self.env.MODE == "DEBUG":
-                        print(self.default_Var["external_scripts"][i])
+                        print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
                     else:
                         os.remove(self.default_Var["external_scripts"][i])
         elif (action == "S") or (action == "Select"):
@@ -956,7 +967,7 @@ class ArchLinux():
                 for sel in arr_Selected:
                     # Delete selected files
                     if self.env.MODE == "DEBUG":
-                        print("Delete: [{}]".format(self.default_Var["external_scripts"][sel]))
+                        print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
                     else:
                         os.remove(self.default_Var["external_scripts"][sel])
         else:
