@@ -17,6 +17,7 @@ class CLIParser():
                 ## Flags
                 "help" : False,
                 "version" : False,
+                "display-options" : False,
                 "generate-config" : False,
                 "print-config" : False,
                 ## Configurations
@@ -115,6 +116,11 @@ class CLIParser():
 
                     # Set element into configurations file
                     configurations["optionals"]["MODE"] = mode
+                elif (curr_arg == "--display-options"):
+                    """
+                    Display Options only
+                    """
+                    configurations["optionals"]["display-options"] = True
                 elif (curr_arg == "--print-config"):
                     """
                     Load/Import configuration file and print it

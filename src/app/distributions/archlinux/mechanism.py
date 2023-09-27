@@ -11,10 +11,17 @@ from lib.env import Environment
 class ArchLinux():
     def __init__(self, setup):
         # Initialize Environment variable class 
+        self.update_setup(setup)
+
+    # Callback/Event Utility functions
+    def update_setup(self, setup):
         self.setup = setup
         self.env = setup.env
         self.cfg = setup.cfg
         self.default_Var = setup.default_Var
+
+    def print_configurations(self):
+        print(self.cfg)
 
     # Installation stages
     def verify_network(self):

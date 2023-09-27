@@ -181,6 +181,10 @@ def begin_installer():
     """
     Begin installation process
     """
+    # Update installer one more time
+    installer_archlinux.update_setup(setup)
+
+    # Start installer
     installer_archlinux.installer()
 
 def body():
@@ -197,6 +201,10 @@ def body():
         if (curr_opt == "help"):
             if (curr_opt_val == True):
                 display_help()
+                display_Options()
+                exit(1)
+        elif (curr_opt == "display-options"):
+            if (curr_opt_val == True):
                 display_Options()
                 exit(1)
         elif (curr_opt == "generate-config"):

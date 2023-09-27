@@ -59,9 +59,14 @@ project-root/
 
 ### Changes
 + [ ] Migration from Linux Bash Shellscript to Python
+- [ ] Configuration File Handling and Support
+    - Key-Values
+        - user_ProfileInfo
+            - Change ['secondary_Groups'] into a list instead of a standalone
 - [ ] Planned Quality-of-Life changes
     - [ ] Improved Readability
         + [ ] Usage of proper data structure objects such as Dictionary for Key-value mappings and Lists for Arrays and iterative data objects
+        + [ ] Rename YAML configuration file keyword naming convention
     - [ ] Improved portability, customizability and modularity
         + [ ] Configuration File I/O: Using YAML serialized data object for configuration file handling instead of shellscript sourcing (and potentially classic JSON support, as well as other configuration file types if enough support and works)
         + [ ] Convenience: Easier to perform rewrites (if necessary)

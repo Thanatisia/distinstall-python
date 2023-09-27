@@ -43,11 +43,22 @@
     - began standardization of 
         + environment variables retrieval to be set in 'lib/env.py'
         + global constants to be set in 'lib/const.py'
+    - README.md
+        - Updated TODO list with new tasks: 
+            + configuration file handling and support
+            + Rename YAML configuration file keyword naming convention
     - main.py
         + Changed initialization of class 'env.Environment()' => setup.env : Referencing of the environment class variable from 'setup.py' so that everything is in one location (unless otherwise required/specified)
         + Fixed header message: Removed quotation marks at the end
+        + Utilised 'update_setup()' just before starting the installer function to update the class variables
     - setup.py
         + initialized class 'lib/env.Environment()' to be used as a global reference variable during runtime.
         + Updated init_prog_Info() to have a default value of retrieving from 'env.MODE' (which takes from the environment variable 'MODE') if parameter 'program_MODE' is not specified.
-
+    - archlinux
+        - mechanism.py
+            + Added function 'print_configurations'
+            + Wrapped the constructor lines into a standalone event update function 'update_setup'
+    - lib
+        - cli.py
+            + Added support for CLI optional argument ['--display-options'] to display options only
 
