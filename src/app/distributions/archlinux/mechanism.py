@@ -67,9 +67,8 @@ class ArchLinux():
             stdout, stderr = process.subprocess_Sync(cmd_set_NTP)
 
             if stderr == "":
-                success_flag = True
+                print("Standard Output: {}".format(stdout))
 
-            if success_flag == True:
                 # To check system clock
                 stdout, stderr = process.subprocess_Sync(cmd_check_NTP)
 
