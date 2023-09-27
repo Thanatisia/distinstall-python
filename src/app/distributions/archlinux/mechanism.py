@@ -107,6 +107,9 @@ class ArchLinux():
 
         print("(+) Get User Input - Partition Information")
 
+        """
+        Formatting Partition Table
+        """
         # Format & Create Label partition table
         format_conf = input("Would you like to format the disk's partition table? [Y|N]: ")
         if (format_conf == "Y") or (format_conf == ""):
@@ -115,10 +118,9 @@ class ArchLinux():
 
             cmd_str = "parted {} mklabel {}".format(disk_Label, partition_Table)
 
-            if self.env.MODE == "DEBUG":
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 # print("parted {} mklabel {}".format(device_Name, device_Label))
-                print(cmd_str)
-            else:
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
                 stdout, stderr = process.subprocess_Sync(cmd_str)
@@ -140,6 +142,9 @@ class ArchLinux():
                 part_Bootable = v[5]
                 part_Others = v[6]
 
+                """
+                Formatting Partitions
+                """
                 print("(+) Creating Partition [{}]".format(part_ID))
 
                 # Create Partition
