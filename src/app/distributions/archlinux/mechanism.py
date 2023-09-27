@@ -11,8 +11,8 @@ from lib.env import Environment
 class ArchLinux():
     def __init__(self, setup):
         # Initialize Environment variable class 
-        self.env = Environment()
         self.setup = setup
+        self.env = setup.env
         self.cfg = setup.cfg
         self.default_Var = setup.default_Var
 
