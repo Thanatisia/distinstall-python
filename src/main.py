@@ -9,7 +9,6 @@ import sys
 import app.distributions as dist
 from app.distributions.archlinux import mechanism
 from setup import Setup
-from lib.env import Environment
 
 def init():
     """
@@ -19,13 +18,13 @@ def init():
 
     # Initialize and setup class
     setup = Setup()
-    env = Environment()
     setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v1.4.0", "DEBUG", "ArchLinux") # Initialize Program Information
     installer_archlinux = mechanism.ArchLinux(setup) # Import the distribution of choice's installation mechanism
 
     # Process CLI arguments
     fmt_Text = setup.fmt_Text
     cliparser = setup.cliparser
+    env = setup.env
     optionals = cliparser.optionals
     positionals = cliparser.positionals
 
@@ -133,10 +132,11 @@ def init_check():
     Perform distribution installer pre-processing and pre-startup check
     """
     print(f"""
-(S) Starting Initialization..."
-    Program Name: {setup.PROGRAM_NAME}"
-    Program Type: {setup.PROGRAM_TYPE}"
-    Distro: {setup.DISTRO}"
+(S) Starting Initialization...
+    Program Name: {setup.PROGRAM_NAME}
+    Program Type: {setup.PROGRAM_TYPE}
+    Distro: {setup.DISTRO}
+    MODE: {env.MODE}
           """)
 
     # Check if configuration file exists

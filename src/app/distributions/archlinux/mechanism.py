@@ -976,6 +976,7 @@ class ArchLinux():
                 echo -e "(+) Network is activated" ||
                 echo -e "(+) Error starting Network"
             """
+            print("")
             if self.env.MODE == "DEBUG":
                 print(cmd_str)
             else:
