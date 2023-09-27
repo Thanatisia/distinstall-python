@@ -151,10 +151,9 @@ class ArchLinux():
                     # Using partition label instead of primary,extended or logical
                     cmd_str = "parted {} mkpart {} {} {} {}".format(disk_Label, part_Name, part_filesystem, part_start_Size, part_end_Size)
 
-                if self.env.MODE == "DEBUG":
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     # check if string is empty
-                    print(cmd_str)
-                else:
                     # Perform Partition Table formatting
                     stdout, stderr = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
@@ -169,10 +168,8 @@ class ArchLinux():
                 else:
                     print("(-) Unknown File System: [$part_file_Type]")
 
-                if self.env.MODE == "DEBUG":
-                    # check if string is empty
-                    print(cmd_str)
-                else:
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     # Perform partitioning
                     stdout, stderr = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
@@ -186,10 +183,8 @@ class ArchLinux():
                         cmd_str = "parted {} set {} esp on".format(disk_Label, part_ID)
 
                     # Begin Execution
-                    if self.env.MODE == "DEBUG":
-                        # check if string is empty
-                        print(cmd_str)
-                    else:
+                    print("Executing: {}".format(cmd_str))
+                    if self.env.MODE != "DEBUG":
                         # Perform Boot set
                         stdout, stderr = process.subprocess_Sync(cmd_str)
                         print("Standard Output: {}".format(stdout))
@@ -199,10 +194,8 @@ class ArchLinux():
                     cmd_str = "swapon {}{}".format(disk_Label, part_ID)
 
                     # Begin Execution
-                    if self.env.MODE == "DEBUG":
-                        # check if string is empty
-                        print(cmd_str)
-                    else:
+                    print("Executing: {}".format(cmd_str))
+                    if self.env.MODE != "DEBUG":
                         ## Perform Swap partition formatting
                         stdout, stderr = process.subprocess_Sync(cmd_str)
                         print("Standard Output: {}".format(stdout))
