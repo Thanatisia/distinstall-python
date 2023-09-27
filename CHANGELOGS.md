@@ -51,6 +51,7 @@
         + Changed initialization of class 'env.Environment()' => setup.env : Referencing of the environment class variable from 'setup.py' so that everything is in one location (unless otherwise required/specified)
         + Fixed header message: Removed quotation marks at the end
         + Utilised 'update_setup()' just before starting the installer function to update the class variables
+        + Added testing user validation and cleanup
     - setup.py
         + initialized class 'lib/env.Environment()' to be used as a global reference variable during runtime.
         + Updated init_prog_Info() to have a default value of retrieving from 'env.MODE' (which takes from the environment variable 'MODE') if parameter 'program_MODE' is not specified.
@@ -66,4 +67,5 @@
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only
-
+        - env.py
+            + Added environment variables 'USER' and 'SUDO_USER' for user run validation

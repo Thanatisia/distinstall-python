@@ -37,8 +37,9 @@ def display_help():
         + CLI Arguments/Parameters
     """
     help_msg = f"""
-Script Name : {setup.PROGRAM_SCRIPTNAME}
-Program Name : {setup.PROGRAM_NAME}
+Running as      : {env.USER}
+Script Name     : {setup.PROGRAM_SCRIPTNAME}
+Program Name    : {setup.PROGRAM_NAME}
 Program Version : {setup.PROGRAM_VERSION}
 
 Synopsis/Syntax:
@@ -133,6 +134,7 @@ def init_check():
     """
     print(f"""
 (S) Starting Initialization...
+    Running as  : {env.USER}
     Program Name: {setup.PROGRAM_NAME}
     Program Type: {setup.PROGRAM_TYPE}
     Distro: {setup.DISTRO}
@@ -143,7 +145,7 @@ def init_check():
     if os.path.isfile(setup.cfg_name):
         # File exists
         # Import Configuration File
-        print("Import Configuration File")
+        print("(+) Import Configuration File")
         setup.cfg = setup.load_config()
     else:
         setup.generate_config()
@@ -233,15 +235,22 @@ def body():
             """
             Start the Installer
             """
-            print(fmt_Text.processing("Starting installation process", delimiter="- "))
-
-            print("")
-
             # Initialize and perform pre-processing and pre-startup checks
             init_check()
 
-            # Start the main Installer
-            begin_installer()
+            print("")
+            print("(+) Beginning Installation...")
+            print("")
+
+            if env.USER == "root":
+                ## Running as super user
+                ### Start the main Installer
+                begin_installer()
+            else:
+                ## Not running as super user
+                print("")
+                print("\t(X) Please run the application as super user via sudo")
+                print("")
 
 def main():
     body()
