@@ -48,6 +48,7 @@
             + configuration file handling and support
             + Rename YAML configuration file keyword naming convention
         - Added Synopsis/Syntax, Parameters and Usage for basic documentation
+        - Added implementation steps to use the project in your own personal project
     - main.py
         + Changed initialization of class 'env.Environment()' => setup.env : Referencing of the environment class variable from 'setup.py' so that everything is in one location (unless otherwise required/specified)
         + Fixed header message: Removed quotation marks at the end
@@ -74,6 +75,8 @@
             + Removed any error messages via bash 'echo' command and through native python via print
             + Replaced copy function via echo to writing
             + Added quotation wraps around echo commands
+            + Added stderr return from 'subprocess_Line' calls
+            + Removing the dependency on shellscript file 'chroot_cmds.sh' and 'postinstallation_cmds.sh' to execute and execute using python
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only
@@ -83,4 +86,8 @@
         - process.py
             + Updated functions subprocess_Line and subprocess_Sync to return the result/exit/status code
             + Added Variable-Length Keyword Arguments '**opts' into commands 'subprocess_Sync' and 'subprocess_Line'
+            + Added function 'subprocess_Open' to open a subprocess
+            + Added function 'chroot_exec' to open a subprocess pipe and execute in chroot
+            + Added stderr return to the function 'subprocess_Line'
+    
 

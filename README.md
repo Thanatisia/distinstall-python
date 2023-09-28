@@ -53,6 +53,21 @@ Currently, this rewrite is in python as it is a good language for prototyping an
 
 ### Usage
 
+### Python reference
+#### Dependencies
+- Linux Distributions Module
+    ```python
+    import app.distributions as dist
+    ```
+- ArchLinux base installation mechanism
+    ```python
+    from app.distributions.archlinux import mechanism
+    ```
+- Setup file
+    ```python
+    from setup import Setup
+    ```
+
 ## Wiki
 ### Project Structure
 ```

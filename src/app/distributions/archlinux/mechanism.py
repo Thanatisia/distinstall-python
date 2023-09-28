@@ -123,7 +123,7 @@ class ArchLinux():
                 # print("parted {} mklabel {}".format(device_Name, device_Label))
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
-                stdout, returncode = process.subprocess_Line(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 if returncode == 0:
                     # Success
                     print("Standard Output: {}".format(stdout))
@@ -240,7 +240,7 @@ class ArchLinux():
             if self.env.MODE != "DEBUG":
                 ## Mount root partition
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout = process.subprocess_Line(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
             print("Directory {} exists.".format(mount_dir_Root))
@@ -278,7 +278,7 @@ class ArchLinux():
             if self.env.MODE != "DEBUG":
                 ## Check filesystem for FAT32
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout, returncode = process.subprocess_Line(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
                 if returncode == 0:
                     # Success
@@ -299,7 +299,7 @@ class ArchLinux():
             if self.env.MODE != "DEBUG":
                 ## Check other filesystems
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout, returncode = process.subprocess_Line(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
                 if returncode == 0:
                     # Success
@@ -326,7 +326,7 @@ class ArchLinux():
             if self.env.MODE != "DEBUG":
                 ## Mount boot partition
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout, returncode = process.subprocess_Line(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
             print("Directory {} exists.".format(mount_dir_Boot))
@@ -481,7 +481,7 @@ class ArchLinux():
         print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
-            stdout = process.subprocess_Line(cmd_str)
+            stdout, stderr, resultcode = process.subprocess_Line(cmd_str)
             print("Standard Output: {}".format(stdout))
 
     def fstab_Generate(self):
@@ -528,7 +528,9 @@ class ArchLinux():
         # Array
 
         # Associative Array
-        chroot_commands = [
+
+        # Step 10 - 13
+        chroot_commands_final_Configs = [
             # "echo ======= Time Zones ======"												            # Step 10: Time Zones
             "echo \"(+) Time Zones\"",
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
@@ -547,14 +549,32 @@ class ArchLinux():
             # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
             "echo \"(+) Making Initial Ramdisk\"",
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
-            # "echo ======= Change Root Password ======="										        # Step 14: User Information; Set Root Password
-            "echo \"(+) Change Root Password\"",
-            "passwd || passwd",																	        # Step 14: User Information; Set Root Password
         ]
+        cmd_str = ";\n".join(chroot_commands_final_Configs)
+        stdout, stderr, resultcode = process.chroot_exec(cmd_str)
+        if resultcode == 0:
+            # Success
+            print("Standard Output: {}".format(stdout))
+        else:
+            # Error
+            print("Error: {}".format(stderr))
+
+        # Step 14: User Information; Set Root Password
+        root_passwd_change = "passwd || passwd;"
+        print("======= Change Root Password =======")
+        stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
+        if resultcode == 0:
+            # Success
+            print("Standard Output: {}".format(stdout))
+        else:
+            # Error
+            print("Error: {}".format(stderr))
 
         # --- Extra Information
 
         #### Step 15: Install Bootloader
+        chroot_commands_Bootloader = []
+
         ### NOTE:
         ### 1. Please Edit [osdef] on top with the bootloader information before proceeding
         ####
@@ -574,44 +594,51 @@ class ArchLinux():
                 bootloader_directory="/boot/grub"
 
             # Setup bootloader
-            chroot_commands.append("echo (+) Installing Bootloader : Grub")
-            chroot_commands.append("sudo pacman -S grub")						# Install Grub Package
+            chroot_commands_Bootloader.append("echo \"(+) Installing Bootloader : Grub\"")
+            chroot_commands_Bootloader.append("sudo pacman -S grub")						# Install Grub Package
 
             # Check if partition table is GPT
             if partition_Table == "gpt":
                 # Install GPT/(U)EFI dependencies
-                chroot_commands.append("sudo pacman -S efibootmgr")
+                chroot_commands_Bootloader.append("sudo pacman -S efibootmgr")
     
             # Install Bootloader
-            chroot_commands.append("grub-install --target={} {} {}".format(bootloader_target_device_Type, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
+            chroot_commands_Bootloader.append("grub-install --target={} {} {}".format(bootloader_target_device_Type, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
 
             # Generate bootloader configuration file
-            chroot_commands.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
-            chroot_commands.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
+            chroot_commands_Bootloader.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
+            chroot_commands_Bootloader.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
         elif bootloader == "syslinux":
             ### Syslinux bootloader support is currently still a WIP and Testing
-            chroot_commands.append("echo (+) Installing Bootloader : Syslinux")
-            chroot_commands.append("sudo pacman -S syslinux")
-            chroot_commands.append("mkdir -p /boot/syslinux")
-            chroot_commands.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
-            chroot_commands.append("extlinux --install /boot/syslinux")
+            chroot_commands_Bootloader.append("echo \"(+) Installing Bootloader : Syslinux\"")
+            chroot_commands_Bootloader.append("sudo pacman -S syslinux")
+            chroot_commands_Bootloader.append("mkdir -p /boot/syslinux")
+            chroot_commands_Bootloader.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
+            chroot_commands_Bootloader.append("extlinux --install /boot/syslinux")
 
             # Check partition table
             if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                chroot_commands.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
+                chroot_commands_Bootloader.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
             elif (partition_Table == "gpt"):
-                chroot_commands.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
-                chroot_commands.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
+                chroot_commands_Bootloader.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
+                chroot_commands_Bootloader.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
 
         # --- Processing
 
         # Combine into a string
-        cmd_str = ";\n".join(chroot_commands)
+        cmd_str = ";\n".join(chroot_commands_Bootloader)
         """
         for c in "${chroot_commands[@]}"; do
             cmd_str+="\n$c;"
         done
         """
+        stdout, stderr, resultcode = process.chroot_exec(chroot_commands_Bootloader)
+        if resultcode == 0:
+            # Success
+            print("Standard Output: {}".format(stdout))
+        else:
+            # Error
+            print("Error: {}".format(stderr))
 
         # Cat commands into script file in mount root
         mount_Root="{}/root".format(dir_Mount)
@@ -635,6 +662,7 @@ class ArchLinux():
             "{}/{}".format(mount_Root, script_to_exe)
         )
 
+        """
         cmd_copy = [
             "chmod +x {}/{}".format(mount_Root, script_to_exe), 
             "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
@@ -644,13 +672,11 @@ class ArchLinux():
             for cmd in cmd_copy:
                 ## Begin executing commands
                 print("Executing: {}".format(cmd))
-                stdout, stderr, returncode = process.subprocess_Sync(cmd, stdin=process.PIPE)
+                stdout, stderr, returncode = process.subprocess_Line(cmd, stdin=process.PIPE)
                 if returncode == 0:
                     # Success
                     print("Standard Output: {}".format(stdout))
-                else:
-                    # Error
-                    print("Error: {}".format(stderr))
+        """
 
     # =========================== #
     # Post-Installation Functions #
@@ -836,7 +862,7 @@ class ArchLinux():
             print("Executing: {}".format(script))
             if self.env.MODE != "DEBUG":
                 # Change Permission and Execute command
-                stdout, returncode = process.subprocess_Line(script, stdin=process.PIPE)
+                stdout, stderr, returncode = process.subprocess_Line(script, stdin=process.PIPE)
 
                 if returncode == 0:
                     # Success
