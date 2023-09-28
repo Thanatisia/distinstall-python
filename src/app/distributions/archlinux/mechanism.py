@@ -311,6 +311,8 @@ class ArchLinux():
         ### Unset/Remove Root partition from mount list
         partition_Scheme.pop(curr_part_Number)
 
+        print("")
+
         """
         Mount boot partition
         """
@@ -393,6 +395,8 @@ class ArchLinux():
 
         ### Unset/Remove Boot partition from mount list
         partition_Scheme.pop(curr_part_Number)
+        
+        print("")
 
         """
         Mount all other partitions
@@ -458,6 +462,8 @@ class ArchLinux():
                     else:
                         # Error
                         print("Error mounting Partition [{}]".format(part_Name))
+        
+            print("")
 
     def bootstrap_Install(self):
         """
