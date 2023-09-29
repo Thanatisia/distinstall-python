@@ -18,7 +18,17 @@ def subprocess_Open(cmd_str, **opts):
     - opts : All Key=Value parameters you wish to parse into Popen
         Type: kwargs (Keyword Arguments) aka Dictionary
     """
-    proc = Popen(cmd_str.split(), **opts)
+    # Initialize Variables
+    cmd = None
+
+    # Check if type is list or string
+    if type(cmd_str) == str:
+        # Input is string - split it into a list
+        cmd = cmd_str.split()
+    else:
+        cmd = cmd_str
+
+    proc = Popen(cmd, **opts)
     return proc
 
 """
@@ -41,30 +51,32 @@ def subprocess_Line(cmd_str, **opts):
     line = ""
     ret_Code = 0
 
-    print(cmd_str.split())
-
     # Open process and Perform action
-    with Popen(cmd_str.split(), stdout=PIPE, **opts) as proc:
-        # Loop until there are no more lines
-        while True:
-            # While there are still lines
+    # with Popen(cmd_str.split(), stdout=PIPE, **opts) as proc:
+    proc = subprocess_Open(cmd_str, stdout=PIPE, **opts)
+    # Loop until there are no more lines
+    while True:
+        # While there are still lines
 
-            # Check if process is still alive
-            if proc.stdout != None:
-                # Read first line
-                line = proc.stdout.readline()
+        # Check if process is still alive
+        if proc.stdout != None:
+            # Read first line
+            line = proc.stdout.readline()
 
-            if not line:
-                break
+        if not line:
+            break
 
-            ## Operate data and store in list
-            line = line.rstrip().lstrip().decode("utf-8")
-            # print("Current Line: {}".format(line))
-            print(line)
-            stdout.append(line)
+        ## Operate data and store in list
+        line = line.rstrip().lstrip().decode("utf-8")
+        # print("Current Line: {}".format(line))
+        print(line)
+        stdout.append(line)
 
-        stderr = proc.stderr
-        ret_Code = proc.returncode
+    proc.wait()
+
+    stdout = proc.stdout
+    stderr = proc.stderr
+    ret_Code = proc.returncode
 
     return stdout, stderr, ret_Code
 
@@ -130,10 +142,10 @@ def chroot_exec(cmd_str, chroot_exec="arch-chroot", dir_Mount="/mnt", shell="/bi
     - opts : All Key=Value parameters you wish to parse into Popen
         Type: kwargs (Keyword Arguments) aka Dictionary
     """
-    cmd = "{} {} {} -c \"{}\"".format(chroot_exec, dir_Mount, shell, cmd_str)
+    cmd = [chroot_exec, dir_Mount, shell, "-c", cmd_str]
 
     ## Open process and Perform action
-    proc = subprocess_Open(cmd_str, stdout=PIPE, **opts)
+    proc = subprocess_Open(cmd, stdout=PIPE, **opts)
 
     # Execute process in sync - check if the previous command is completed before proceeding
     stdout, stderr = proc.communicate(communicate_opts)
@@ -152,4 +164,43 @@ def chroot_exec(cmd_str, chroot_exec="arch-chroot", dir_Mount="/mnt", shell="/bi
 
     return stdout, stderr, resultcode
 
+"""
+subprocess stdin (Standard Input) handlers
+"""
+def subprocess_Input(proc, texts=None):
+    """
+    Enter multiple input buffer strings into stdin buffer reader
+
+    :: Params
+    - proc : The target subprocess object (Popen)
+        Type: subprocess.Popen()
+
+    - texts : List of all texts you wish to input into the stdin for that process instance; Please append all the texts in linear sequential order
+        - Explanation
+            - For example
+                - If you wish to enter a password for 'passwd' or something: ['your-password', 'your-password']
+        Type: List
+    """
+    # Check if process is empty
+    if (proc != None) and (texts != None):
+        # Not Empty
+        # Loop through all the texts
+        for text in texts:
+            # Check if standard input stream is empty
+            if proc.stdin != None:
+                # Check if line is entered
+                if text != "":
+                    # Write this buffer string into the process' stdin
+                    proc.stdin.write('{}\n'.format(text))
+
+def subprocess_stdin_Clear(proc):
+    """
+    Wrapper function to flush and clear the subprocess stdin buffer stream using 'proc.stdin.flush'
+    """
+    # Check if process is empty
+    if (proc != None):
+        # Check if standard input stream is empty
+        if proc.stdin != None:
+            # Flush the standard input stream
+            proc.stdin.flush()
 

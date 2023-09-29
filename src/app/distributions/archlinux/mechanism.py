@@ -124,12 +124,13 @@ class ArchLinux():
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+                print("Return Code: {}".format(returncode))
                 if returncode == 0:
                     # Success
                     print("Standard Output: {}".format(stdout))
                 else:
                     # Error
-                    print("Error executing: {}".format(cmd_str))
+                    print("Error executing [{}]: {}".format(cmd_str, stderr))
 
         print("")
 
@@ -500,13 +501,25 @@ class ArchLinux():
         dir_Mount = cfg["mount_Paths"]["Root"] # Look for root/mount partition
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
-        cmd_str = "genfstab -U {} >> {}/etc/fstab".format(dir_Mount, dir_Mount)
-            
+        cmd_str = "genfstab -U {}".format(dir_Mount)
+
+        # Execute and get fstab content from command and write into /etc/fstab
         print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
             ## Begin generating filesystems table
-            stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-            print("Standard Output: {}".format(stdout))
+            filesystems_table, stderr, returncode = process.subprocess_Sync(cmd_str)
+            if returncode == 0:
+                # Success
+                # Write into [mount-point]/etc/fstab
+                with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
+                    # Write fstab content into file
+                    write_fstab.writelines(filesystems_table)
+
+                    # Close file after usage
+                    write_fstab.close()
+            else:
+                # Error
+                print("Error obtaining genfstab: {}".format(stderr))
 
     def arch_chroot_Exec(self):
         """
@@ -545,7 +558,7 @@ class ArchLinux():
             "echo \"(+) Location\"",
             "sed -i '/{}/s/^#//g' /etc/locale.gen".format(language), 									# Step 11: Localization; Uncomment locale using sed
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
-            "echo \"LANG=${}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
+            "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
             # "echo ======= Network Configuration ======"										        # step 12: Network Configuration;
             "echo \"(+) Network Configuration\"",
             "echo \"{}\" | tee -a /etc/hostname".format(hostname),										# Step 12: Network Configuration; Set Network Hostname Configuration; Create hostname file
@@ -556,25 +569,74 @@ class ArchLinux():
             "echo \"(+) Making Initial Ramdisk\"",
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
         ]
-        cmd_str = ";\n".join(chroot_commands_final_Configs)
-        stdout, stderr, resultcode = process.chroot_exec(cmd_str)
-        if resultcode == 0:
-            # Success
-            print("Standard Output: {}".format(stdout))
-        else:
-            # Error
-            print("Error: {}".format(stderr))
+        # cmd_str = ";\n".join(chroot_commands_final_Configs)
+        for i in range(len(chroot_commands_final_Configs)):
+            # Get current cmd
+            cmd_str = chroot_commands_final_Configs[i]
+
+            # Formulate chroot command
+            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", cmd_str]
+
+            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+            if self.env.MODE != "DEBUG":
+                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                if resultcode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error: {}".format(stderr))
 
         # Step 14: User Information; Set Root Password
-        root_passwd_change = "passwd || passwd;"
+        str_root_passwd_change = "passwd || passwd;"
+        cmd_root_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", str_root_passwd_change]
         print("======= Change Root Password =======")
-        stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
-        if resultcode == 0:
-            # Success
-            print("Standard Output: {}".format(stdout))
-        else:
-            # Error
-            print("Error: {}".format(stderr))
+        print("Executing: {}".format(' '.join(cmd_root_passwd_change)))
+        if self.env.MODE != "DEBUG":
+            proc = process.subprocess_Open(cmd_root_passwd_change, stdout=process.PIPE)
+
+            # While the process is still working
+            line = ""
+            is_alive = proc.poll()
+            while is_alive is None:
+                print("Loading...")
+
+                # Still working
+                print("Line: {}".format(line))
+                
+                # Check if standard output stream is empty
+                if proc.stdout != None:
+                    line = proc.stdout.readline()
+
+                # Check if standard input stream is empty
+                if proc.stdin != None:
+                    # Check if line is entered
+                    if line != "":
+                        # Enter your secret line into the tty
+                        proc.stdin.write('{}\n'.format(line))
+
+                        # Enter one more time
+                        proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
+
+                        # Flush the standard input stream
+                        proc.stdin.flush()
+
+                # Poll and check if is alive
+                # If poll == None: Alive, else not Alive
+                is_alive = proc.poll()
+                print("Status: {}".format(is_alive))
+
+            # Get output, error and status code
+            stdout = proc.stdout
+            stderr = proc.stderr
+            resultcode = proc.returncode
+            # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
+            if resultcode == 0:
+                # Success
+                print("Standard Output: {}".format(stdout))
+            else:
+                # Error
+                print("Error: {}".format(stderr))
 
         # --- Extra Information
 
@@ -638,13 +700,20 @@ class ArchLinux():
             cmd_str+="\n$c;"
         done
         """
-        stdout, stderr, resultcode = process.chroot_exec(chroot_commands_Bootloader)
-        if resultcode == 0:
-            # Success
-            print("Standard Output: {}".format(stdout))
-        else:
-            # Error
-            print("Error: {}".format(stderr))
+        for i in range(len(chroot_commands_Bootloader)):
+            # Get current command
+            curr_cmd = chroot_commands_Bootloader[i]
+
+            # Begin
+            print("Executing: {}".format(curr_cmd))
+            if self.env.MODE != "DEBUG":
+                stdout, stderr, resultcode = process.chroot_exec(curr_cmd)
+                if resultcode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error: {}".format(stderr))
 
         # Cat commands into script file in mount root
         mount_Root="{}/root".format(dir_Mount)
@@ -762,6 +831,38 @@ class ArchLinux():
         return user_params
 
     # Post-Installation Stages
+    def enable_sudo(self, dir_Mount="/mnt"):
+        """
+        Enabling sudo in /etc/sudoers via command line
+        """
+        # Initialize Variables
+        return_val = [] # List containing the list [stdout, stderr, resultcode] for each command output
+        postinstall_commands = [
+            ### Body ###
+            # Enable Sudo
+            "echo \"(+) Enable sudo\"",
+            # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
+            "sed -i 's/^#\\s*\\(%wheel\\s\\+ALL=(ALL:ALL)\\s\\+ALL\\)/\\1/' /etc/sudoers",
+        ]
+
+        # Run the currently set commands via chroot
+        for i in range(len(postinstall_commands)):
+            # Get current cmd
+            curr_cmd = postinstall_commands[i]
+
+            # Formulate chroot command
+            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
+
+            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+            if self.env.MODE != "DEBUG":
+                # Execute command line-by-line
+                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+
+                # Append result to entry
+                return_val.append([stdout, stderr, resultcode])
+
+        return return_val
+
     def postinstallation(self):
         """
         Post-Installation Recommendations and TODOs 
@@ -771,15 +872,29 @@ class ArchLinux():
 
         # Local Variable
         dir_Mount = self.cfg["mount_Paths"]["Root"] # Look for root/mount partition
-        postinstall_commands = [
-            ### Body ###
-            # Enable Sudo
-            "echo \"(+) Enable sudo\"",
-            # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
-            "sed -i 's/^#\s*\(%wheel\s\+ALL=(ALL:ALL)\s\+ALL\)/\1/' /etc/sudoers",
-            # User Management
-            "echo \"(+) User Management\"",
-        ]
+        postinstall_commands = []
+
+        # Enable sudo
+        result = self.enable_sudo(dir_Mount)
+
+        for i in range(len(result)):
+            # Get current result
+            curr_cmd_result = result[i]
+
+            # Expand out
+            stdout, stderr, resultcode = curr_cmd_result
+
+            if resultcode == 0:
+                # Success
+                print("Standard Output: {}".format(stdout))
+            else:
+                # Error
+                print("Error: {}".format(stderr))
+
+
+        ## User Management and Creation
+        # User Management
+        print("(+) User Management")
 
         # Loop through all users in user_profiles and
         # See if it exists, follow above documentation
@@ -795,8 +910,9 @@ class ArchLinux():
             if self.env.MODE == "DEBUG":
                 u_Exists = ""
             else:
-                cmd_check_if_user_Exists = "arch-chroot {} /bin/bash -c \"getent passwd {}\"".format(dir_Mount, u_Name) #  Check if user exists | Empty if Not Found
-                u_Exists, stderr, returncode = process.subprocess_Sync(cmd_check_if_user_Exists)
+                # Check if user exists | Empty if Not Found
+                cmd_get_Entry = "getent passwd {}".format(u_Name)
+                u_Exists, stderr, returncode = process.chroot_exec(cmd_get_Entry)
 
             if u_Exists == "":
                 # 0 : Does not exist
@@ -823,12 +939,85 @@ class ArchLinux():
                     u_create_Command+=" {} ".format(u_other_Params)
 
                 u_create_Command += u_Name
-
+                
+                # Append the user creation process
                 postinstall_commands.append("{}".format(u_create_Command))
+
+                """
                 postinstall_commands.append("echo \"\t(+) Password change for {}\"".format(u_Name))
                 postinstall_commands.append("if [[ \"$?\" == \"0\" ]]; then")
                 postinstall_commands.append("	passwd {}".format(u_Name))
                 postinstall_commands.append("fi")
+                """
+                for i in range(len(postinstall_commands)):
+                    # Get current cmd
+                    curr_cmd = postinstall_commands[i]
+
+                    # Formulate chroot command
+                    chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
+
+                    print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+                    if self.env.MODE != "DEBUG":
+                        stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                        if resultcode == 0:
+                            # Success
+                            # User is created
+                            print("Standard Output: {}".format(stdout))
+
+                            # password change for the new user
+                            print("\t(+) Password change for {}\"".format(u_Name))
+                            passwd_change = "passwd {}".format(u_Name)
+                            cmd_user_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", passwd_change]
+
+                            print("Executing: {}".format(' '.join(cmd_user_passwd_change)))
+                            if self.env.MODE != "DEBUG":
+                                proc = process.subprocess_Open(cmd_user_passwd_change, stdout=process.PIPE)
+
+                                # While the process is still working
+                                line = ""
+                                is_alive = proc.poll()
+                                while is_alive is None:
+                                    print("Loading...")
+
+                                    # Still working
+                                    print("Line: {}".format(line))
+                                    
+                                    # Check if standard output stream is empty
+                                    if proc.stdout != None:
+                                        line = proc.stdout.readline()
+
+                                    # Check if standard input stream is empty
+                                    if proc.stdin != None:
+                                        # Check if line is entered
+                                        if line != "":
+                                            # Enter your secret line into the tty
+                                            proc.stdin.write('{}\n'.format(line))
+
+                                            # Enter one more time
+                                            proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
+
+                                            # Flush the standard input stream
+                                            proc.stdin.flush()
+
+                                    # Poll and check if is alive
+                                    # If poll == None: Alive, else not Alive
+                                    is_alive = proc.poll()
+                                    print("Status: {}".format(is_alive))
+
+                                # Get output, error and status code
+                                stdout = proc.stdout
+                                stderr = proc.stderr
+                                resultcode = proc.returncode
+                                # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
+                                if resultcode == 0:
+                                    # Success
+                                    print("Standard Output: {}".format(stdout))
+                                else:
+                                    # Error
+                                    print("Error: {}".format(stderr))
+                        else:
+                            # Error
+                            print("Error: {}".format(stderr))
 
         ### Footer ###
 
@@ -863,6 +1052,7 @@ class ArchLinux():
             "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
         ]
 
+        """
         # Iterate and loop through elements of chroot_exec_Script
         for script in chroot_exec_Script:
             print("Executing: {}".format(script))
@@ -873,6 +1063,7 @@ class ArchLinux():
                 if returncode == 0:
                     # Success
                     print("Standard Output: {}".format(stdout))
+        """
 
         # Append external script path to the default variable key "external_scripts"
         self.default_Var["external_scripts"].append(
@@ -1004,24 +1195,54 @@ class ArchLinux():
                 sel_primary_group=""
                 sel_uhome_dir=""
 
+                """
                 cmd_to_exec = [
-                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo $(id -gn {})'\"".format(dir_Mount, sel_uhome, sel_uhome),
-                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo $HOME'\"".format(dir_Mount, sel_uhome)
+                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $(id -gn {})'".format(sel_uhome, sel_uhome)],
+                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $HOME'".format(sel_uhome, sel_uhome)]
                 ]
 
                 if self.env.MODE == "DEBUG":
-                    print("Executing: {}".format(cmd_to_exec[0]))
-                    print("Executing: {}".format(cmd_to_exec[1]))
+                    print("Executing: {}".format(' '.join(cmd_to_exec[0])))
+                    print("Executing: {}".format(' '.join(cmd_to_exec[1])))
                 else:
-                    # Get the home directory of the user
+                    # Get the primary group of the user
                     sel_primary_group, stderr, returncode = process.subprocess_Sync(cmd_to_exec[0])
+                    if returncode == 0:
+                        # Success
+                        print("Primary Group: {}".format(sel_primary_group))
+                    else:
+                        # Error
+                        print("Error: {}".format(stderr))
+
+                    # Get the home directory of the user
                     sel_uhome_dir, stderr, returncode = process.subprocess_Sync(cmd_to_exec[1])
+                    if returncode == 0:
+                        # Success
+                        print("Home Directory: {}".format(sel_uhome_dir))
+                    else:
+                        # Error
+                        print("Error: {}".format(stderr))
 
                     # Start copy
                     for i in range(number_of_external_scripts):
                         curr_script = self.default_Var["external_scripts"][i]
                         print("Copying from [{}] : {} => {}/{}/".format(dir_Mount, curr_script, dir_Mount, sel_uhome_dir))
-                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir))
+                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir.rstrip()))
+                """
+                # Get the target's profile info
+                target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
+
+                ## Split and obtain individual parameters
+                u_primary_Group = target_user_profile[0]         # Primary Group
+                u_secondary_Groups = target_user_profile[1]      # Secondary Groups
+                u_home_Dir = target_user_profile[2]              # Home Directory
+                u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
+
+                for i in range(number_of_external_scripts):
+                    curr_script = self.default_Var["external_scripts"][i]
+                    print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
+                    if self.env.MODE != "DEBUG":
+                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
 
             # Reset script to let user delete if they want to
             self.postinstall_sanitize()

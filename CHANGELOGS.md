@@ -40,6 +40,9 @@
 - New
     + Created new file 'const.py' to place all immutable/constant variables
 - Updates
+    - Major fixes
+        - General flow for ArchLinux's base installation mechanism is working
+            + Requires some cleanup before it is production ready
     - began standardization of 
         + environment variables retrieval to be set in 'lib/env.py'
         + global constants to be set in 'lib/const.py'
@@ -65,18 +68,29 @@
         - mechanism.py
             + Added function 'print_configurations'
             + Wrapped the constructor lines into a standalone event update function 'update_setup'
-            - Fixes
-                + Added '.items()' behind partition_Scheme in line 247 and line 314
-                - Replaced unsetting via '= None' (Wrong) => using .pop (Correct)
-                    + Unsetting doesnt remove thee index, only remove the value and set it as None/Null
-                + Removed quotation marks surrounding the folders to be mounted
-                + Removed quotation marks surrounding the device to be mounted
             + Added the return element 'resultcode' to every subprocess the process function requires
             + Removed any error messages via bash 'echo' command and through native python via print
             + Replaced copy function via echo to writing
             + Added quotation wraps around echo commands
             + Added stderr return from 'subprocess_Line' calls
             + Removing the dependency on shellscript file 'chroot_cmds.sh' and 'postinstallation_cmds.sh' to execute and execute using python
+            + Added '.items()' behind partition_Scheme in line 247 and line 314
+            - Replaced unsetting via '= None' (Wrong) => using .pop (Correct)
+                + Unsetting doesnt remove thee index, only remove the value and set it as None/Null
+            + Removed quotation marks surrounding the folders to be mounted
+            + Removed quotation marks surrounding the device to be mounted
+            + Created standalone postinstallation function 'enable_sudo' for enabling sudoers
+            + Changed the postinstallation cleanup process to become more efficient
+            - Fixes
+                + Fixed Genfstab
+                + Fixed Localization
+                + Fixed Network Configuration
+                + Fixed Initial RAM filesystem formatting
+                + Fixed setting root password + Creating working subprocess stdin buffer stream flow
+                + Fixed Bootloader installation
+                + Fixed User Management
+                + Fixed User Creation process
+                + Fixed User password setting
     - lib
         - cli.py
             + Added support for CLI optional argument ['--display-options'] to display options only
@@ -89,5 +103,9 @@
             + Added function 'subprocess_Open' to open a subprocess
             + Added function 'chroot_exec' to open a subprocess pipe and execute in chroot
             + Added stderr return to the function 'subprocess_Line'
-    
+            + Added function 'subprocess_Input' for any steps requiring subprocess stdin (standard input) buffer stream writing
+            + Added function 'subprocess_stdin_Clear' to clear off the stdin stream after writing or usage
+            + Separated 'with Popen()... as proc' to individual steps for modularity
+            - Fixes
+                + Fixed subprocess_Line() to return the returncode proper
 
