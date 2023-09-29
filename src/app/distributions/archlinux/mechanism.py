@@ -11,10 +11,17 @@ from lib.env import Environment
 class ArchLinux():
     def __init__(self, setup):
         # Initialize Environment variable class 
-        self.env = Environment()
+        self.update_setup(setup)
+
+    # Callback/Event Utility functions
+    def update_setup(self, setup):
         self.setup = setup
+        self.env = setup.env
         self.cfg = setup.cfg
         self.default_Var = setup.default_Var
+
+    def print_configurations(self):
+        print(self.cfg)
 
     # Installation stages
     def verify_network(self):
@@ -52,23 +59,27 @@ class ArchLinux():
         """
         # Initialize Variables
         ret_Code = 0
+        cmd_set_NTP = "timedatectl set-ntp true"
+        cmd_check_NTP = "timedatectl status"
         success_flag = False
+
         if self.env.MODE == "DEBUG":
             # Set NTP
-            print("timedatectl set-ntp true")
+            print(cmd_set_NTP)
             # To check system clock
-            print("timedatectl status")
+            print(cmd_check_NTP)
             success_flag = True
         else:
             # Set NTP
-            ret_Code = os.system("timedatectl set-ntp true")
-            if ret_Code == 0:
-                success_flag = True
+            stdout, stderr, returncode = process.subprocess_Sync(cmd_set_NTP)
 
-            if success_flag == True:
+            if stderr == "":
+                print("Standard Output: {}".format(stdout))
+
                 # To check system clock
-                ret_Code = os.system("timedatectl status")
-                if ret_Code == 0:
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_check_NTP)
+
+                if returncode == 0:
                     # Successfully set system clock
                     success_flag = True
                 else:
@@ -96,6 +107,9 @@ class ArchLinux():
 
         print("(+) Get User Input - Partition Information")
 
+        """
+        Formatting Partition Table
+        """
         # Format & Create Label partition table
         format_conf = input("Would you like to format the disk's partition table? [Y|N]: ")
         if (format_conf == "Y") or (format_conf == ""):
@@ -104,14 +118,19 @@ class ArchLinux():
 
             cmd_str = "parted {} mklabel {}".format(disk_Label, partition_Table)
 
-            if self.env.MODE == "DEBUG":
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 # print("parted {} mklabel {}".format(device_Name, device_Label))
-                print(cmd_str)
-            else:
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
-                stdout, stderr = process.subprocess_Sync(cmd_str)
-                print("Standard Output: {}".format(stdout))
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+                print("Return Code: {}".format(returncode))
+                if returncode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error executing [{}]: {}".format(cmd_str, stderr))
 
         print("")
 
@@ -129,6 +148,9 @@ class ArchLinux():
                 part_Bootable = v[5]
                 part_Others = v[6]
 
+                """
+                Formatting Partitions
+                """
                 print("(+) Creating Partition [{}]".format(part_ID))
 
                 # Create Partition
@@ -140,12 +162,11 @@ class ArchLinux():
                     # Using partition label instead of primary,extended or logical
                     cmd_str = "parted {} mkpart {} {} {} {}".format(disk_Label, part_Name, part_filesystem, part_start_Size, part_end_Size)
 
-                if self.env.MODE == "DEBUG":
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     # check if string is empty
-                    print(cmd_str)
-                else:
                     # Perform Partition Table formatting
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
 
                 ## Format file system
@@ -158,12 +179,10 @@ class ArchLinux():
                 else:
                     print("(-) Unknown File System: [$part_file_Type]")
 
-                if self.env.MODE == "DEBUG":
-                    # check if string is empty
-                    print(cmd_str)
-                else:
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     # Perform partitioning
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
 
                 ## Check bootable
@@ -175,12 +194,10 @@ class ArchLinux():
                         cmd_str = "parted {} set {} esp on".format(disk_Label, part_ID)
 
                     # Begin Execution
-                    if self.env.MODE == "DEBUG":
-                        # check if string is empty
-                        print(cmd_str)
-                    else:
+                    print("Executing: {}".format(cmd_str))
+                    if self.env.MODE != "DEBUG":
                         # Perform Boot set
-                        stdout, stderr = process.subprocess_Sync(cmd_str)
+                        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                         print("Standard Output: {}".format(stdout))
 
                 ## Check Swap partition
@@ -188,12 +205,10 @@ class ArchLinux():
                     cmd_str = "swapon {}{}".format(disk_Label, part_ID)
 
                     # Begin Execution
-                    if self.env.MODE == "DEBUG":
-                        # check if string is empty
-                        print(cmd_str)
-                    else:
+                    print("Executing: {}".format(cmd_str))
+                    if self.env.MODE != "DEBUG":
                         ## Perform Swap partition formatting
-                        stdout, stderr = process.subprocess_Sync(cmd_str)
+                        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                         print("Standard Output: {}".format(stdout))
 
         print("")
@@ -206,7 +221,7 @@ class ArchLinux():
         """
         
         # --- Input
-        # Local Vairiables
+        # Local Variables
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"]
@@ -219,14 +234,17 @@ class ArchLinux():
         ## Create directories if does not exists
         if not (os.path.isdir(mount_dir_Root)):
             ### Directory does not exist
-            cmd_str = "mkdir -p \"{}\"".format(mount_dir_Root)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
-                ## Mount root partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
-                print("Standard Output: {}".format(stdout))
+            cmd_str = "mkdir -p {}".format(mount_dir_Root)
 
+            print("Directory {} does not exist, creating directory...".format(mount_dir_Root))
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
+                ## Mount root partition
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+                print("Standard Output: {}".format(stdout))
+        else:
+            print("Directory {} exists.".format(mount_dir_Root))
 
         ## --- Processing
         ### Mount the volume to the path
@@ -236,7 +254,7 @@ class ArchLinux():
         curr_part_Number = 1
 
         ##### Search for partition number of the Root partition
-        for k,v in partition_Scheme:
+        for k,v in partition_Scheme.items():
             # Get key-value
             part_ID = k
             part_Defn = v
@@ -246,6 +264,7 @@ class ArchLinux():
 
             # Find the Root partition
             if part_Name == target_Partition:
+                # Found
                 curr_part_Number = part_ID
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
@@ -254,29 +273,46 @@ class ArchLinux():
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
         if (curr_filesystem == "fat32"):
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, curr_part_Number, mount_dir_Root)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
-                cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
-
+            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Root)
+                
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Check filesystem for FAT32
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
+                if returncode == 0:
+                    # Success
+                    print("Partition [Root] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Root]")
         else:
             # Any other filesystems
-            cmd_str = "mount -t \"{}\" \"{}\"{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Root)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
-                cmd_str += "&& echo -e \"Partition [Root] Mounted.\" || echo -e \"Error mounting Partition [Root]\""
-
+            """
+            mount -t ext4 /dev/sdX2 /mnt
+            mount -t ext4 /dev/sdX1 /mnt/boot 
+            mount -t ext4 /dev/sdX3 /mnt/home
+            """
+            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Root)
+                
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Check other filesystems
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
+                if returncode == 0:
+                    # Success
+                    print("Partition [Root] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Root]")
 
         ### Unset/Remove Root partition from mount list
-        partition_Scheme[curr_part_Number] = None
+        partition_Scheme.pop(curr_part_Number)
+
+        print("")
 
         """
         Mount boot partition
@@ -286,13 +322,17 @@ class ArchLinux():
         ## Create directories if does not exists
         if not (os.path.isdir(mount_dir_Boot)):
             ### Directory does not exist
-            cmd_str = "mkdir -p \"{}\"".format(mount_dir_Boot)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
+            cmd_str = "mkdir -p {}".format(mount_dir_Boot)
+
+            print("Directory {} does not exist, creating directory...".format(mount_dir_Boot))
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Mount boot partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                # stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
+        else:
+            print("Directory {} exists.".format(mount_dir_Boot))
 
         ## --- Processing
         ### Mount the volume to the path
@@ -302,16 +342,17 @@ class ArchLinux():
         curr_part_Number = 1
 
         ##### Search for partition number of the Root partition
-        for k,v in partition_Scheme:
+        for k,v in partition_Scheme.items():
             # Get key-value
             part_ID = k
             part_Defn = v
 
             # Get definition
-            part_Name = v[0]
+            part_Name = part_Defn[0]
 
             # Find the Root partition
             if part_Name == target_Partition:
+                # Found
                 curr_part_Number = part_ID
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
@@ -322,33 +363,46 @@ class ArchLinux():
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
-                cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
+            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
 
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Check FAT32 partition scheme for Boot partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
+
+                if returncode == 0:
+                    # Success
+                    print("Partition [Boot] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Boot]")
         else:
             # Any other filesystems
-            cmd_str = "mount -t {} \"{}\"{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
-            if self.env.MODE == "DEBUG":
-                print(cmd_str)
-            else:
-                cmd_str += "&& echo -e \"Partition [Boot] Mounted.\" || echo -e \"Error mounting Partition [Boot]\""
+            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
 
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
                 ## Check Other partition scheme for Boot partition
-                stdout, stderr = process.subprocess_Sync(cmd_str)
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
 
+                if returncode == 0:
+                    # Success
+                    print("Partition [Boot] Mounted.")
+                else:
+                    # Error
+                    print("Error mounting Partition [Boot]")
+
         ### Unset/Remove Boot partition from mount list
-        partition_Scheme[curr_part_Number] = None
+        partition_Scheme.pop(curr_part_Number)
+        
+        print("")
 
         """
         Mount all other partitions
         """
+        print("Partition Scheme: {}".format(partition_Scheme))
         for k,v in partition_Scheme.items():
             part_ID = k
             part_Defn = v
@@ -364,38 +418,53 @@ class ArchLinux():
             ## Create directories if does not exists
             if not (os.path.isdir(part_mount_dir)):
                 ### Directory does not exist
-                cmd_str = "mkdir -p \"{}\"".format(part_mount_dir)
-                if self.env.MODE == "DEBUG":
-                    print(cmd_str)
-                else:
+                cmd_str = "mkdir -p {}".format(part_mount_dir)
+                
+                print("Directory {} does not exist, creating directory...".format(part_mount_dir))
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     ## Create the other partition mount points
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
+            else:
+                print("Directory {} exists.".format(part_mount_dir))
 
             ## --- Processing
             ### Mount the volume to the path
             #### Check filesystem
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if part_filesystem == "fat32":
-                cmd_str = "mount -t vfat \"{}\"{} {}".format(disk_Label, part_ID, part_mount_dir)
-                if self.env.MODE == "DEBUG":
-                    print(cmd_str)
-                else:
-                    cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
+                cmd_str = "mount -t vfat {}{} {}".format(disk_Label, part_ID, part_mount_dir)
 
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     ## Mount the other partition mount points using FAT32
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
-            else:
-                cmd_str = "mount -t \"{}\" \"{}\"{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
-                if self.env.MODE == "DEBUG":
-                    print(cmd_str)
-                else:
-                    cmd_str += "&& echo -e \"Partition [{}] Mounted.\" || echo -e \"Error mounting Partition [{}]\"".format(part_Name, part_Name)
 
+                    if returncode == 0:
+                        # Success
+                        print("Partition [{}] Mounted.".format(part_Name))
+                    else:
+                        # Error
+                        print("Error mounting Partition [{}]".format(part_Name))
+            else:
+                cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
+                    
+                print("Executing: {}".format(cmd_str))
+                if self.env.MODE != "DEBUG":
                     ## Mount the other partition mount points using other filesystem types
-                    stdout, stderr = process.subprocess_Sync(cmd_str)
+                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
+
+                    if returncode == 0:
+                        # Success
+                        print("Partition [{}] Mounted.".format(part_Name))
+                    else:
+                        # Error
+                        print("Error mounting Partition [{}]".format(part_Name))
+        
+            print("")
 
     def bootstrap_Install(self):
         """
@@ -414,13 +483,12 @@ class ArchLinux():
         mount_Point = cfg["mount_Paths"]["Root"]
 
         # --- Processing
-        cmd_str = "pacstrap {} {}".format(mount_Point, **base_packages)
-        if self.env.MODE == "DEBUG":
-            # echo pacstrap ${mount_Group["2"]} "${pkgs[@]}"
-            print(cmd_str)
-        else:
+        cmd_str = "pacstrap {} {}".format(mount_Point, ' '.join(base_packages))
+
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
-            stdout, stderr = process.subprocess_Sync(cmd_str)
+            stdout, stderr, resultcode = process.subprocess_Line(cmd_str)
             print("Standard Output: {}".format(stdout))
 
     def fstab_Generate(self):
@@ -433,13 +501,25 @@ class ArchLinux():
         dir_Mount = cfg["mount_Paths"]["Root"] # Look for root/mount partition
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
-        cmd_str = "genfstab -U {} >> {}/etc/fstab".format(dir_Mount, dir_Mount)
-        if self.env.MODE == "DEBUG":
-            print(cmd_str)
-        else:
+        cmd_str = "genfstab -U {}".format(dir_Mount)
+
+        # Execute and get fstab content from command and write into /etc/fstab
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
             ## Begin generating filesystems table
-            stdout, stderr = process.subprocess_Sync(cmd_str)
-            print("Standard Output: {}".format(stdout))
+            filesystems_table, stderr, returncode = process.subprocess_Sync(cmd_str)
+            if returncode == 0:
+                # Success
+                # Write into [mount-point]/etc/fstab
+                with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
+                    # Write fstab content into file
+                    write_fstab.writelines(filesystems_table)
+
+                    # Close file after usage
+                    write_fstab.close()
+            else:
+                # Error
+                print("Error obtaining genfstab: {}".format(stderr))
 
     def arch_chroot_Exec(self):
         """
@@ -458,7 +538,7 @@ class ArchLinux():
         language = cfg["location"]["Language"]
         keyboard_mapping = cfg["location"]["KeyboardMapping"]
         hostname = cfg["networkConfig_hostname"]
-        default_Kernel = cfg["default_Kernel"]
+        default_Kernel = cfg["default_kernel"]
         bootloader = cfg["bootloader"]
         bootloader_directory = cfg["bootloader_directory"]
         bootloader_optional_Params = cfg["bootloader_Params"]
@@ -467,33 +547,102 @@ class ArchLinux():
         # Array
 
         # Associative Array
-        chroot_commands = [
+
+        # Step 10 - 13
+        chroot_commands_final_Configs = [
             # "echo ======= Time Zones ======"												            # Step 10: Time Zones
-            "echo (+) Time Zones",
+            "echo \"(+) Time Zones\"",
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
             "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
             # "echo ======= Location ======"													        # Step 11: Localization;
-            "echo (+) Location",
+            "echo \"(+) Location\"",
             "sed -i '/{}/s/^#//g' /etc/locale.gen".format(language), 									# Step 11: Localization; Uncomment locale using sed
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
-            "echo \"LANG=${}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
+            "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
             # "echo ======= Network Configuration ======"										        # step 12: Network Configuration;
-            "echo (+) Network Configuration",
+            "echo \"(+) Network Configuration\"",
             "echo \"{}\" | tee -a /etc/hostname".format(hostname),										# Step 12: Network Configuration; Set Network Hostname Configuration; Create hostname file
             "echo \"127.0.0.1   localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
             # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
-            "echo (+) Making Initial Ramdisk",
+            "echo \"(+) Making Initial Ramdisk\"",
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
-            # "echo ======= Change Root Password ======="										        # Step 14: User Information; Set Root Password
-            "echo (+) Change Root Password",
-            "passwd || passwd",																	        # Step 14: User Information; Set Root Password
         ]
+        # cmd_str = ";\n".join(chroot_commands_final_Configs)
+        for i in range(len(chroot_commands_final_Configs)):
+            # Get current cmd
+            cmd_str = chroot_commands_final_Configs[i]
+
+            # Formulate chroot command
+            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", cmd_str]
+
+            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+            if self.env.MODE != "DEBUG":
+                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                if resultcode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error: {}".format(stderr))
+
+        # Step 14: User Information; Set Root Password
+        str_root_passwd_change = "passwd || passwd;"
+        cmd_root_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", str_root_passwd_change]
+        print("======= Change Root Password =======")
+        print("Executing: {}".format(' '.join(cmd_root_passwd_change)))
+        if self.env.MODE != "DEBUG":
+            proc = process.subprocess_Open(cmd_root_passwd_change, stdout=process.PIPE)
+
+            # While the process is still working
+            line = ""
+            is_alive = proc.poll()
+            while is_alive is None:
+                print("Loading...")
+
+                # Still working
+                print("Line: {}".format(line))
+                
+                # Check if standard output stream is empty
+                if proc.stdout != None:
+                    line = proc.stdout.readline()
+
+                # Check if standard input stream is empty
+                if proc.stdin != None:
+                    # Check if line is entered
+                    if line != "":
+                        # Enter your secret line into the tty
+                        proc.stdin.write('{}\n'.format(line))
+
+                        # Enter one more time
+                        proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
+
+                        # Flush the standard input stream
+                        proc.stdin.flush()
+
+                # Poll and check if is alive
+                # If poll == None: Alive, else not Alive
+                is_alive = proc.poll()
+                print("Status: {}".format(is_alive))
+
+            # Get output, error and status code
+            stdout = proc.stdout
+            stderr = proc.stderr
+            resultcode = proc.returncode
+            # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
+            if resultcode == 0:
+                # Success
+                print("Standard Output: {}".format(stdout))
+            else:
+                # Error
+                print("Error: {}".format(stderr))
 
         # --- Extra Information
 
         #### Step 15: Install Bootloader
+        chroot_commands_Bootloader = []
+
         ### NOTE:
         ### 1. Please Edit [osdef] on top with the bootloader information before proceeding
         ####
@@ -513,56 +662,72 @@ class ArchLinux():
                 bootloader_directory="/boot/grub"
 
             # Setup bootloader
-            chroot_commands.append("echo (+) Installing Bootloader : Grub")
-            chroot_commands.append("sudo pacman -S grub")						# Install Grub Package
+            chroot_commands_Bootloader.append("echo \"(+) Installing Bootloader : Grub\"")
+            chroot_commands_Bootloader.append("sudo pacman -S grub")						# Install Grub Package
 
             # Check if partition table is GPT
             if partition_Table == "gpt":
                 # Install GPT/(U)EFI dependencies
-                chroot_commands.append("sudo pacman -S efibootmgr")
+                chroot_commands_Bootloader.append("sudo pacman -S efibootmgr")
     
             # Install Bootloader
-            chroot_commands.append("grub-install --target={} {} {}".format(bootloader_target_device_Type, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
+            chroot_commands_Bootloader.append("grub-install --target={} {} {}".format(bootloader_target_device_Type, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
 
             # Generate bootloader configuration file
-            chroot_commands.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
-            chroot_commands.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
+            chroot_commands_Bootloader.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
+            chroot_commands_Bootloader.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
         elif bootloader == "syslinux":
             ### Syslinux bootloader support is currently still a WIP and Testing
-            chroot_commands.append("echo (+) Installing Bootloader : Syslinux")
-            chroot_commands.append("sudo pacman -S syslinux")
-            chroot_commands.append("mkdir -p /boot/syslinux")
-            chroot_commands.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
-            chroot_commands.append("extlinux --install /boot/syslinux")
+            chroot_commands_Bootloader.append("echo \"(+) Installing Bootloader : Syslinux\"")
+            chroot_commands_Bootloader.append("sudo pacman -S syslinux")
+            chroot_commands_Bootloader.append("mkdir -p /boot/syslinux")
+            chroot_commands_Bootloader.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
+            chroot_commands_Bootloader.append("extlinux --install /boot/syslinux")
 
             # Check partition table
             if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                chroot_commands.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
+                chroot_commands_Bootloader.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
             elif (partition_Table == "gpt"):
-                chroot_commands.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
-                chroot_commands.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
+                chroot_commands_Bootloader.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
+                chroot_commands_Bootloader.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
 
         # --- Processing
 
         # Combine into a string
-        cmd_str = ";\n".join(chroot_commands)
+        cmd_str = ";\n".join(chroot_commands_Bootloader)
         """
         for c in "${chroot_commands[@]}"; do
             cmd_str+="\n$c;"
         done
         """
+        for i in range(len(chroot_commands_Bootloader)):
+            # Get current command
+            curr_cmd = chroot_commands_Bootloader[i]
+
+            # Begin
+            print("Executing: {}".format(curr_cmd))
+            if self.env.MODE != "DEBUG":
+                stdout, stderr, resultcode = process.chroot_exec(curr_cmd)
+                if resultcode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error: {}".format(stderr))
 
         # Cat commands into script file in mount root
         mount_Root="{}/root".format(dir_Mount)
         script_to_exe="chroot-comms.sh"
-        if self.env.MODE == "DEBUG":
-            print(cmd_str)
-        else:
-            cmd_copy = "echo -e \"{}\" > {}/{}".format(cmd_str, mount_Root, script_to_exe)
+        target_directory = "{}/{}".format(mount_Root, script_to_exe)
+            
+        print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
+        if self.env.MODE != "DEBUG":
+            with open(target_directory, "a+") as write_chroot_Commands:
+                write_chroot_Commands.write(cmd_str)
+                # Close file after usage
+                write_chroot_Commands.close()
 
-            ## Begin executing commands
-            stdout, stderr = process.subprocess_Sync(cmd_copy)
-            print("Standard Output: {}".format(stdout))
+        print("")
 
         # Execute in arch-chroot
         # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
@@ -572,20 +737,21 @@ class ArchLinux():
             "{}/{}".format(mount_Root, script_to_exe)
         )
 
-        if self.env.MODE == "DEBUG":
-            print("chmod +x {}/{}".format(mount_Root, script_to_exe))
-            print("arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe))
-        else:
-            cmd_copy = [
-                "chmod +x {}/{}".format(mount_Root, script_to_exe), 
-                "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
-            ]
-
+        """
+        cmd_copy = [
+            "chmod +x {}/{}".format(mount_Root, script_to_exe), 
+            "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
+        ]
+        if self.env.MODE != "DEBUG":
             # Loop through all actions
             for cmd in cmd_copy:
                 ## Begin executing commands
-                stdout, stderr = process.subprocess_Sync(cmd)
-                print("Standard Output: {}".format(stdout))
+                print("Executing: {}".format(cmd))
+                stdout, stderr, returncode = process.subprocess_Line(cmd, stdin=process.PIPE)
+                if returncode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+        """
 
     # =========================== #
     # Post-Installation Functions #
@@ -607,7 +773,7 @@ class ArchLinux():
             # Not Empty
             # Get the home directory of the user
             cmd_str = "su - {} -c \"echo $HOME\""
-            home_dir, stderr = process.subprocess_Sync(cmd_str)
+            home_dir, stderr, returncode = process.subprocess_Sync(cmd_str)
         return home_dir
 
     def check_user_Exists(self, user_name):
@@ -623,7 +789,7 @@ class ArchLinux():
         cmd_res_Existence="getent passwd {}".format(user_name)
 
         # Check if user exists
-        res_Existence, stderr = process.subprocess_Sync(cmd_res_Existence)
+        res_Existence, stderr, returncode = process.subprocess_Sync(cmd_res_Existence)
 
         if res_Existence != "":
             # Something is found
@@ -656,7 +822,7 @@ class ArchLinux():
         for k,_ in user_params.items():
             # Get parameter for specified keyword
             tmp_cmd_str = "useradd -D | grep {} | cut -d '=' -f2".format(k)
-            curr_keyword_default_Param, stderr = process.subprocess_Sync(tmp_cmd_str)
+            curr_keyword_default_Param, stderr, returncode = process.subprocess_Sync(tmp_cmd_str)
 
             # Map keyword to result default parameters
             user_params[k] = curr_keyword_default_Param
@@ -665,6 +831,38 @@ class ArchLinux():
         return user_params
 
     # Post-Installation Stages
+    def enable_sudo(self, dir_Mount="/mnt"):
+        """
+        Enabling sudo in /etc/sudoers via command line
+        """
+        # Initialize Variables
+        return_val = [] # List containing the list [stdout, stderr, resultcode] for each command output
+        postinstall_commands = [
+            ### Body ###
+            # Enable Sudo
+            "echo \"(+) Enable sudo\"",
+            # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
+            "sed -i 's/^#\\s*\\(%wheel\\s\\+ALL=(ALL:ALL)\\s\\+ALL\\)/\\1/' /etc/sudoers",
+        ]
+
+        # Run the currently set commands via chroot
+        for i in range(len(postinstall_commands)):
+            # Get current cmd
+            curr_cmd = postinstall_commands[i]
+
+            # Formulate chroot command
+            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
+
+            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+            if self.env.MODE != "DEBUG":
+                # Execute command line-by-line
+                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+
+                # Append result to entry
+                return_val.append([stdout, stderr, resultcode])
+
+        return return_val
+
     def postinstallation(self):
         """
         Post-Installation Recommendations and TODOs 
@@ -676,19 +874,27 @@ class ArchLinux():
         dir_Mount = self.cfg["mount_Paths"]["Root"] # Look for root/mount partition
         postinstall_commands = []
 
-        ### Body ###
-        # =========== #
-        # Enable Sudo #
-        # =========== #
-        postinstall_commands.append("echo (+) Enable sudo")
-        postinstall_commands.append("sed -i 's/^#\s*\(%wheel\s\+ALL=(ALL:ALL)\s\+ALL\)/\1/' /etc/sudoers")				# PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
+        # Enable sudo
+        result = self.enable_sudo(dir_Mount)
 
-        # =============== #
-        # User Management #
-        # =============== #
-        postinstall_commands.append(
-            "echo (+) User Management"
-        )
+        for i in range(len(result)):
+            # Get current result
+            curr_cmd_result = result[i]
+
+            # Expand out
+            stdout, stderr, resultcode = curr_cmd_result
+
+            if resultcode == 0:
+                # Success
+                print("Standard Output: {}".format(stdout))
+            else:
+                # Error
+                print("Error: {}".format(stderr))
+
+
+        ## User Management and Creation
+        # User Management
+        print("(+) User Management")
 
         # Loop through all users in user_profiles and
         # See if it exists, follow above documentation
@@ -701,8 +907,12 @@ class ArchLinux():
 
             # Check if user exists
             print("(+) Checking for user {}...".format(u_Name))
-            cmd_check_if_user_Exists = "arch-chroot {} /bin/bash -c \"getent passwd {}\"".format(dir_Mount, u_Name) #  Check if user exists | Empty if Not Found
-            u_Exists, stderr = process.subprocess_Sync(cmd_check_if_user_Exists)
+            if self.env.MODE == "DEBUG":
+                u_Exists = ""
+            else:
+                # Check if user exists | Empty if Not Found
+                cmd_get_Entry = "getent passwd {}".format(u_Name)
+                u_Exists, stderr, returncode = process.chroot_exec(cmd_get_Entry)
 
             if u_Exists == "":
                 # 0 : Does not exist
@@ -729,12 +939,85 @@ class ArchLinux():
                     u_create_Command+=" {} ".format(u_other_Params)
 
                 u_create_Command += u_Name
-
+                
+                # Append the user creation process
                 postinstall_commands.append("{}".format(u_create_Command))
+
+                """
                 postinstall_commands.append("echo \"\t(+) Password change for {}\"".format(u_Name))
                 postinstall_commands.append("if [[ \"$?\" == \"0\" ]]; then")
-                postinstall_commands.append("	passwd $u_name")
+                postinstall_commands.append("	passwd {}".format(u_Name))
                 postinstall_commands.append("fi")
+                """
+                for i in range(len(postinstall_commands)):
+                    # Get current cmd
+                    curr_cmd = postinstall_commands[i]
+
+                    # Formulate chroot command
+                    chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
+
+                    print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+                    if self.env.MODE != "DEBUG":
+                        stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                        if resultcode == 0:
+                            # Success
+                            # User is created
+                            print("Standard Output: {}".format(stdout))
+
+                            # password change for the new user
+                            print("\t(+) Password change for {}\"".format(u_Name))
+                            passwd_change = "passwd {}".format(u_Name)
+                            cmd_user_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", passwd_change]
+
+                            print("Executing: {}".format(' '.join(cmd_user_passwd_change)))
+                            if self.env.MODE != "DEBUG":
+                                proc = process.subprocess_Open(cmd_user_passwd_change, stdout=process.PIPE)
+
+                                # While the process is still working
+                                line = ""
+                                is_alive = proc.poll()
+                                while is_alive is None:
+                                    print("Loading...")
+
+                                    # Still working
+                                    print("Line: {}".format(line))
+                                    
+                                    # Check if standard output stream is empty
+                                    if proc.stdout != None:
+                                        line = proc.stdout.readline()
+
+                                    # Check if standard input stream is empty
+                                    if proc.stdin != None:
+                                        # Check if line is entered
+                                        if line != "":
+                                            # Enter your secret line into the tty
+                                            proc.stdin.write('{}\n'.format(line))
+
+                                            # Enter one more time
+                                            proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
+
+                                            # Flush the standard input stream
+                                            proc.stdin.flush()
+
+                                    # Poll and check if is alive
+                                    # If poll == None: Alive, else not Alive
+                                    is_alive = proc.poll()
+                                    print("Status: {}".format(is_alive))
+
+                                # Get output, error and status code
+                                stdout = proc.stdout
+                                stderr = proc.stderr
+                                resultcode = proc.returncode
+                                # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
+                                if resultcode == 0:
+                                    # Success
+                                    print("Standard Output: {}".format(stdout))
+                                else:
+                                    # Error
+                                    print("Error: {}".format(stderr))
+                        else:
+                            # Error
+                            print("Error: {}".format(stderr))
 
         ### Footer ###
 
@@ -754,11 +1037,12 @@ class ArchLinux():
         # Cat commands into script file in mount root
         mount_Root = "{}/root".format(dir_Mount)
         script_to_exe = "postinstall-comms.sh"
-        if self.env.MODE == "DEBUG":
+        target_file = "{}/{}".format(mount_Root, script_to_exe)
+
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
             # echo "echo -e "$cmd_str" > $mount_Root/$script_to_exe"
-            print(cmd_str)
-        else:
-            with open("{}/{}".format(mount_Root, script_to_exe), "a+") as write_postinstall_Commands:
+            with open(target_file, "a+") as write_postinstall_Commands:
                 write_postinstall_Commands.write(cmd_str)
                 # Close file after usage
                 write_postinstall_Commands.close()
@@ -768,12 +1052,20 @@ class ArchLinux():
             "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
         ]
 
-        if self.env.MODE == "DEBUG":
-            # Change Permission and Execute command
-            print(chroot_exec_Script)
-        else:
-            stdout = process.subprocess_Line(chroot_exec_Script)
-        
+        """
+        # Iterate and loop through elements of chroot_exec_Script
+        for script in chroot_exec_Script:
+            print("Executing: {}".format(script))
+            if self.env.MODE != "DEBUG":
+                # Change Permission and Execute command
+                stdout, stderr, returncode = process.subprocess_Line(script, stdin=process.PIPE)
+
+                if returncode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+        """
+
+        # Append external script path to the default variable key "external_scripts"
         self.default_Var["external_scripts"].append(
             ### Append all external scripts used ###
             "{}/{}".format(mount_Root, script_to_exe)
@@ -885,7 +1177,7 @@ class ArchLinux():
             if (users == "A") or (users == "All"):
                 # Loop through all users in user_profiles and
                 # See if it exists, follow above documentation
-                for u_Name, u_Defn in self.cfg["user_ProfileInfo"]:
+                for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
                     # Get individual parameters
                     u_primary_Group = u_Defn[0]         # Primary Group
                     u_secondary_Groups = u_Defn[1]      # Secondary Groups
@@ -895,27 +1187,62 @@ class ArchLinux():
                     for i in range(number_of_external_scripts):
                         curr_script = self.default_Var["external_scripts"][i]
                         print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+                        if self.env.MODE != "DEBUG":
+                            shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
             elif (users == "S") or (users == "Select"):
                 # User Input
                 sel_uhome = input("User name: ")
                 sel_primary_group=""
                 sel_uhome_dir=""
 
+                """
                 cmd_to_exec = [
-                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo \$(id -gn {})'\"".format(dir_Mount, sel_uhome, sel_uhome),
-                    "arch-chroot {} /bin/bash -c \"su - {} -c 'echo \$HOME'\"".format(dir_Mount, sel_uhome)
+                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $(id -gn {})'".format(sel_uhome, sel_uhome)],
+                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $HOME'".format(sel_uhome, sel_uhome)]
                 ]
 
-                # Get the home directory of the user
-                sel_primary_group, stderr = process.subprocess_Sync(cmd_to_exec[0])
-                sel_uhome_dir, stderr = process.subprocess_Sync(cmd_to_exec[1])
+                if self.env.MODE == "DEBUG":
+                    print("Executing: {}".format(' '.join(cmd_to_exec[0])))
+                    print("Executing: {}".format(' '.join(cmd_to_exec[1])))
+                else:
+                    # Get the primary group of the user
+                    sel_primary_group, stderr, returncode = process.subprocess_Sync(cmd_to_exec[0])
+                    if returncode == 0:
+                        # Success
+                        print("Primary Group: {}".format(sel_primary_group))
+                    else:
+                        # Error
+                        print("Error: {}".format(stderr))
 
-                # Start copy
+                    # Get the home directory of the user
+                    sel_uhome_dir, stderr, returncode = process.subprocess_Sync(cmd_to_exec[1])
+                    if returncode == 0:
+                        # Success
+                        print("Home Directory: {}".format(sel_uhome_dir))
+                    else:
+                        # Error
+                        print("Error: {}".format(stderr))
+
+                    # Start copy
+                    for i in range(number_of_external_scripts):
+                        curr_script = self.default_Var["external_scripts"][i]
+                        print("Copying from [{}] : {} => {}/{}/".format(dir_Mount, curr_script, dir_Mount, sel_uhome_dir))
+                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir.rstrip()))
+                """
+                # Get the target's profile info
+                target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
+
+                ## Split and obtain individual parameters
+                u_primary_Group = target_user_profile[0]         # Primary Group
+                u_secondary_Groups = target_user_profile[1]      # Secondary Groups
+                u_home_Dir = target_user_profile[2]              # Home Directory
+                u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
+
                 for i in range(number_of_external_scripts):
                     curr_script = self.default_Var["external_scripts"][i]
-                    print("Copying from [{}] : {} => {}/{}/".format(dir_Mount, curr_script, dir_Mount, sel_uhome_dir))
-                    shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir))
+                    print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
+                    if self.env.MODE != "DEBUG":
+                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
 
             # Reset script to let user delete if they want to
             self.postinstall_sanitize()
@@ -928,7 +1255,7 @@ class ArchLinux():
                 # Delete all
                 for i in range(number_of_external_scripts):
                     if self.env.MODE == "DEBUG":
-                        print(self.default_Var["external_scripts"][i])
+                        print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
                     else:
                         os.remove(self.default_Var["external_scripts"][i])
         elif (action == "S") or (action == "Select"):
@@ -945,7 +1272,7 @@ class ArchLinux():
                 for sel in arr_Selected:
                     # Delete selected files
                     if self.env.MODE == "DEBUG":
-                        print("Delete: [{}]".format(self.default_Var["external_scripts"][sel]))
+                        print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
                     else:
                         os.remove(self.default_Var["external_scripts"][sel])
         else:
@@ -968,15 +1295,21 @@ class ArchLinux():
         print("(S) 1. Testing Network...")
         network_Enabled = self.verify_network()
         if network_Enabled == False:
-            cmd_str = """
-            sudo dhcpcd && \
-                echo -e "(+) Network is activated" || \
-                echo -e "(+) Error starting Network"
-            """
-            ## Begin executing commands
-            stdout, stderr = process.subprocess_Sync(cmd_str)
-            print("Standard Output: {}".format(stdout))
-            print("Standard Error: {}".format(stderr))
+            cmd_str = "dhcpcd"
+            print("")
+            print("Executing: {}".format(cmd_str))
+            if self.env.MODE != "DEBUG":
+                ## Begin executing commands
+                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
+                print("Standard Output: {}".format(stdout))
+                print("Standard Error: {}".format(stderr))
+
+                if returncode == 0:
+                    # Success
+                    print("(+) Network is activated")
+                else:
+                    # Error
+                    print("(-) Error starting Network")
         else:
             print("(+) Network is active")
 

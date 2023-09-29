@@ -9,7 +9,6 @@ import sys
 import app.distributions as dist
 from app.distributions.archlinux import mechanism
 from setup import Setup
-from lib.env import Environment
 
 def init():
     """
@@ -19,13 +18,13 @@ def init():
 
     # Initialize and setup class
     setup = Setup()
-    env = Environment()
     setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v1.4.0", "DEBUG", "ArchLinux") # Initialize Program Information
     installer_archlinux = mechanism.ArchLinux(setup) # Import the distribution of choice's installation mechanism
 
     # Process CLI arguments
     fmt_Text = setup.fmt_Text
     cliparser = setup.cliparser
+    env = setup.env
     optionals = cliparser.optionals
     positionals = cliparser.positionals
 
@@ -38,8 +37,9 @@ def display_help():
         + CLI Arguments/Parameters
     """
     help_msg = f"""
-Script Name : {setup.PROGRAM_SCRIPTNAME}
-Program Name : {setup.PROGRAM_NAME}
+Running as      : {env.USER}
+Script Name     : {setup.PROGRAM_SCRIPTNAME}
+Program Name    : {setup.PROGRAM_NAME}
 Program Version : {setup.PROGRAM_VERSION}
 
 Synopsis/Syntax:
@@ -133,17 +133,19 @@ def init_check():
     Perform distribution installer pre-processing and pre-startup check
     """
     print(f"""
-(S) Starting Initialization..."
-    Program Name: {setup.PROGRAM_NAME}"
-    Program Type: {setup.PROGRAM_TYPE}"
-    Distro: {setup.DISTRO}"
+(S) Starting Initialization...
+    Running as  : {env.USER}
+    Program Name: {setup.PROGRAM_NAME}
+    Program Type: {setup.PROGRAM_TYPE}
+    Distro: {setup.DISTRO}
+    MODE: {setup.env.MODE}
           """)
 
     # Check if configuration file exists
     if os.path.isfile(setup.cfg_name):
         # File exists
         # Import Configuration File
-        print("Import Configuration File")
+        print("(+) Import Configuration File")
         setup.cfg = setup.load_config()
     else:
         setup.generate_config()
@@ -181,7 +183,14 @@ def begin_installer():
     """
     Begin installation process
     """
-    installer_archlinux.installer()
+    if setup.DISTRO == "ArchLinux":
+        print("Installing: {}".format(setup.DISTRO))
+
+        # Update installer one more time
+        installer_archlinux.update_setup(setup)
+
+        # Start installer
+        installer_archlinux.installer()
 
 def body():
     """
@@ -197,6 +206,10 @@ def body():
         if (curr_opt == "help"):
             if (curr_opt_val == True):
                 display_help()
+                display_Options()
+                exit(1)
+        elif (curr_opt == "display-options"):
+            if (curr_opt_val == True):
                 display_Options()
                 exit(1)
         elif (curr_opt == "generate-config"):
@@ -217,6 +230,13 @@ def body():
                 for k,v in setup.cfg.items():
                     print("{} : {}".format(k,v))
                 exit(1)
+        elif (curr_opt == "MODE"):
+            if (curr_opt_val != None):
+                # Get the new mode (if any)
+                new_mode = cliparser.configurations["optionals"]["MODE"]
+
+                # Set the new mode into the Environment Variable class variable
+                setup.env.MODE = new_mode
 
     ## Switch-case CLI positionals
     for i in range(len(positionals)):
@@ -225,15 +245,22 @@ def body():
             """
             Start the Installer
             """
-            print(fmt_Text.processing("Starting installation process", delimiter="- "))
-
-            print("")
-
             # Initialize and perform pre-processing and pre-startup checks
             init_check()
 
-            # Start the main Installer
-            begin_installer()
+            print("")
+            print("(+) Beginning Installation...")
+            print("")
+
+            if env.USER == "root":
+                ## Running as super user
+                ### Start the main Installer
+                begin_installer()
+            else:
+                ## Not running as super user
+                print("")
+                print("\t(X) Please run the application as super user via sudo")
+                print("")
 
 def main():
     body()

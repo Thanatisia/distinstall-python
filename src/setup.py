@@ -26,6 +26,7 @@ class Setup():
         self.yaml.default_flow_style = False
         self.cliparser = CLIParser()
         self.fmt_Text = Text()
+        self.env = Environment()
         self.init_defaults()
         self.init_Variables()
 
@@ -118,12 +119,13 @@ class Setup():
         }
 
     def init_prog_Info(self, program_scriptname, program_appName, program_Type, program_Version, program_Mode, distribution, config_Name="config.yaml"):
+        # Initialize Defaults
         # Initialize Variables
         self.PROGRAM_SCRIPTNAME = program_scriptname
         self.PROGRAM_NAME = program_appName
         self.PROGRAM_TYPE = program_Type
         self.PROGRAM_VERSION = program_Version
-        self.MODE = program_Mode # { DEBUG | RELEASE }
+        self.MODE = program_Mode
         self.DISTRO = distribution
         self.cfg_name = config_Name
 
