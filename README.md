@@ -37,6 +37,28 @@ Currently, this rewrite is in python as it is a good language for prototyping an
         python -m pip install -Ur requirements.txt
         ```
 
+### Compiling into an executable
+> Still undergoing tests
+- Using PyInstaller
+    - Pre-Requisites
+        - Dependencies
+            - Python package
+                + pyinstaller
+    - Compile/Build the executable
+        - Parameters
+            + --onefile : Generate a single executable file with everything bundled inside
+        - Notes
+            - Output: 
+                + dist: The executable will be placed here
+        - Syntax
+            ```console
+            {python -m} pyinstaller --onefile [main-driver-file]
+            ```
+        - Usage
+            ```console
+            {python -m} pyinstaller --onefile main.py
+            ```
+
 ## Documentation
 ### Synopsis/Syntax
 - Basic Run
@@ -53,8 +75,8 @@ Currently, this rewrite is in python as it is a good language for prototyping an
 
 ### Usage
 
-### Python reference
-#### Dependencies
+### Developers
+#### Dependencies and Importing
 - Linux Distributions Module
     ```python
     import app.distributions as dist
@@ -89,9 +111,10 @@ project-root/
 ### Changes
 + [ ] Migration from Linux Bash Shellscript to Python
 - [ ] Configuration File Handling and Support
-    - Key-Values
+    - [ ] Key-Values
         - user_ProfileInfo
             - Change ['secondary_Groups'] into a list instead of a standalone
+    - [ ] Support for JSON
 - [ ] Planned Quality-of-Life changes
     - [ ] Improved Readability
         + [ ] Usage of proper data structure objects such as Dictionary for Key-value mappings and Lists for Arrays and iterative data objects

@@ -5,7 +5,8 @@
     > [version] | [date] [time] | [status]
     + v0.1.0 | 2023-09-26 1604H | Merged to main
     + v0.1.1 | 2023-09-26 2223H | Merged to main
-    + v0.2.0 | 2023-09-27 2106H | Development
+    + v0.2.0 | 2023-09-27 2106H | Merged to main
+    + v0.2.1 | 2023-09-30 1650H | Development
 
 ## Entries
 
@@ -108,4 +109,12 @@
             + Separated 'with Popen()... as proc' to individual steps for modularity
             - Fixes
                 + Fixed subprocess_Line() to return the returncode proper
+
+### v0.2.1
+- New
+    + Added new 'USAGE.md' for a Quickstart Reference Guide for using
+- Updates
+    - README.md
+        + Added header 'Developers' for Developer Documentations
+        + Added new TODO
 
