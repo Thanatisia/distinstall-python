@@ -3,7 +3,6 @@ Primary Installation Mechanism
 """
 import os
 import sys
-import yaml
 import shutil
 from lib import utils, env, user_management, process
 from lib.env import Environment
