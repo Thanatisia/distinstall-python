@@ -713,7 +713,7 @@ class ArchLinux():
             # Begin
             print("Executing: {}".format(curr_cmd))
             if self.env.MODE != "DEBUG":
-                stdout, stderr, resultcode = process.chroot_exec(curr_cmd)
+                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
                 if resultcode == 0:
                     # Success
                     print("Standard Output: {}".format(stdout))
@@ -725,7 +725,8 @@ class ArchLinux():
         mount_Root="{}/root".format(dir_Mount)
         script_to_exe="chroot-comms.sh"
         target_directory = "{}/{}".format(mount_Root, script_to_exe)
-            
+           
+        # Write commands into file for reusing
         print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
         if self.env.MODE != "DEBUG":
             with open(target_directory, "a+") as write_chroot_Commands:
@@ -902,7 +903,7 @@ class ArchLinux():
             else:
                 # Check if user exists | Empty if Not Found
                 cmd_get_Entry = "getent passwd {}".format(u_Name)
-                u_Exists, stderr, returncode = process.chroot_exec(cmd_get_Entry)
+                u_Exists, stderr, returncode = process.chroot_exec(cmd_get_Entry, dir_Mount=dir_Mount)
 
             if u_Exists == "":
                 # 0 : Does not exist

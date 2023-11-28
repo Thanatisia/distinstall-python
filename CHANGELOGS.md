@@ -192,3 +192,9 @@
         - Removed several standard output prints and 
         - Replaced 'subprocess_Line' with 'subprocess_Realtime' 
 
+### v0.2.8
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Fixed chroot_exec by parsing in the 'dir_Mount' parameter leading to the root partition (mount) directory
+    - Updated document 'process.py' in 'src/lib'
+        - Fixing 'subprocess_Realtime()' : WIP
