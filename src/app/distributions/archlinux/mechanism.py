@@ -102,6 +102,9 @@ class ArchLinux():
         partition_Table = cfg["disk_partition_Table"]
         partition_Scheme = cfg["partition_Scheme"]
 
+        # Check Device Type (i.e. sdX, nvme, loop)
+        device_medium_Type = cfg["device_Type"]
+
         print("")
 
         print("(+) Get User Input - Partition Information")
@@ -168,15 +171,29 @@ class ArchLinux():
                     stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
 
+                ## Prepare and Format Partition according to Device Medium Type
+                if device_medium_Type == "sata":
+                    # Devices using '/dev/sdX'
+                    curr_part = "{}{}".format(disk_Label, part_ID)
+                elif device_medium_Type == "nvme":
+                    # Devices using '/dev/nvme[device-number]p[partition-number]
+                    curr_part = "{}p{}".format(disk_Label, part_ID)
+                elif device_medium_Type == "loop":
+                    # Devices using '/dev/loop[loopback-device-number]p[partition-number]
+                    curr_part = "{}p{}".format(disk_Label, part_ID)
+                else:
+                    # Any other devices
+                    curr_part = "{}{}".format(disk_Label, part_ID)
+
                 ## Format file system
                 if part_filesystem == "fat32":
-                    cmd_str = "mkfs.fat -F32 {}{}".format(disk_Label, part_ID)
+                    cmd_str = "mkfs.fat -F32 {}".format(curr_part)
                 elif part_filesystem == "ext4":
-                    cmd_str = "mkfs.ext4 {}{}".format(disk_Label, part_ID)
+                    cmd_str = "mkfs.ext4 {}".format(curr_part)
                 elif part_filesystem == "swap":
-                    cmd_str = "mkswap {}{}".format(disk_Label, part_ID)
+                    cmd_str = "mkswap {}{}".format(curr_part)
                 else:
-                    print("(-) Unknown File System: [$part_file_Type]")
+                    print("(-) Unknown File System: [{}]".format(part_filesystem))
 
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
@@ -224,6 +241,7 @@ class ArchLinux():
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"]
+        device_medium_Type = cfg["device_Type"]
 
         """
         Mount root partition
@@ -268,11 +286,25 @@ class ArchLinux():
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
 
+        #### Prepare and Format Partition according to Device Medium Type for Root Partition
+        if device_medium_Type == "sata":
+            # Devices using '/dev/sdX'
+            target_disk_root_Part = "{}{}".format(disk_Label, curr_part_Number)
+        elif device_medium_Type == "nvme":
+            # Devices using '/dev/nvme[device-number]p[partition-number]
+            target_disk_root_Part = "{}p{}".format(disk_Label, curr_part_Number)
+        elif device_medium_Type == "loop":
+            # Devices using '/dev/loop[loopback-device-number]p[partition-number]
+            target_disk_root_Part = "{}p{}".format(disk_Label, curr_part_Number)
+        else:
+            # Any other devices
+            target_disk_root_Part = "{}{}".format(disk_Label, curr_part_Number)
+
         #### Check filesystem of current partition
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
         if (curr_filesystem == "fat32"):
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Root)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_root_Part, mount_dir_Root)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -293,7 +325,7 @@ class ArchLinux():
             mount -t ext4 /dev/sdX1 /mnt/boot 
             mount -t ext4 /dev/sdX3 /mnt/home
             """
-            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Root)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_root_Part, mount_dir_Root)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -358,11 +390,25 @@ class ArchLinux():
 
         ## --- Processing
         ### Mount the volume to the path
+        #### Prepare and Format Partition according to Device Medium Type for Boot Partition
+        if device_medium_Type == "sata":
+            # Devices using '/dev/sdX'
+            target_disk_boot_Part = "{}{}".format(disk_Label, curr_part_Number)
+        elif device_medium_Type == "nvme":
+            # Devices using '/dev/nvme[device-number]p[partition-number]
+            target_disk_boot_Part = "{}p{}".format(disk_Label, curr_part_Number)
+        elif device_medium_Type == "loop":
+            # Devices using '/dev/loop[loopback-device-number]p[partition-number]
+            target_disk_boot_Part = "{}p{}".format(disk_Label, curr_part_Number)
+        else:
+            # Any other devices
+            target_disk_boot_Part = "{}{}".format(disk_Label, curr_part_Number)
+
         #### Check filesystem
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_boot_Part, mount_dir_Boot)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -378,7 +424,7 @@ class ArchLinux():
                     print("Error mounting Partition [Boot]")
         else:
             # Any other filesystems
-            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_boot_Part, mount_dir_Boot)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -430,10 +476,24 @@ class ArchLinux():
 
             ## --- Processing
             ### Mount the volume to the path
+            #### Prepare and Format Partition according to Device Medium Type for the current partition
+            if device_medium_Type == "sata":
+                # Devices using '/dev/sdX'
+                target_disk_curr_Part = "{}{}".format(disk_Label, part_ID)
+            elif device_medium_Type == "nvme":
+                # Devices using '/dev/nvme[device-number]p[partition-number]
+                target_disk_curr_Part = "{}p{}".format(disk_Label, part_ID)
+            elif device_medium_Type == "loop":
+                # Devices using '/dev/loop[loopback-device-number]p[partition-number]
+                target_disk_curr_Part = "{}p{}".format(disk_Label, part_ID)
+            else:
+                # Any other devices
+                target_disk_curr_Part = "{}{}".format(disk_Label, part_ID)
+
             #### Check filesystem
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if part_filesystem == "fat32":
-                cmd_str = "mount -t vfat {}{} {}".format(disk_Label, part_ID, part_mount_dir)
+                cmd_str = "mount -t vfat {} {}".format(target_disk_curr_Part, part_mount_dir)
 
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
@@ -448,7 +508,7 @@ class ArchLinux():
                         # Error
                         print("Error mounting Partition [{}]".format(part_Name))
             else:
-                cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
+                cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_curr_Part, part_mount_dir)
                     
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":

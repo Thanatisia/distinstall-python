@@ -9,6 +9,8 @@ Currently, this rewrite is in python as it is a good language for prototyping an
 
 ## Setup
 ### Dependencies
++ arch-install-scripts
++ dd
 + python
 - python pypi packages
     + ruamel.yaml : For YAML configuration file handling
@@ -36,6 +38,19 @@ Currently, this rewrite is in python as it is a good language for prototyping an
         ```console
         python -m pip install -Ur requirements.txt
         ```
+
+- (Optional) If you are installing into a Virtual Disk Image on Host
+    - Mount Disk Image and Partitions as loopback devices
+        - Using losetup
+            - Pre-Requisites
+                + losetup
+            - Explanation
+                - Parameters
+                    + -P
+                    + -f : Print the first available loop device
+            ```console
+            sudo losetup -Pf [path-to-virtual-hard-disk-img]
+            ```
 
 ### Compiling into an executable
 > Still undergoing tests
@@ -108,17 +123,20 @@ project-root/
         |-- lib/ : For all external/general libraries that are not application-specific
 ```
 
-### Changes
+## TODO
+### Pipeline
 + [ ] Migration from Linux Bash Shellscript to Python
 - [ ] Configuration File Handling and Support
     - [ ] Key-Values
-        - user_ProfileInfo
-            - Change ['secondary_Groups'] into a list instead of a standalone
+        - [ ] user_ProfileInfo
+            - [ ] Change ['secondary_Groups'] into a list instead of a standalone
+        - [ ] Plan to rename "device_Type" into "storage_Controller" for a better, more accurate name, OR to add a separate group called "storage_Controller"
+        - [ ] Change configuration naming scheme
     - [ ] Support for JSON
     - [ ] Support for segmented running - Running only specific steps at any one time
     - [ ] Support for different disk medium typings
-        - [ ] NVME : /dev/nvme[disk-number]p[partition-number]
-        - [ ] Loopback device : /dev/loop[loopback-number]p[partition-number]
+        - [O] NVME : /dev/nvme[disk-number]p[partition-number]
+        - [O] Loopback device : /dev/loop[loopback-number]p[partition-number]
 - [ ] Planned Quality-of-Life changes
     - [ ] Improved Readability
         + [ ] Usage of proper data structure objects such as Dictionary for Key-value mappings and Lists for Arrays and iterative data objects

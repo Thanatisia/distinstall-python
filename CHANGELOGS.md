@@ -8,6 +8,7 @@
     + v0.2.0 | 2023-09-27 2106H | Merged to main
     + v0.2.1 | 2023-09-30 1650H | Merged to main
     + v0.2.2 | 2023-11-28 1708H | Development
+    + v0.2.3 | 2023-11-28 1945H | Development
 
 ## Entries
 
@@ -130,4 +131,29 @@
         - Added dependency for pyinstaller : Attempting to implement pyinstaller compilation support for easier distribution
     - Updated installation mechanism 'archlinux'
         - Removed import 'yaml'
+
+### v0.2.3
+- Updates
+    - Updated document 'README.md'
+        - Additional pre-requisite if you are installing in a loopback device (i.e. a Virtual Disk Image/Virtual Hard Drive)
+        - Added new TODO regarding the configuration key-value "device_Type"
+    - Updated document 'USAGE.md' 
+        - Updated section 'configuration'
+            - Added valid values to 'device_Type'
+            - Plans to either
+                1. Rename 'device_Type' to 'storage_Controller', or
+                2. Add a new key named 'storage_Controller'
+    - Updated installation mechanism 'archlinux'
+        - Implemented feature: Multi-storage platform support 
+            - i.e. 
+                + SATA/AHCI => /dev/sdX, 
+                + NVME => /dev/nvmeXpN, 
+                + Loopback => /dev/loopXpN, 
+                + ...
+            - Users have to specify their device medium in the configuration file's keyword 'device_Type' 
+                - Accepted Values
+                    + sata : For SATA/AHCI Controllers; Format: /dev/sdX
+                    + nvme : For NVME Controllers; Format: /dev/nvmeXpN
+                    + loop : Loopback Devices; Format: /dev/loopXpN
+
 
