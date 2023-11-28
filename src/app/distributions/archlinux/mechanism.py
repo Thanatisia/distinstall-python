@@ -1195,23 +1195,23 @@ class ArchLinux():
                         print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
                     else:
                         os.remove(self.default_Var["external_scripts"][i])
-        elif (action == "S") or (action == "Select"):
-            # Let user choose
-            # Seperate all options with delimiter ','
-            print("Please enter all files you wish to delete\n	(Seperate all options with delimiter ',')")
-            del_selections = input("> : ")
+            elif (action == "S") or (action == "Select"):
+                # Let user choose
+                # Seperate all options with delimiter ','
+                print("Please enter all files you wish to delete\n	(Seperate all options with delimiter ',')")
+                del_selections = input("> : ")
 
-            # Seperate selected options with ',' delimited
-            arr_Selected = del_selections.split(",")
+                # Seperate selected options with ',' delimited
+                arr_Selected = del_selections.split(",")
 
-            # Delete selected files if not empty
-            if del_selections != "":
-                for sel in arr_Selected:
-                    # Delete selected files
-                    if self.env.MODE == "DEBUG":
-                        print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
-                    else:
-                        os.remove(self.default_Var["external_scripts"][sel])
+                # Delete selected files if not empty
+                if del_selections != "":
+                    for sel in arr_Selected:
+                        # Delete selected files
+                        if self.env.MODE == "DEBUG":
+                            print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
+                        else:
+                            os.remove(self.default_Var["external_scripts"][sel])
         else:
             print("No action.")
 

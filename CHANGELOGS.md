@@ -197,5 +197,6 @@
     - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
         - Fixed chroot_exec by parsing in the 'dir_Mount' parameter leading to the root partition (mount) directory
         - Added User Validator to check if user exists when copying files/scripts to user
+        - Bug Fix: Moved action 'Select' by 1 indent inwards to be under the primary action 'Delete'
     - Updated document 'process.py' in 'src/lib'
         - Fixing 'subprocess_Realtime()' : WIP
