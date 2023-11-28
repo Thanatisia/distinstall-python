@@ -148,7 +148,7 @@ def init_check():
         print("(+) Import Configuration File")
         setup.cfg = setup.load_config()
     else:
-        setup.generate_config()
+        setup.generate_config_Raw()
         print("please modify the variables and rerun the program again, thank you!")
         exit(1)
 
@@ -216,7 +216,7 @@ def body():
             if (curr_opt_val == True):
                 # Get the new custom configuration file name (if any)
                 cfg_name = cliparser.configurations["optionals"]["CUSTOM_CONFIGURATION_FILENAME"]
-                setup.generate_config(cfg_name)
+                setup.generate_config_Raw(cfg_name)
                 exit(1)
         elif (curr_opt == "print-config"):
             if (curr_opt_val == True):

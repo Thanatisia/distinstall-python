@@ -9,6 +9,7 @@
     + v0.2.1 | 2023-09-30 1650H | Merged to main
     + v0.2.2 | 2023-11-28 1708H | Development
     + v0.2.3 | 2023-11-28 1945H | Development
+    + v0.2.4 | 2023-11-28 2018H | Development
 
 ## Entries
 
@@ -156,4 +157,11 @@
                     + nvme : For NVME Controllers; Format: /dev/nvmeXpN
                     + loop : Loopback Devices; Format: /dev/loopXpN
 
+### v0.2.4
+- Updates
+    - Updated document 'main.py' in 'src'
+        - Changed functions 'generate_config' => 'generate_config_Raw' because raw string is easier to handle
+    - Updated document 'setup.py' in 'src'
+        - Added new function 'generate_config_Raw' to output a raw string of the configuration file directly
+        - Renamed function 'generate_config' => 'generated_config_YAML' for a dedicated YAML configuration output
 
