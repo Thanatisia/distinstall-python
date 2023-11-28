@@ -126,7 +126,6 @@ class ArchLinux():
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Return Code: {}".format(returncode))
                 if returncode == 0:
                     # Success
                     print("Standard Output: {}".format(stdout))
@@ -289,7 +288,6 @@ class ArchLinux():
                 ## Check filesystem for FAT32
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Standard Output: {}".format(stdout))
                 if returncode == 0:
                     # Success
                     print("Partition [Root] Mounted.")
@@ -310,7 +308,6 @@ class ArchLinux():
                 ## Check other filesystems
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Standard Output: {}".format(stdout))
                 if returncode == 0:
                     # Success
                     print("Partition [Root] Mounted.")
@@ -503,7 +500,7 @@ class ArchLinux():
         print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
-            stdout, stderr, resultcode = process.subprocess_Line(cmd_str)
+            stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
             print("Standard Output: {}".format(stdout))
 
     def fstab_Generate(self):

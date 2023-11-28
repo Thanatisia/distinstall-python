@@ -34,6 +34,46 @@ def subprocess_Open(cmd_str, **opts):
 """
 Process/Subprocess Execution functions
 """
+def subprocess_Realtime(cmd_str, **opts):
+    """
+    Open a subprocess and read the stdout line by line in real time
+
+    :: Params
+    - cmd_str : The command string to execute
+        Type: String
+
+    - opts : All Key=Value parameters you wish to parse into Popen
+        Type: kwargs (Keyword Arguments) aka Dictionary
+    """
+    # Initialize Variables
+    stdout = []
+    stderr = ""
+    line = ""
+    ret_Code = 0
+
+    # Open process and Perform action
+    # with Popen(cmd_str.split(), stdout=PIPE, **opts) as proc:
+    proc = subprocess_Open(cmd_str, stdout=PIPE, **opts)
+    # Loop until there are no more lines
+    while True:
+        # While there are still lines
+
+        # Get standard output
+        curr_output = proc.stdout.readline().rstrip().decode("utf-8")
+
+        # Check if process is still alive
+        if curr_output == "" and proc.poll() is not None:
+            # Process has terminated/killed
+            break
+
+        ## Operate data and store in list
+        stdout.append(curr_output)
+
+    stderr = proc.stderr
+    ret_Code = proc.poll()
+
+    return stdout, stderr, ret_Code
+
 def subprocess_Line(cmd_str, **opts):
     """
     Open a subprocess and read the stdout line by line

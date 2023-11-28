@@ -182,4 +182,13 @@
 - Updates
     - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
         - Refactored and removed unnecessary legacy code-comments and debug messages
-        
+
+### v0.2.7
+- Updates
+    - Updated document 'process.py' in 'src/lib'
+        - Added new function 'subprocess_Realtime()' to display standard output in real time, line by line (Testing)
+
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Removed several standard output prints and 
+        - Replaced 'subprocess_Line' with 'subprocess_Realtime' 
+
