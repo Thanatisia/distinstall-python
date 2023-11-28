@@ -614,11 +614,9 @@ class ArchLinux():
             line = ""
             is_alive = proc.poll()
             while is_alive is None:
+                # Still working
                 print("Loading...")
 
-                # Still working
-                print("Line: {}".format(line))
-                
                 # Check if standard output stream is empty
                 if proc.stdout != None:
                     line = proc.stdout.readline()
@@ -710,11 +708,7 @@ class ArchLinux():
 
         # Combine into a string
         cmd_str = ";\n".join(chroot_commands_Bootloader)
-        """
-        for c in "${chroot_commands[@]}"; do
-            cmd_str+="\n$c;"
-        done
-        """
+
         for i in range(len(chroot_commands_Bootloader)):
             # Get current command
             curr_cmd = chroot_commands_Bootloader[i]
@@ -751,22 +745,6 @@ class ArchLinux():
             ### Append all external scripts used ###
             "{}/{}".format(mount_Root, script_to_exe)
         )
-
-        """
-        cmd_copy = [
-            "chmod +x {}/{}".format(mount_Root, script_to_exe), 
-            "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
-        ]
-        if self.env.MODE != "DEBUG":
-            # Loop through all actions
-            for cmd in cmd_copy:
-                ## Begin executing commands
-                print("Executing: {}".format(cmd))
-                stdout, stderr, returncode = process.subprocess_Line(cmd, stdin=process.PIPE)
-                if returncode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
-        """
 
     # =========================== #
     # Post-Installation Functions #
@@ -958,12 +936,6 @@ class ArchLinux():
                 # Append the user creation process
                 postinstall_commands.append("{}".format(u_create_Command))
 
-                """
-                postinstall_commands.append("echo \"\t(+) Password change for {}\"".format(u_Name))
-                postinstall_commands.append("if [[ \"$?\" == \"0\" ]]; then")
-                postinstall_commands.append("	passwd {}".format(u_Name))
-                postinstall_commands.append("fi")
-                """
                 for i in range(len(postinstall_commands)):
                     # Get current cmd
                     curr_cmd = postinstall_commands[i]
@@ -992,11 +964,9 @@ class ArchLinux():
                                 line = ""
                                 is_alive = proc.poll()
                                 while is_alive is None:
+                                    # Still working
                                     print("Loading...")
 
-                                    # Still working
-                                    print("Line: {}".format(line))
-                                    
                                     # Check if standard output stream is empty
                                     if proc.stdout != None:
                                         line = proc.stdout.readline()
@@ -1042,12 +1012,6 @@ class ArchLinux():
 
         # Combine into a string
         cmd_str = ";\n".join(postinstall_commands)
-        """
-        cmd_str=""
-        for c in "${postinstall_commands[@]}"; do
-            cmd_str+="\n$c"
-        done
-        """
         
         # Cat commands into script file in mount root
         mount_Root = "{}/root".format(dir_Mount)
@@ -1066,19 +1030,6 @@ class ArchLinux():
             "chmod +x {}/{}".format(mount_Root, script_to_exe),
             "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
         ]
-
-        """
-        # Iterate and loop through elements of chroot_exec_Script
-        for script in chroot_exec_Script:
-            print("Executing: {}".format(script))
-            if self.env.MODE != "DEBUG":
-                # Change Permission and Execute command
-                stdout, stderr, returncode = process.subprocess_Line(script, stdin=process.PIPE)
-
-                if returncode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
-        """
 
         # Append external script path to the default variable key "external_scripts"
         self.default_Var["external_scripts"].append(
@@ -1210,40 +1161,6 @@ class ArchLinux():
                 sel_primary_group=""
                 sel_uhome_dir=""
 
-                """
-                cmd_to_exec = [
-                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $(id -gn {})'".format(sel_uhome, sel_uhome)],
-                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $HOME'".format(sel_uhome, sel_uhome)]
-                ]
-
-                if self.env.MODE == "DEBUG":
-                    print("Executing: {}".format(' '.join(cmd_to_exec[0])))
-                    print("Executing: {}".format(' '.join(cmd_to_exec[1])))
-                else:
-                    # Get the primary group of the user
-                    sel_primary_group, stderr, returncode = process.subprocess_Sync(cmd_to_exec[0])
-                    if returncode == 0:
-                        # Success
-                        print("Primary Group: {}".format(sel_primary_group))
-                    else:
-                        # Error
-                        print("Error: {}".format(stderr))
-
-                    # Get the home directory of the user
-                    sel_uhome_dir, stderr, returncode = process.subprocess_Sync(cmd_to_exec[1])
-                    if returncode == 0:
-                        # Success
-                        print("Home Directory: {}".format(sel_uhome_dir))
-                    else:
-                        # Error
-                        print("Error: {}".format(stderr))
-
-                    # Start copy
-                    for i in range(number_of_external_scripts):
-                        curr_script = self.default_Var["external_scripts"][i]
-                        print("Copying from [{}] : {} => {}/{}/".format(dir_Mount, curr_script, dir_Mount, sel_uhome_dir))
-                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir.rstrip()))
-                """
                 # Get the target's profile info
                 target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
 

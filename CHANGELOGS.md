@@ -11,6 +11,7 @@
     + v0.2.3 | 2023-11-28 1945H | Development
     + v0.2.4 | 2023-11-28 2018H | Development
     + v0.2.5 | 2023-11-28 2112H | Development
+    + v0.2.6 | 2023-11-28 2200H | Development
 
 ## Entries
 
@@ -177,3 +178,8 @@
         - Refactored and rewrote the Storage Controller validator into a single function in 'src/lib/device_management.py' titled 'format_partition_str' and
         - Replaced the validators with the function call to streamline and make things neater
 
+### v0.2.6
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Refactored and removed unnecessary legacy code-comments and debug messages
+        
