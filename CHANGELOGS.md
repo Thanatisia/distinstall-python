@@ -126,4 +126,6 @@
 - Updates
     - Updated document 'README.md' with
         - New TODO 
+    - Updated document 'requirements.txt'
+        - Added dependency for pyinstaller : Attempting to implement pyinstaller compilation support for easier distribution
 
