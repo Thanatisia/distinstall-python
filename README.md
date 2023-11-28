@@ -74,6 +74,54 @@ Currently, this rewrite is in python as it is a good language for prototyping an
             {python -m} pyinstaller --onefile main.py
             ```
 
+### Quickstart Flow
+#### Users
+1. Perform setup
+    - Create Virtual Environment
+        ```console
+        python3 -m venv env
+        ```
+    - Source and chroot into Virtual Environment
+        - Linux
+            ```console
+            . env/bin/activate
+            ```
+        - Windows
+            ```console
+            .\env\Scripts\activate
+            ```
+    - Install dependencies
+        ```console
+        pip install -Ur requirements.txt
+        ```
+2. Change directory into application folder
+    ```console
+    cd src
+    ```
+3. Generate configuration file
+    ```console
+    python3 main.py --generate-config
+    ```
+4. Edit configuration file
+    + Please refer to [USAGE.md](USAGE.md) for more information on customization
+    + Under the 'customization' section
+5. Perform a test run
+    ```console
+    sudo python3 main.py start
+    ```
+6. Once you have confirmed
+    - Perform full start
+        ```console
+        sudo python3 main.py --mode RELEASE start
+        ```
+
+#### Developers
+- To implement a new distribution installation step
+    - Copy the template 'mechanism.py' from any of the 'src/app/distributions/[base-distribution-name]' to a test draft location
+    - Edit accordingly
+        - Please ensure that to maintain consistency, function names is adviced to be the same if the function already exists.
+        - If the function didnt exist, then you may create a new function to be called as necessary
+
 ## Documentation
 ### Synopsis/Syntax
 - Basic Run

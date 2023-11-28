@@ -159,6 +159,8 @@
 
 ### v0.2.4
 - Updates
+    - Updated document 'README.md' 
+        - Added a 'Quickflow guide' section for reference
     - Updated document 'main.py' in 'src'
         - Changed functions 'generate_config' => 'generate_config_Raw' because raw string is easier to handle
     - Updated document 'setup.py' in 'src'
