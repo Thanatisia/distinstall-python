@@ -10,6 +10,7 @@
     + v0.2.2 | 2023-11-28 1708H | Development
     + v0.2.3 | 2023-11-28 1945H | Development
     + v0.2.4 | 2023-11-28 2018H | Development
+    + v0.2.5 | 2023-11-28 2112H | Development
 
 ## Entries
 
@@ -166,4 +167,13 @@
     - Updated document 'setup.py' in 'src'
         - Added new function 'generate_config_Raw' to output a raw string of the configuration file directly
         - Renamed function 'generate_config' => 'generated_config_YAML' for a dedicated YAML configuration output
+
+### v0.2.5
+- New
+    - Added new document 'device_management.py' in 'src/lib' for functions related to Device/Disk Management
+
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Refactored and rewrote the Storage Controller validator into a single function in 'src/lib/device_management.py' titled 'format_partition_str' and
+        - Replaced the validators with the function call to streamline and make things neater
 

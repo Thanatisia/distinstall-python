@@ -4,7 +4,7 @@ Primary Installation Mechanism
 import os
 import sys
 import shutil
-from lib import utils, env, user_management, process
+from lib import utils, env, user_management, device_management, process
 from lib.env import Environment
 
 class ArchLinux():
@@ -171,19 +171,8 @@ class ArchLinux():
                     stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
 
-                ## Prepare and Format Partition according to Device Medium Type
-                if device_medium_Type == "sata":
-                    # Devices using '/dev/sdX'
-                    curr_part = "{}{}".format(disk_Label, part_ID)
-                elif device_medium_Type == "nvme":
-                    # Devices using '/dev/nvme[device-number]p[partition-number]
-                    curr_part = "{}p{}".format(disk_Label, part_ID)
-                elif device_medium_Type == "loop":
-                    # Devices using '/dev/loop[loopback-device-number]p[partition-number]
-                    curr_part = "{}p{}".format(disk_Label, part_ID)
-                else:
-                    # Any other devices
-                    curr_part = "{}{}".format(disk_Label, part_ID)
+                ## Prepare and Format Partition according to Device Storage Controller Type
+                curr_part = device_management.format_partition_str(disk_Label, part_ID, device_medium_Type)
 
                 ## Format file system
                 if part_filesystem == "fat32":
@@ -286,19 +275,8 @@ class ArchLinux():
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
 
-        #### Prepare and Format Partition according to Device Medium Type for Root Partition
-        if device_medium_Type == "sata":
-            # Devices using '/dev/sdX'
-            target_disk_root_Part = "{}{}".format(disk_Label, curr_part_Number)
-        elif device_medium_Type == "nvme":
-            # Devices using '/dev/nvme[device-number]p[partition-number]
-            target_disk_root_Part = "{}p{}".format(disk_Label, curr_part_Number)
-        elif device_medium_Type == "loop":
-            # Devices using '/dev/loop[loopback-device-number]p[partition-number]
-            target_disk_root_Part = "{}p{}".format(disk_Label, curr_part_Number)
-        else:
-            # Any other devices
-            target_disk_root_Part = "{}{}".format(disk_Label, curr_part_Number)
+        #### Prepare and Format Partition according to Device Storage Controller Type for Root partition
+        target_disk_root_Part = device_management.format_partition_str(disk_Label, curr_part_Number, device_medium_Type)
 
         #### Check filesystem of current partition
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
@@ -390,19 +368,8 @@ class ArchLinux():
 
         ## --- Processing
         ### Mount the volume to the path
-        #### Prepare and Format Partition according to Device Medium Type for Boot Partition
-        if device_medium_Type == "sata":
-            # Devices using '/dev/sdX'
-            target_disk_boot_Part = "{}{}".format(disk_Label, curr_part_Number)
-        elif device_medium_Type == "nvme":
-            # Devices using '/dev/nvme[device-number]p[partition-number]
-            target_disk_boot_Part = "{}p{}".format(disk_Label, curr_part_Number)
-        elif device_medium_Type == "loop":
-            # Devices using '/dev/loop[loopback-device-number]p[partition-number]
-            target_disk_boot_Part = "{}p{}".format(disk_Label, curr_part_Number)
-        else:
-            # Any other devices
-            target_disk_boot_Part = "{}{}".format(disk_Label, curr_part_Number)
+        #### Prepare and Format Partition according to Device Storage Controller Type for Boot partition
+        target_disk_boot_Part = device_management.format_partition_str(disk_Label, curr_part_Number, device_medium_Type)
 
         #### Check filesystem
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
@@ -476,19 +443,8 @@ class ArchLinux():
 
             ## --- Processing
             ### Mount the volume to the path
-            #### Prepare and Format Partition according to Device Medium Type for the current partition
-            if device_medium_Type == "sata":
-                # Devices using '/dev/sdX'
-                target_disk_curr_Part = "{}{}".format(disk_Label, part_ID)
-            elif device_medium_Type == "nvme":
-                # Devices using '/dev/nvme[device-number]p[partition-number]
-                target_disk_curr_Part = "{}p{}".format(disk_Label, part_ID)
-            elif device_medium_Type == "loop":
-                # Devices using '/dev/loop[loopback-device-number]p[partition-number]
-                target_disk_curr_Part = "{}p{}".format(disk_Label, part_ID)
-            else:
-                # Any other devices
-                target_disk_curr_Part = "{}{}".format(disk_Label, part_ID)
+            #### Prepare and Format Partition according to Device Storage Controller Type for the current partition
+            target_disk_curr_Part = device_management.format_partition_str(disk_Label, part_ID, device_medium_Type)
 
             #### Check filesystem
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
