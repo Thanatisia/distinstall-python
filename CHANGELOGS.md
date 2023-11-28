@@ -6,7 +6,8 @@
     + v0.1.0 | 2023-09-26 1604H | Merged to main
     + v0.1.1 | 2023-09-26 2223H | Merged to main
     + v0.2.0 | 2023-09-27 2106H | Merged to main
-    + v0.2.1 | 2023-09-30 1650H | Development
+    + v0.2.1 | 2023-09-30 1650H | Merged to main
+    + v0.2.2 | 2023-11-28 1708H | Development
 
 ## Entries
 
@@ -117,4 +118,12 @@
     - README.md
         + Added header 'Developers' for Developer Documentations
         + Added new TODO
+
+### v0.2.2
+- New
+    - Added document 'Makefile' for automation
+
+- Updates
+    - Updated document 'README.md' with
+        - New TODO 
 

@@ -115,6 +115,10 @@ project-root/
         - user_ProfileInfo
             - Change ['secondary_Groups'] into a list instead of a standalone
     - [ ] Support for JSON
+    - [ ] Support for segmented running - Running only specific steps at any one time
+    - [ ] Support for different disk medium typings
+        - [ ] NVME : /dev/nvme[disk-number]p[partition-number]
+        - [ ] Loopback device : /dev/loop[loopback-number]p[partition-number]
 - [ ] Planned Quality-of-Life changes
     - [ ] Improved Readability
         + [ ] Usage of proper data structure objects such as Dictionary for Key-value mappings and Lists for Arrays and iterative data objects
