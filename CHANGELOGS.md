@@ -200,3 +200,9 @@
         - Bug Fix: Moved action 'Select' by 1 indent inwards to be under the primary action 'Delete'
     - Updated document 'process.py' in 'src/lib'
         - Fixing 'subprocess_Realtime()' : WIP
+
+### v0.2.9
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Added user and directory validator when copying files to user home directory in the post-installation
+

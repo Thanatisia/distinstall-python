@@ -1159,27 +1159,32 @@ class ArchLinux():
                 sel_primary_group=""
                 sel_uhome_dir=""
 
-                # Get the target's profile info
-                target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
+                # Check if username is in the dictionary
+                if sel_uhome in self.cfg["user_ProfileInfo"]:
+                    # Username is in
+                    # Get the target's profile info
+                    target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
 
-                ## Split and obtain individual parameters
-                u_primary_Group = target_user_profile[0]         # Primary Group
-                u_secondary_Groups = target_user_profile[1]      # Secondary Groups
-                u_home_Dir = target_user_profile[2]              # Home Directory
-                u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
+                    ## Split and obtain individual parameters
+                    u_primary_Group = target_user_profile[0]         # Primary Group
+                    u_secondary_Groups = target_user_profile[1]      # Secondary Groups
+                    u_home_Dir = target_user_profile[2]              # Home Directory
+                    u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
 
-                # Check if user directory exists
-                dir_to_Validate = "{}/{}".format(dir_Mount, u_home_Dir)
-                if os.path.isdir(dir_to_Validate):
-                    ## Directory exists
-                    for i in range(number_of_external_scripts):
-                        curr_script = self.default_Var["external_scripts"][i]
-                        print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                        if self.env.MODE != "DEBUG":
-                            shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+                    # Check if user directory exists
+                    dir_to_Validate = "{}/{}".format(dir_Mount, u_home_Dir)
+                    if os.path.isdir(dir_to_Validate):
+                        ## Directory exists
+                        for i in range(number_of_external_scripts):
+                            curr_script = self.default_Var["external_scripts"][i]
+                            print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
+                            if self.env.MODE != "DEBUG":
+                                shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+                    else:
+                        ## Directory does not exist
+                        print("User home directory [{}] does not exist.".format(dir_to_Validate))
                 else:
-                    ## Directory does not exist
-                    print("User home directory [{}] does not exist.".format(dir_to_Validate))
+                    print("User {} does not exist.".format(sel_uhome))
 
             # Reset script to let user delete if they want to
             self.postinstall_sanitize()
