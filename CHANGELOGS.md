@@ -13,6 +13,7 @@
     + v0.2.5  | 2023-11-28 2112H | Development
     + v0.2.6  | 2023-11-28 2200H | Development
     + v0.2.10 | 2023-11-29 2012H | Development
+    + v0.3.0  | 2023-11-29 2028H | Development
 
 ## Entries
 
@@ -230,4 +231,14 @@
         - with new configuration setting key 'storage-controller'
     - Updated document 'setup.py' in 'src'
         - Added new key 'storage-controller' into template skeleton
+
+### v0.3.0
+- Feature Change
+    - New Support
+        - Multi-Storage Controller support for various Storage Controllers
+            - Storage Controller Types
+                - SATA/AHCI => '/dev/sdX'
+                - NVME      => '/dev/nvme[device-number]p[partition-number]'
+                - Loopback  => '/dev/loop[device-number]p[partition-number]'
+
 
