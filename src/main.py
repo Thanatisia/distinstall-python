@@ -235,7 +235,7 @@ def body():
 
                 # Set the new mode into the Environment Variable class variable
                 setup.env.MODE = new_mode
-        elif (curr_opt == "execute-stage"):
+        elif (curr_opt == "STAGE"):
             """
             Execute the specific stage
             """

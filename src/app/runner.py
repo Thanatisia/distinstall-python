@@ -88,12 +88,20 @@ class App():
                 9 : self.installer_class.arch_chroot_Exec,
             }
 
-            # Obtain step to execute
-            stage_to_Execute = steps[step_Number]
+            # Try and convert stage to integer
+            try:
+                # Convert string to integer
+                step_Number = int(step_Number)
 
-            # Execute stage
-            result = stage_to_Execute()
-            print(result)
+                # Obtain step to execute
+                stage_to_Execute = steps[step_Number]
+
+                # Execute stage
+                result = stage_to_Execute()
+                print(result)
+            except:
+                # Not an integer
+                print("Stage input [{}] is not an integer, please enter a valid stage number".format(step_Number))
         else:
             print("Installation mechanics class is not initialized, possible issues could be")
             print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")
