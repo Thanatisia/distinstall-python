@@ -15,7 +15,7 @@ class App():
         self.dist = distribution_Name # Distribution of choice
         # Initialize Variables
         self.supported_distributions = {
-            "arch" : "ArchLinux",
+            "arch" : ["arch", "ArchLinux"],
         }
         self.setup = setup # Initialized Setup configurations
         self.env = env # Initialized Environment Variables
@@ -24,6 +24,17 @@ class App():
         # Initialize Class
         self.platform_Select()
         self.installer_switch()
+
+    def update_setup(self):
+        """
+        Update the setup variables according to that of the target platform's installer mechanism class
+        """
+        if self.installer_class != None:
+            self.installer_class.update_setup(self.setup)
+        else:
+            print("Installation mechanics class is not initialized, possible issues could be")
+            print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")
+            exit(1)
 
     def platform_Select(self):
         """
@@ -269,13 +280,7 @@ class App():
 
     def pre_start_Setup(self):
         # Check if installer mechanism class is initialized
-        if self.installer_class != None:
-            # Update installer one more time
-            self.installer_class.update_setup(self.setup)
-        else:
-            print("Installation mechanics class is not initialized, possible issues could be")
-            print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")
-            exit(1)
+        self.update_setup()
 
     def begin(self):
         """

@@ -186,6 +186,7 @@ def begin_installer():
     """
     Begin installation process
     """
+    app.update_setup()
     app.begin()
 
 def body():
