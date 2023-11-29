@@ -99,9 +99,9 @@ class App():
                 # Execute stage
                 result = stage_to_Execute()
                 print(result)
-            except:
+            except Exception as ex:
                 # Not an integer
-                print("Stage input [{}] is not an integer, please enter a valid stage number".format(step_Number))
+                print("Exception detected: [{}]".format(ex))
         else:
             print("Installation mechanics class is not initialized, possible issues could be")
             print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")

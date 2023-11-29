@@ -194,6 +194,9 @@ def body():
     """
     Begin CLI argument processing
     """
+    # Initialize and perform pre-processing and pre-startup checks
+    init_check()
+
     ## Switch-case CLI optionals
     for k,v in optionals.items():
         # Get keyword and value
