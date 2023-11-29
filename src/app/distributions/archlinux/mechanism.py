@@ -501,7 +501,6 @@ class ArchLinux():
         if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
             stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
-            print("Standard Output: {}".format(stdout))
 
     def fstab_Generate(self):
         """
@@ -1219,10 +1218,6 @@ class ArchLinux():
                             os.remove(self.default_Var["external_scripts"][sel])
         else:
             print("No action.")
-
-        print("")
-
-        print("Sanitization Completed.")
 
     def installer(self):
         """

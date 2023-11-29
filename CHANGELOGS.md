@@ -3,15 +3,16 @@
 ## Table of Contents
 - Entries
     > [version] | [date] [time] | [status]
-    + v0.1.0 | 2023-09-26 1604H | Merged to main
-    + v0.1.1 | 2023-09-26 2223H | Merged to main
-    + v0.2.0 | 2023-09-27 2106H | Merged to main
-    + v0.2.1 | 2023-09-30 1650H | Merged to main
-    + v0.2.2 | 2023-11-28 1708H | Development
-    + v0.2.3 | 2023-11-28 1945H | Development
-    + v0.2.4 | 2023-11-28 2018H | Development
-    + v0.2.5 | 2023-11-28 2112H | Development
-    + v0.2.6 | 2023-11-28 2200H | Development
+    + v0.1.0  | 2023-09-26 1604H | Merged to main
+    + v0.1.1  | 2023-09-26 2223H | Merged to main
+    + v0.2.0  | 2023-09-27 2106H | Merged to main
+    + v0.2.1  | 2023-09-30 1650H | Merged to main
+    + v0.2.2  | 2023-11-28 1708H | Development
+    + v0.2.3  | 2023-11-28 1945H | Development
+    + v0.2.4  | 2023-11-28 2018H | Development
+    + v0.2.5  | 2023-11-28 2112H | Development
+    + v0.2.6  | 2023-11-28 2200H | Development
+    + v0.2.10 | 2023-11-29 2012H | Development
 
 ## Entries
 
@@ -206,3 +207,22 @@
     - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
         - Added user and directory validator when copying files to user home directory in the post-installation
 
+### v0.2.10
+- Planned Feature Change
+    - New Support
+        - Multi-Storage Controller support for various Storage Controllers
+            - Storage Controller Types
+                - SATA/AHCI => '/dev/sdX'
+                - NVME      => '/dev/nvme[device-number]p[partition-number]'
+                - Loopback  => '/dev/loop[device-number]p[partition-number]'
+
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Tested new feature support 
+            - 'Multi-Storage Controller support for various Storage Controllers'
+            - Installation support for 
+                - Disk Image files (i.e. .img files from dd) and loopback devices
+                - SATA/AHCI devices (/dev/sdX)
+        - WIP
+            - Perform refactorization and cleaning up
+            
