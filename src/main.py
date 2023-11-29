@@ -19,7 +19,7 @@ def init():
 
     # Initialize and setup class
     setup = Setup()
-    setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v1.4.0", "DEBUG", "ArchLinux") # Initialize Program Information
+    setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v1.4.0", "DEBUG", "arch") # Initialize Program Information
 
     # Process CLI arguments
     fmt_Text = setup.fmt_Text
