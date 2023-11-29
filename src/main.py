@@ -249,8 +249,10 @@ def body():
                 # Loop through list of stages
                 for curr_stage_Number in target_stages:
                     # Execute in the launcher
+                    print("Executing stage number: {}".format(curr_stage_Number))
                     app.update_setup()
                     app.execute_Step(curr_stage_Number)
+                    print("")
 
     ## Switch-case CLI positionals
     for i in range(len(positionals)):
