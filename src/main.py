@@ -238,17 +238,19 @@ def body():
 
                 # Set the new mode into the Environment Variable class variable
                 setup.env.MODE = new_mode
-        elif (curr_opt == "STAGE"):
+        elif (curr_opt == "STAGES"):
             """
             Execute the specific stage
             """
             if (curr_opt_val != None):
-                # Get the stage to execute
-                target_stage = cliparser.configurations["optionals"]["STAGE"]
+                # Get the list of stages to execute
+                target_stages = cliparser.configurations["optionals"]["STAGES"]
 
-                # Execute in the launcher
-                app.update_setup()
-                app.execute_Step(target_stage)
+                # Loop through list of stages
+                for curr_stage_Number in target_stages:
+                    # Execute in the launcher
+                    app.update_setup()
+                    app.execute_Step(curr_stage_Number)
 
     ## Switch-case CLI positionals
     for i in range(len(positionals)):

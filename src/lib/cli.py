@@ -27,7 +27,7 @@ class CLIParser():
                 "MODE" : "DEBUG",
                 "CFDISK_TARGET" : None,
                 "FDISK_TARGET" : None,
-                "STAGE" : None,
+                "STAGES" : [],
             },
             "positionals" : []
         }
@@ -134,7 +134,7 @@ class CLIParser():
                         # Target is specified
 
                         # Set target into configurations file
-                        configurations["optionals"]["STAGE"] = target_Stage
+                        configurations["optionals"]["STAGES"].append(target_Stage)
                 elif (curr_arg == "--print-config"):
                     """
                     Load/Import configuration file and print it
