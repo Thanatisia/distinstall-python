@@ -55,6 +55,7 @@ Command Line (CLI) Arguments:
             + -d [target-disk-name] | --target-disk [target-disk-name] : Set target disk name
             + -e [default-editor]   | --editor      [default-editor]   : Set default text editor
             + -m [DEBUG|RELEASE]    | --mode        [DEBUG|RELEASE]    : Set mode (DEBUG|RELEASE)
+            + --execute-stage [stage-number]                           : Specify an installation stage number to execute
         - Flags
             + -g | --generate-config    : Generate configuration file
             + --print-config            : Import configuration file, load it and print contents
@@ -234,6 +235,17 @@ def body():
 
                 # Set the new mode into the Environment Variable class variable
                 setup.env.MODE = new_mode
+        elif (curr_opt == "execute-stage"):
+            """
+            Execute the specific stage
+            """
+            if (curr_opt_val != None):
+                # Get the stage to execute
+                target_stage = cliparser.configurations["optionals"]["STAGE"]
+
+                # Execute in the launcher
+                app.update_setup()
+                app.execute_Step(target_stage)
 
     ## Switch-case CLI positionals
     for i in range(len(positionals)):

@@ -27,6 +27,7 @@ class CLIParser():
                 "MODE" : "DEBUG",
                 "CFDISK_TARGET" : None,
                 "FDISK_TARGET" : None,
+                "STAGE" : None,
             },
             "positionals" : []
         }
@@ -121,6 +122,19 @@ class CLIParser():
                     Display Options only
                     """
                     configurations["optionals"]["display-options"] = True
+                elif (curr_arg == "--execute-stage"):
+                    """
+                    Execute the specific stage only
+                    """
+                    ## Get installation stage to execute
+                    i, target_Stage = self.get_cli_subarguments(argv, i)
+
+                    ### Check if argument is empty
+                    if target_Stage != "":
+                        # Target is specified
+
+                        # Set target into configurations file
+                        configurations["optionals"]["STAGE"] = target_Stage
                 elif (curr_arg == "--print-config"):
                     """
                     Load/Import configuration file and print it
