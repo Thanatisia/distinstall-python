@@ -63,7 +63,7 @@ class App():
             # Update installer one more time
             self.pre_start_Setup()
 
-            self.installer = self.install_Arch()
+            self.installer = self.install_Arch
         else:
             print("Invalid distribution specified.")
             print("")
