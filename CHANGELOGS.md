@@ -218,6 +218,7 @@
 
 - Updates
     - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Replaced usage of configuration key 'device_Type' with new key 'storage-controller' for accuracy
         - Tested new feature support 
             - 'Multi-Storage Controller support for various Storage Controllers'
             - Installation support for 
@@ -225,4 +226,8 @@
                 - SATA/AHCI devices (/dev/sdX)
         - WIP
             - Perform refactorization and cleaning up
-            
+    - Updated document 'USAGE.md' 
+        - with new configuration setting key 'storage-controller'
+    - Updated document 'setup.py' in 'src'
+        - Added new key 'storage-controller' into template skeleton
+

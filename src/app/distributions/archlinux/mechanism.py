@@ -104,6 +104,7 @@ class ArchLinux():
 
         # Check Device Type (i.e. sdX, nvme, loop)
         device_medium_Type = cfg["device_Type"]
+        storage_controller = cfg["storage-controller"]
 
         print("")
 
@@ -171,7 +172,7 @@ class ArchLinux():
                     print("Standard Output: {}".format(stdout))
 
                 ## Prepare and Format Partition according to Device Storage Controller Type
-                curr_part = device_management.format_partition_str(disk_Label, part_ID, device_medium_Type)
+                curr_part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
 
                 ## Format file system
                 if part_filesystem == "fat32":
@@ -230,6 +231,7 @@ class ArchLinux():
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"]
         device_medium_Type = cfg["device_Type"]
+        storage_controller = cfg["storage-controller"]
 
         """
         Mount root partition
@@ -275,7 +277,7 @@ class ArchLinux():
         curr_filesystem = partition_Scheme[curr_part_Number][2]
 
         #### Prepare and Format Partition according to Device Storage Controller Type for Root partition
-        target_disk_root_Part = device_management.format_partition_str(disk_Label, curr_part_Number, device_medium_Type)
+        target_disk_root_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
 
         #### Check filesystem of current partition
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
@@ -366,7 +368,7 @@ class ArchLinux():
         ## --- Processing
         ### Mount the volume to the path
         #### Prepare and Format Partition according to Device Storage Controller Type for Boot partition
-        target_disk_boot_Part = device_management.format_partition_str(disk_Label, curr_part_Number, device_medium_Type)
+        target_disk_boot_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
 
         #### Check filesystem
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
@@ -441,7 +443,7 @@ class ArchLinux():
             ## --- Processing
             ### Mount the volume to the path
             #### Prepare and Format Partition according to Device Storage Controller Type for the current partition
-            target_disk_curr_Part = device_management.format_partition_str(disk_Label, part_ID, device_medium_Type)
+            target_disk_curr_Part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
 
             #### Check filesystem
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))

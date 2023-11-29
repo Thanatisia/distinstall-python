@@ -182,7 +182,7 @@ class Setup():
         # Initialize Variables
         config_Skeleton = """# Storage Disk/Device Firmware and Controller Settings
 device_Type: [your-device-type (VHD|VDI|QCOW2)]
-storage-Controller: [your-storage-controller (ahci|nvme|loop)]
+storage-controller: [your-storage-controller (ahci|nvme|loop)]
 device_Size: [total-storage-size (xMiB|xMB|xGiB|xGB)]
 disk_Label: [your-device-file (i.e. SATA|AHCI => /dev/sdX, NVME => /dev/nvme[device-number], Loopback device => /dev/loop[device-number])]
 disk_partition_Table: [partition-table (msdos|uefi)]

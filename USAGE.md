@@ -64,18 +64,18 @@
             ```yaml
             device_Type: VHD
             ```
-        - Storage Controllers
         - Storage Medium Types
-            - Currently-in-Use
+            + HDD : Hard Disk Drive
+            + SSH : Solid State Drive
+            + VHD : Virtual Hard Drive
+            + VDI : Virtual Disk Image
+            + QCOW2 : QEMU Image format
+    - storage-controller: Specify the storage controller used by the storage medium/device
+        - Storage Controllers
+            - Currently supported
                 + sata : For SATA/AHCI Controllers; Format: /dev/sdX
                 + nvme : For NVME Controllers; Format: /dev/nvmeXpN
                 + loop : Loopback Devices; Format: /dev/loopXpN
-            - Planned
-                + HDD : Hard Disk Drive
-                + SSH : Solid State Drive
-                + VHD : Virtual Hard Drive
-                + VDI : Virtual Disk Image
-                + QCOW2 : QEMU Image format
     - device_Size: This specifies the total disk/drive storage space/size
         - Format
             ```yaml
@@ -267,6 +267,7 @@
     - /dev/sdX, 51200MIB Storage, MSDOS, BIOS, GRUB
         ```yaml
         device_Type: VHD
+        storage-controller: sata
         device_Size: 51200MiB
         disk_Label: /dev/sdX
         disk_partition_Table: msdos
