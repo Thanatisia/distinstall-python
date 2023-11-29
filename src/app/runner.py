@@ -71,6 +71,34 @@ class App():
             for k,v in self.supported_distributions.items():
                 print("\t{} = {}\n".format(k,v))
 
+    def execute_Step(self, step_Number):
+        """
+        Execute only a specific step
+        """
+        if self.installer_class != None:
+            # Initialize Variables
+            steps = {
+                1 : self.installer_class.verify_network,
+                2 : self.installer_class.verify_boot_Mode,
+                3 : self.installer_class.update_system_Clock,
+                4 : self.installer_class.device_partition_Manager,
+                5 : self.installer_class.mount_Disks,
+                7 : self.installer_class.bootstrap_Install,
+                8 : self.installer_class.fstab_Generate,
+                9 : self.installer_class.arch_chroot_Exec,
+            }
+
+            # Obtain step to execute
+            stage_to_Execute = steps[step_Number]
+
+            # Execute stage
+            result = stage_to_Execute()
+            print(result)
+        else:
+            print("Installation mechanics class is not initialized, possible issues could be")
+            print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")
+            exit(1)
+
     def install_Arch(self):
         """
         Main setup installer
