@@ -131,6 +131,31 @@ class Setup():
         self.DISTRO = distribution
         self.cfg_name = config_Name
 
+    def update_prog_variable(self, program_scriptname="", program_appName="", program_Type="", program_Version="", program_Mode="", distribution="", config_Name="config.yaml"):
+        """
+        Update and replace program information
+        """
+        if program_scriptname != "":
+            self.PROGRAM_SCRIPTNAME = program_scriptname
+
+        if program_appName != "":
+            self.PROGRAM_NAME = program_appName
+
+        if program_Type != "":
+            self.PROGRAM_TYPE = program_Type
+
+        if program_Version != "":
+            self.PROGRAM_VERSION = program_Version
+
+        if program_Mode != "":
+            self.MODE = program_Mode
+
+        if distribution != "":
+            self.DISTRO = distribution
+
+        if config_Name != "config.yaml":
+            self.cfg_name = config_Name
+
     def init_Variables(self):
         """
         Initialize Variables

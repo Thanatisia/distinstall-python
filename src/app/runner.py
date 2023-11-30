@@ -33,6 +33,8 @@ class App():
         }
 
         # Obtain parameters
+        self.set_distribution_Name()
+        setup.DISTRO = self.dist
 
         # Initialize Class
         self.platform_Select()
@@ -42,11 +44,19 @@ class App():
         """
         Get specified distribution from the configuration file
         """
+        # Check if 'distribution-name' is in configuration file
         if ("distribution-name" in self.setup.cfg):
             # Check if 'distribution-name' is empty and value is in the dictionary of supported distributions
-            if (self.setup.cfg["distribution-name"] != "") and (self.setup.cfg["distribution-name"] in self.supported_distributions.keys()):
-                ## Check if 'distribution-name' is in configuration file
+            if (self.setup.cfg["distribution-name"] != "") and (self.setup.cfg["distribution-name"] in list(self.supported_distributions.keys())):
+                # Distribution is accepted
                 self.dist = self.setup.cfg["distribution-name"]
+            else:
+                # Invalid Distribution
+                print("Invalid distribution: {}".format(self.setup.cfg["distribution-name"]))
+                print("Please specify a valid distribution:")
+                for k,v in self.supported_distributions.items():
+                    print("\t{} = {}\n".format(k,v))
+                exit(1)
 
     def update_setup(self):
         """

@@ -13,7 +13,7 @@ def init():
     """
     Application Initialization
     """
-    global setup, app, env, fmt_Text, cliparser, optionals, positionals
+    global setup, env, fmt_Text, cliparser, optionals, positionals
 
     # Initialize and setup class
     setup = Setup()
@@ -25,8 +25,13 @@ def init():
     env = setup.env
     optionals = cliparser.optionals
     positionals = cliparser.positionals
-    
-    # Application class
+
+def init_Application():
+    """ 
+    Initialize Application class
+    """
+    global app
+    # Initialize Class
     app = app_runner.App(setup.DISTRO, setup, env)
 
 def display_info():
@@ -203,6 +208,9 @@ def body():
     # Verify Environment Variables
     print("(+) Verifying Environment Variables...")
     verify_Env()
+
+    # Initialize Application class after importing configurations
+    init_Application()
 
     # Initialization Completed
     print("(D) Initialization completed")
