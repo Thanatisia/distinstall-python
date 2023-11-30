@@ -275,9 +275,6 @@ def body():
             """
             Start the Installer
             """
-            # Initialize and perform pre-processing and pre-startup checks
-            init_check()
-
             print("")
             print("(+) Beginning Installation...")
             print("")
