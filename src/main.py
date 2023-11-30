@@ -200,8 +200,6 @@ def body():
     print("(S) Starting Initialization...")
     verify_Init()
 
-    print("")
-
     # Verify Environment Variables
     print("(+) Verifying Environment Variables...")
     verify_Env()
