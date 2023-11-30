@@ -7,8 +7,6 @@ import sys
 
 ## External Libraries
 import app.runner as app_runner
-import app.distributions as dist
-from app.distributions.archlinux import mechanism
 from setup import Setup
 
 def init():
@@ -145,14 +143,18 @@ def init_check():
     MODE: {setup.env.MODE}
           """)
 
+    # Get custom configuration file name (if any)
+    cfg_name = cliparser.configurations["optionals"]["CUSTOM_CONFIGURATION_FILENAME"]
+
     # Check if configuration file exists
-    if os.path.isfile(setup.cfg_name):
+    if os.path.isfile(cfg_name):
         # File exists
+
         # Import Configuration File
         print("(+) Import Configuration File")
-        setup.cfg = setup.load_config()
+        setup.cfg = setup.load_config(cfg_name)
     else:
-        setup.generate_config_Raw()
+        setup.generate_config_Raw(cfg_name)
         print("please modify the variables and rerun the program again, thank you!")
         exit(1)
 
@@ -230,6 +232,10 @@ def body():
                 # Print out configuration dictionary object
                 for k,v in setup.cfg.items():
                     print("{} : {}".format(k,v))
+                exit(1)
+        elif (curr_opt == "--list-stages"):
+            if (curr_opt_val == True):
+                app.list_steps()
                 exit(1)
         elif (curr_opt == "MODE"):
             if (curr_opt_val != None):

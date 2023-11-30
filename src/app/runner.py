@@ -20,6 +20,18 @@ class App():
         self.setup = setup # Initialized Setup configurations
         self.env = env # Initialized Environment Variables
         self.installer = None # Variable to be substituted as the main installer mechanism depending on the distribution specified
+        self.installation_stages = {
+            1 : "Verify Network",
+            2 : "Verify Boot Mode",
+            3 : "Update System Clock",
+            4 : "Disk Partition Management",
+            5 : "Disk Mounting",
+            7 : "Root filesystem Bootstrap Packaging",
+            8 : "Filesystems Table (/etc/fstab) generating",
+            9 : "System chroot execution",
+            10 : "Post-Installation",
+            11 : "Post-Installation Cleanup and Sanitization",
+        }
 
         # Initialize Class
         self.platform_Select()
@@ -71,6 +83,15 @@ class App():
             for k,v in self.supported_distributions.items():
                 print("\t{} = {}\n".format(k,v))
 
+    def list_steps(self):
+        """
+        List all installation stages/steps
+        """
+        for k,v in self.installation_stages.items():
+            # k = Stage Number
+            # v = Stage Description
+            print("{} : {}".format(k,v))
+
     def execute_Step(self, step_Number):
         """
         Execute only a specific step
@@ -86,6 +107,8 @@ class App():
                 7 : self.installer_class.bootstrap_Install,
                 8 : self.installer_class.fstab_Generate,
                 9 : self.installer_class.arch_chroot_Exec,
+                10 : self.installer_class.postinstallation,
+                11 : self.installer_class.postinstall_sanitize,
             }
 
             # Try and convert stage to integer

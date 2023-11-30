@@ -20,6 +20,7 @@ class CLIParser():
                 "display-options" : False,
                 "generate-config" : False,
                 "print-config" : False,
+                "list-stages" : False,
                 ## Configurations
                 "CUSTOM_CONFIGURATION_FILENAME" : "config.yaml",
                 "TARGET_DISK_NAME" : None,
@@ -122,6 +123,12 @@ class CLIParser():
                     Display Options only
                     """
                     configurations["optionals"]["display-options"] = True
+                elif (curr_arg == "--list-stages"):
+                    """
+                    List all installation steps/stages of the target platform to install
+                    """
+                    # Set element into configurations file
+                    configurations["optionals"]["list-stages"] = True
                 elif (curr_arg == "--execute-stage"):
                     """
                     Execute the specific stage only
