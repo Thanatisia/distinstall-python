@@ -12,7 +12,13 @@ from lib import process
 class App():
     def __init__(self, distribution_Name, setup, env):
         # Obtain parameters
-        self.dist = distribution_Name # Distribution of choice
+        ## Distribution of choice
+        if "distribution-name" in setup.cfg:
+            ## Check if 'distribution-name' is in configuration file
+            self.dist = setup.cfg["distribution-name"]
+        else:
+            ## Default to the specified distribution name
+            self.dist = distribution_Name
         # Initialize Variables
         self.supported_distributions = {
             "arch" : ["arch", "ArchLinux"],

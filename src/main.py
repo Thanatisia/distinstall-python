@@ -173,8 +173,6 @@ def verify_Env():
         # Set target disk name to configuration set
         setup.cfg["disk_Label"] = disk_Label
 
-
-
 def begin_installer():
     """
     Begin installation process

@@ -59,6 +59,11 @@
 ### Template
 #### Components
 - Key-Values
+    - distribution-name: The target distribution/platform you wish to install
+        - Valid Values
+            + arch : ArchLinux
+            + debian : (WIP) Debian
+            + gentoo : (WIP) Debian
     - device_Type: (Currently not in use); This specifies the type of storage medium/device you are using; i.e. SSD, HDD, VHD, VDI, QCOW2
         - Format
             ```yaml
@@ -266,6 +271,7 @@
 - YAML
     - /dev/sdX, 51200MIB Storage, MSDOS, BIOS, GRUB
         ```yaml
+        distribution-name: The target distribution/platform you wish to install
         device_Type: VHD
         storage-controller: sata
         device_Size: 51200MiB

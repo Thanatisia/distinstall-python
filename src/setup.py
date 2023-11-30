@@ -32,7 +32,9 @@ class Setup():
 
     def init_defaults(self):
         self.cfg = {
+            "distribution-name" : "[arch]",
             "device_Type" : "<hdd|ssd|flashdrive|microSD>", # Your disk/device/file type; i.e. VHD|HDD|SSD|Flashdrive|Microsd etc
+            "storage-controller": "[your-storage-controller (ahci|nvme|loop)]",
             "device_Size" : "<x {GB | GiB | MB | MiB}>", # The total disk size
             "disk_Label" : os.environ.get("TARGET_DISK_NAME"), # The disk's name/label (i.e. /dev/sdX for SATA, /dev/nvme0np1 for NVME); Default: uses the environment variable '$TARGET_DISK_NAME'
             "disk_partition_Table" : "", # mbr/msdos | gpt
@@ -180,7 +182,10 @@ class Setup():
         in the install script in Raw string
         """
         # Initialize Variables
-        config_Skeleton = """# Storage Disk/Device Firmware and Controller Settings
+        config_Skeleton = """# Platform Management
+distribution-name: [arch]
+
+# Storage Disk/Device Firmware and Controller Settings
 device_Type: [your-device-type (VHD|VDI|QCOW2)]
 storage-controller: [your-storage-controller (ahci|nvme|loop)]
 device_Size: [total-storage-size (xMiB|xMB|xGiB|xGB)]
