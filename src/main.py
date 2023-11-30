@@ -60,6 +60,7 @@ Command Line (CLI) Arguments:
             + -h | --help               : Display this help menu and all commands/command line arguments
             + --fdisk                   : Open up fdisk for manual partition configuration
             + --cfdisk                  : Open up cfdisk for manual partition configuration
+            + --list-stages             : List all installation steps/stages of the target platform to install
 
     - Positional Parameters
         + start : Start the installer
@@ -130,19 +131,10 @@ def display_Options():
         curr_pos = positionals[i]
         print("\t{}: {}".format(i, curr_pos))
 
-def init_check():
+def verify_Init():
     """
     Perform distribution installer pre-processing and pre-startup check
     """
-    print(f"""
-(S) Starting Initialization...
-    Running as  : {env.USER}
-    Program Name: {setup.PROGRAM_NAME}
-    Program Type: {setup.PROGRAM_TYPE}
-    Distro: {setup.DISTRO}
-    MODE: {setup.env.MODE}
-          """)
-
     # Get custom configuration file name (if any)
     cfg_name = cliparser.configurations["optionals"]["CUSTOM_CONFIGURATION_FILENAME"]
 
@@ -161,10 +153,10 @@ def init_check():
     # Initialize Variables
     setup.init_Variables()
 
-    print("")
-
-    print("(+) Verifying Environment Variables...")
-
+def verify_Env():
+    """
+    Verify Environment Variables
+    """
     # Check if environment variables are empty
     disk_Label = env.TARGET_DISK_NAME
     if disk_Label == "":
@@ -181,9 +173,7 @@ def init_check():
         # Set target disk name to configuration set
         setup.cfg["disk_Label"] = disk_Label
 
-    print("")
 
-    print("(D) Initialization completed")
 
 def begin_installer():
     """
@@ -197,7 +187,25 @@ def body():
     Begin CLI argument processing
     """
     # Initialize and perform pre-processing and pre-startup checks
-    init_check()
+    print(f"""
+(S) Starting Initialization...
+    Running as  : {env.USER}
+    Program Name: {setup.PROGRAM_NAME}
+    Program Type: {setup.PROGRAM_TYPE}
+    Distro: {setup.DISTRO}
+    MODE: {setup.env.MODE}
+          """)
+    verify_Init()
+
+    print("")
+
+    # Verify Environment Variables
+    print("(+) Verifying Environment Variables...")
+    verify_Env()
+
+    # Initialization Completed
+    print("(D) Initialization completed")
+    print("")
 
     ## Switch-case CLI optionals
     for k,v in optionals.items():
@@ -233,7 +241,7 @@ def body():
                 for k,v in setup.cfg.items():
                     print("{} : {}".format(k,v))
                 exit(1)
-        elif (curr_opt == "--list-stages"):
+        elif (curr_opt == "list-stages"):
             if (curr_opt_val == True):
                 app.list_steps()
                 exit(1)
