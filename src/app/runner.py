@@ -11,15 +11,8 @@ from lib import process
 
 class App():
     def __init__(self, distribution_Name, setup, env):
-        # Obtain parameters
-        ## Distribution of choice
-        if "distribution-name" in setup.cfg:
-            ## Check if 'distribution-name' is in configuration file
-            self.dist = setup.cfg["distribution-name"]
-        else:
-            ## Default to the specified distribution name
-            self.dist = distribution_Name
         # Initialize Variables
+        self.dist = distribution_Name
         self.supported_distributions = {
             "arch" : ["arch", "ArchLinux"],
         }
@@ -39,9 +32,21 @@ class App():
             11 : "Post-Installation Cleanup and Sanitization",
         }
 
+        # Obtain parameters
+
         # Initialize Class
         self.platform_Select()
         self.installer_switch()
+
+    def set_distribution_Name(self):
+        """
+        Get specified distribution from the configuration file
+        """
+        if ("distribution-name" in self.setup.cfg):
+            # Check if 'distribution-name' is empty and value is in the dictionary of supported distributions
+            if (self.setup.cfg["distribution-name"] != "") and (self.setup.cfg["distribution-name"] in self.supported_distributions.keys()):
+                ## Check if 'distribution-name' is in configuration file
+                self.dist = self.setup.cfg["distribution-name"]
 
     def update_setup(self):
         """
