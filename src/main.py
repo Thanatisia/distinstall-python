@@ -258,8 +258,6 @@ def body():
             Execute the specific stage
             """
             if (curr_opt_val != None):
-                display_info()
-
                 # Get the list of stages to execute
                 target_stages = cliparser.configurations["optionals"]["STAGES"]
 
