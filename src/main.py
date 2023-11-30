@@ -29,6 +29,18 @@ def init():
     # Application class
     app = app_runner.App(setup.DISTRO, setup, env)
 
+def display_info():
+    """
+    Print and display system information
+    """
+    print(f"""
+    Running as  : {env.USER}
+    Program Name: {setup.PROGRAM_NAME}
+    Program Type: {setup.PROGRAM_TYPE}
+    Distro: {setup.DISTRO}
+    MODE: {setup.env.MODE}
+          """)
+
 def display_help():
     """
     Display help message
@@ -185,14 +197,7 @@ def body():
     Begin CLI argument processing
     """
     # Initialize and perform pre-processing and pre-startup checks
-    print(f"""
-(S) Starting Initialization...
-    Running as  : {env.USER}
-    Program Name: {setup.PROGRAM_NAME}
-    Program Type: {setup.PROGRAM_TYPE}
-    Distro: {setup.DISTRO}
-    MODE: {setup.env.MODE}
-          """)
+    print("(S) Starting Initialization...")
     verify_Init()
 
     print("")
@@ -255,6 +260,8 @@ def body():
             Execute the specific stage
             """
             if (curr_opt_val != None):
+                display_info()
+
                 # Get the list of stages to execute
                 target_stages = cliparser.configurations["optionals"]["STAGES"]
 
@@ -273,6 +280,8 @@ def body():
             """
             Start the Installer
             """
+            display_info()
+
             print("")
             print("(+) Beginning Installation...")
             print("")
