@@ -1039,7 +1039,7 @@ class ArchLinux():
         combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
 
         # Archive the command string into a file
-        self.archive_command_Str(cmd_str)
+        self.archive_command_Str(cmd_str, dir_Mount)
 
         print("")
 
@@ -1395,6 +1395,8 @@ class PostInstallation():
                 else:
                     print("User {} does not exist.".format(sel_uhome))
 
+            print("")
+
             # Reset script to let user delete if they want to
             self.postinstall_sanitize()
         elif (action == "D") or (action == "Delete"):
@@ -1513,7 +1515,6 @@ class PostInstallation():
         postinstall_commands = [
             ### Body ###
             # Enable Sudo
-            "echo \"(+) Enable sudo\"",
             # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
             "sed -i 's/^#\\s*\\(%wheel\\s\\+ALL=(ALL:ALL)\\s\\+ALL\\)/\\1/' /etc/sudoers",
         ]
@@ -1548,6 +1549,7 @@ class PostInstallation():
         postinstall_commands = []
 
         # Enable sudo
+        print("(+) Enable sudo")
         result = self.enable_sudo(dir_Mount)
 
         for i in range(len(result)):
@@ -1564,6 +1566,7 @@ class PostInstallation():
                 # Error
                 print("Error: {}".format(stderr))
 
+        print("")
 
         ## User Management and Creation
         # User Management
