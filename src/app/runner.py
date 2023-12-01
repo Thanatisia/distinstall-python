@@ -80,6 +80,7 @@ class App():
         # Process
         if dist_Name == "arch":
             self.installer_class = mechanism.ArchLinux(self.setup) # Import the distribution of choice's installation mechanism
+            self.installer_class_PostInstall = mechanism.PostInstallation(self.setup.cfg) # Import the distribution of choice's postinstallation class
         else:
             self.installer_class = None
 
@@ -135,7 +136,7 @@ class App():
                 8 : self.installer_class.fstab_Generate,
                 9 : self.installer_class.arch_chroot_Exec,
                 10 : self.installer_class.postinstallation,
-                11 : self.installer_class.postinstall_sanitize,
+                11 : self.installer_class_PostInstall.postinstall_sanitize,
             }
 
             # Try and convert stage to integer
