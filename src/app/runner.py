@@ -140,7 +140,7 @@ class App():
                 7 : self.installer_class.bootstrap_Install,
                 8 : self.installer_class.fstab_Generate,
                 9 : self.installer_class.arch_chroot_Exec,
-                10 : self.installer_class.postinstallation,
+                10 : self.installer_class_PostInstall.postinstallation,
                 11 : self.installer_class_PostInstall.postinstall_sanitize,
             }
 
