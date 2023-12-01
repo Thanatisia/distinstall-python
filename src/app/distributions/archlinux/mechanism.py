@@ -1188,6 +1188,17 @@ class ArchLinux():
             "{}/{}".format(mount_Root, script_to_exe)
         )
 
+class PostInstallation():
+    """
+    Class for the Post-Installation functions in the installation library/framework
+    """
+    def __init__(self, cfg):
+        # Local Variables
+        self.cfg = cfg
+        dir_Mount = self.cfg["mount_Paths"]["Root"]
+        number_of_external_scripts = len(self.default_Var["external_scripts"])
+
+
     def postinstall_todo(self):
         msg = """
 - Please proceed to follow the 'Post-Installation' series of guides
