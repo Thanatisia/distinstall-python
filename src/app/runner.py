@@ -80,7 +80,7 @@ class App():
         # Process
         if dist_Name == "arch":
             self.installer_class = mechanism.ArchLinux(self.setup) # Import the distribution of choice's installation mechanism
-            self.installer_class_PostInstall = mechanism.PostInstallation(self.setup.cfg) # Import the distribution of choice's postinstallation class
+            self.installer_class_PostInstall = mechanism.PostInstallation(self.setup, self.installer_class) # Import the distribution of choice's postinstallation class
         else:
             self.installer_class = None
 
