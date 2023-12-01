@@ -23,17 +23,24 @@ class ArchLinux():
         print(self.cfg)
 
     # Installation stages
-    def verify_network(self):
+    def verify_network(self, ping_Count=5, ipv4_address="8.8.8.8"):
         """
         Step 1: Verify that the host network is working
         """
-        ping_Count = 5
-        ipv4_address = "8.8.8.8"
-        ret_Code:int = os.system("ping -c {} {}".format(ping_Count, ipv4_address))
+        # Initialize Variables
+        cmd_str = "ping -c {} {}".format(ping_Count, ipv4_address)
         res = False
-        if ret_Code != 0:
-            # Success
-            res=True
+
+        if self.env.MODE == "DEBUG":
+            print(cmd_str)
+            res = True
+        else:
+            ret_Code:int = os.system(cmd_str)
+            if ret_Code != 0:
+                # Success
+                res=True
+
+        # Output
         return res
 
     def verify_boot_Mode(self):
@@ -43,13 +50,19 @@ class ArchLinux():
         - BIOS : Legacy
         - UEFI : Modern Universal EFI mode
         """
+        # Initialize Variables
         boot_Mode:str = "bios"
+        cmd_str:str = "ls /sys/firmware/efi/efivars"
 
-        # Check if sytem has EFI
-        ret_Code:int = os.system("ls /sys/firmware/efi/efivars")
-        if ret_Code == 0:
-            # UEFI
-            boot_Mode="uefi"
+        if self.env.MODE == "DEBUG":
+            print(cmd_str)
+        else:
+            # Check if sytem has EFI
+            ret_Code:int = os.system(cmd_str)
+            if ret_Code == 0:
+                # UEFI
+                boot_Mode="uefi"
+
         return boot_Mode
 
     def update_system_Clock(self):
@@ -1341,6 +1354,8 @@ class PostInstallation():
         print("External Scripts created:")
         for i in range(number_of_external_scripts):
             print("[{}] : [{}]".format(i, self.default_Var["external_scripts"][i]))
+
+        print("")
 
         action = input("What would you like to do to the root scripts? [(C)opy to user|(D)elete|<Leave empty to do nothing>]: ")
         if (action == "C") or (action == "Copy"):
