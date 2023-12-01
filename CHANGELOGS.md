@@ -240,5 +240,15 @@
                 - SATA/AHCI => '/dev/sdX'
                 - NVME      => '/dev/nvme[device-number]p[partition-number]'
                 - Loopback  => '/dev/loop[device-number]p[partition-number]'
+        - Explicit stage selection : You can specify an installation step/stage to execute using '--execute-stage [stage-number]'. 
+            + You can append this to execute multiple steps at a single operation
+            + Ensure that you place all your steps in consecutive order
 
+    - UX/DX Improvements
+        - Created a 'load balancer', or more appropriately, a Distribution switcher that will act as a middleman proxy to process what Distribution you wish to install
+            - Afterwhich, import and call the functions from the framework/library appropriately.
+            - This should help to improve the User Experience (UX), Developer's Experience (DX), such that it is not only easier to modify, but should also improve expandibility.
+        - Several functions in the mechanism framework has been separated into individual files
+        - Post-Installation functions have been separated into its own standalone PostInstallation class for usage
+            - It supports taking in the Base Installation class object to continue from the state of the Base Installation
 
