@@ -875,7 +875,11 @@ class ArchLinux():
         self.chroot_execute_format_Ramdisk(default_Kernel)
 
         # Step 14: User Information - Set Root password
-        stdout, stderr, resultcode = self.chroot_execute_set_root_Password()
+        res = self.chroot_execute_set_root_Password()
+        stdout = res["stdout"]
+        stderr = res["stderr"]
+        resultcode = res["resultcode"] 
+        cmd_str = res["command-string"]
         if resultcode == 0:
             # Success
             print("Standard Output: {}".format(stdout))
@@ -884,7 +888,11 @@ class ArchLinux():
             print("Error: {}".format(stderr))
         
         # Step 15: Install Bootloader
-        stdout, stderr, resultcode, cmd_str = self.chroot_execute_install_Bootloader(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+        res = self.chroot_execute_install_Bootloader(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+        stdout = res["stdout"]
+        stderr = res["stderr"]
+        resultcode = res["resultcode"] 
+        cmd_str = res["command-string"]
         if resultcode == 0:
             # Success
             print("Standard Output: {}".format(stdout))

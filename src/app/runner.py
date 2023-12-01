@@ -19,6 +19,7 @@ class App():
         self.setup = setup # Initialized Setup configurations
         self.env = env # Initialized Environment Variables
         self.installer = None # Variable to be substituted as the main installer mechanism depending on the distribution specified
+        self.postinstaller = None # Variable to be substituted as the post installation mechanism depending on the distribution specified
         self.installation_stages = {
             1 : "Verify Network",
             2 : "Verify Boot Mode",
@@ -64,6 +65,7 @@ class App():
         """
         if self.installer_class != None:
             self.installer_class.update_setup(self.setup)
+            self.installer_class_PostInstall.update_setup(self.setup)
         else:
             print("Installation mechanics class is not initialized, possible issues could be")
             print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")
@@ -80,7 +82,9 @@ class App():
         # Process
         if dist_Name == "arch":
             self.installer_class = mechanism.ArchLinux(self.setup) # Import the distribution of choice's installation mechanism
+            print("Base Installation class initialized.")
             self.installer_class_PostInstall = mechanism.PostInstallation(self.setup, self.installer_class) # Import the distribution of choice's postinstallation class
+            print("Post Installation class initialized.")
         else:
             self.installer_class = None
 
@@ -100,6 +104,7 @@ class App():
             # Check if installer mechanism class is initialized
             if self.installer_class != None:
                 self.installer = self.installer_class.installer
+                self.postinstaller = self.installer_class_PostInstall.postinstaller
             else:
                 print("Installation mechanics class is not initialized, possible issues could be")
                 print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")
@@ -173,6 +178,12 @@ class App():
                 self.installer()
             else:
                 print("Installer function is not set.")
+                exit(1)
+
+            if self.postinstaller != None:
+                self.postinstaller()
+            else:
+                print("Post Installer function is not set.")
                 exit(1)
         else:
             print("Installation mechanics class is not initialized, possible issues could be")
