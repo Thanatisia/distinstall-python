@@ -106,13 +106,26 @@ Currently, this rewrite is in python as it is a good language for prototyping an
     + Please refer to [USAGE.md](USAGE.md) for more information on customization
     + Under the 'customization' section
 5. Perform a test run
-    ```console
-    sudo python3 main.py start
-    ```
+    - Explanation
+        + The Default mode is 'Debug', this will print the commands only
+    - Perform full start
+        ```console
+        sudo python3 main.py start
+        ```
+    - Execute specific stages
+        ```console
+        sudo python3 main.py --execute-stage [stage-number]
+        ```
 6. Once you have confirmed
+    - Explanation
+        + To run the changes proper, you need to set the mode to RELEASE
     - Perform full start
         ```console
         sudo python3 main.py --mode RELEASE start
+        ```
+    - Execute specific stages
+        ```console
+        sudo python3 main.py --mode RELEASE --execute-stage [stage-number]
         ```
 
 #### Developers
@@ -126,7 +139,7 @@ Currently, this rewrite is in python as it is a good language for prototyping an
 ### Synopsis/Syntax
 - Basic Run
     ```console
-    python main.py {options} <arguments> [positionals]
+    {sudo} python main.py {options} <arguments> [positionals]
     ```
 
 ### Parameters
@@ -134,26 +147,17 @@ Currently, this rewrite is in python as it is a good language for prototyping an
     + start : Confirm and Begin the installation
 - Optionals
     - With Arguments
+        + `--execute-stage [stage-number]` : Specify a target installation stage number to execute and executes it; You can append this option to execute all the steps in chronological order
+        + `-m | --mode [DEBUG|RELEASE]` : Explicitly specify the program run mode; Default: DEBUG; Set this to 'RELEASE' to allow changes to be made; You can also set the Environment Variable 'MODE' to 'RELEASE'.
     - Flags
 
 ### Usage
 
-### Developers
-#### Dependencies and Importing
-- Linux Distributions Module
-    ```python
-    import app.distributions as dist
-    ```
-- ArchLinux base installation mechanism
-    ```python
-    from app.distributions.archlinux import mechanism
-    ```
-- Setup file
-    ```python
-    from setup import Setup
-    ```
+### Notes
++ For more information on usage and customization, please refer to [USAGE.md](USAGE.md)
 
 ## Wiki
+
 ### Project Structure
 ```
 project-root/
@@ -165,10 +169,23 @@ project-root/
         |-- unittest.py : WIP Unit Testing source file
         |-- app/ : For all application-specific functionalities; Such as source files related to the installation mechanism of the various Distributions
             |
+            |-- runner.py : This is the Distribution Switcher ("Load Balancer") that will process your target distribution name and separate to the appropriate distributions
             |-- distributions/ : For all distribution classes
                 |
                 |-- archlinux/ : Contains ArchLinux installation functionality and archlinux-specific libraries
+                    |
+                    |-- mechanism.py : The primary library containing the Base Installation and Post-Installation mechanism classes for the distribution
         |-- lib/ : For all external/general libraries that are not application-specific
+            |
+            |-- cli.py : This contains functionality to Command Line Interface (CLI) Argument handling
+            |-- config_handler.py : This contains functionality to handling Configuration Files
+            |-- const.py : This contains constant variables and values
+            |-- device_management.py : This contains Device and Disk Handling functions
+            |-- env.py : This contains Environment Variables
+            |-- format.py : This contains string formatting support
+            |-- process.py : This contains Subprocess and systems command execution functions
+            |-- user_management.py : This contains User management functionalities
+            |-- utils.py : This contains general utilities
 ```
 
 ## TODO
