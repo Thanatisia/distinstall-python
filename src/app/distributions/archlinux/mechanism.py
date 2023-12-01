@@ -1353,55 +1353,37 @@ class ArchLinux():
         print("Installation Completed.")
         print("=======================")
 
-        print("")
-
-        print("=================")
-        print("Post-Installation")
-        print("=================")
-
-        print("(S) Starting Basic Post-Installation")
-
-        print("(+) Running post-installation...")
-        success_Flag = self.postinstallation()
-        if success_Flag == False:
-            print("(-) Error detected in post-installation process")
-            exit(1)
-        print("(+) Post-Installation execution completed")
-
-        if self.env.MODE == "DEBUG":
-            tmp = input("Press anything to continue...")
-
-        print("")
-
-        print("========================")
-        print("Sanitization and Cleanup")
-        print("========================")
-        print("(+) Running finalization and sanitization...")
-        success_Flag = self.postinstall_sanitize()
-        if success_Flag == False:
-            print("(-) Error detected in post-installation sanitization and cleanup")
-            exit(1)
-        print("(+) Sanitization completed")
-
-        if self.env.MODE == "DEBUG":
-            tmp = input("Press anything to continue...")
-
-        print("")
-
-        print("(D) Basic Post-Installation processes completed.")
-
-        finish = input("(D) Finished, press anything to quit.")
-
 class PostInstallation():
     """
     Class for the Post-Installation functions in the installation library/framework
     """
-    def __init__(self, cfg):
+    def __init__(self, setup, base_mechanism_Obj=None):
         # Local Variables
-        self.cfg = cfg
+        self.setup = setup
+        self.cfg = self.setup.cfg
         dir_Mount = self.cfg["mount_Paths"]["Root"]
-        number_of_external_scripts = len(self.default_Var["external_scripts"])
+        number_of_external_scripts = len(base_mechanism_Obj.default_Var["external_scripts"])
 
+        if base_mechanism_Obj == None:
+            # Initialize defaults from configuration file if no base installation object is specified
+            self.init_Config()
+
+    def init_Config(self):
+        """
+        Initialize defaults from configuration file if base installation is not used
+        """
+        # Update setup to the latest
+        self.update_setup(self.setup)
+
+    # Callback/Event Utility functions
+    def update_setup(self, setup):
+        self.setup = setup
+        self.env = setup.env
+        self.cfg = setup.cfg
+        self.default_Var = setup.default_Var
+
+    def print_configurations(self):
+        print(self.cfg)
 
     def postinstall_todo(self):
         msg = """
@@ -1587,3 +1569,43 @@ class PostInstallation():
                             os.remove(self.default_Var["external_scripts"][sel])
         else:
             print("No action.")
+
+    def postinstaller(self):
+        print("")
+
+        print("=================")
+        print("Post-Installation")
+        print("=================")
+
+        print("(S) Starting Basic Post-Installation")
+
+        print("(+) Running post-installation...")
+        success_Flag = self.postinstallation()
+        if success_Flag == False:
+            print("(-) Error detected in post-installation process")
+            exit(1)
+        print("(+) Post-Installation execution completed")
+
+        if self.env.MODE == "DEBUG":
+            tmp = input("Press anything to continue...")
+
+        print("")
+
+        print("========================")
+        print("Sanitization and Cleanup")
+        print("========================")
+        print("(+) Running finalization and sanitization...")
+        success_Flag = self.postinstall_sanitize()
+        if success_Flag == False:
+            print("(-) Error detected in post-installation sanitization and cleanup")
+            exit(1)
+        print("(+) Sanitization completed")
+
+        if self.env.MODE == "DEBUG":
+            tmp = input("Press anything to continue...")
+
+        print("")
+
+        print("(D) Basic Post-Installation processes completed.")
+
+        finish = input("(D) Finished, press anything to quit.")
