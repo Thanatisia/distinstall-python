@@ -611,53 +611,49 @@ class ArchLinux():
 
         return result
 
-    def chroot_execute_Timezone(self, region, city):
+    def chroot_execute_Timezone(self, mount_Dir, region, city):
         """
         Synchronize Hardware Clock in chroot
         """
         chroot_commands = [
             # "echo ======= Time Zones ======"												            # Step 10: Time Zones
-            "echo \"(+) Time Zones\"",
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
             "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
         ]
-        self.chroot_execute_command_List(chroot_commands)
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
 
-    def chroot_execute_Location(self, language):
+    def chroot_execute_Location(self, mount_Dir, language):
         """
         Uncomment and Enable locale/region
         """
         chroot_commands = [
             # "echo ======= Location ======"													        # Step 11: Localization;
-            "echo \"(+) Location\"",
             "sed -i '/{}/s/^#//g' /etc/locale.gen".format(language), 									# Step 11: Localization; Uncomment locale using sed
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
             "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
         ]
-        self.chroot_execute_command_List(chroot_commands)
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
 
-    def chroot_execute_Network(self, hostname):
+    def chroot_execute_Network(self, mount_Dir, hostname):
         """
         Append Network Host file
         """
         chroot_commands = [
             # "echo ======= Network Configuration ======"										        # step 12: Network Configuration;
-            "echo \"(+) Network Configuration\"",
             "echo \"{}\" | tee -a /etc/hostname".format(hostname),										# Step 12: Network Configuration; Set Network Hostname Configuration; Create hostname file
             "echo \"127.0.0.1   localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
         ]
-        self.chroot_execute_command_List(chroot_commands)
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
 
-    def chroot_execute_format_Ramdisk(self, default_Kernel="linux"):
+    def chroot_execute_format_Ramdisk(self, mount_Dir, default_Kernel="linux"):
         """
         Format initial ramdisk
         """
         # Initialize Variables
         chroot_commands = [
             # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
-            "echo \"(+) Making Initial Ramdisk\"",
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
         ]
         result = {
@@ -668,17 +664,17 @@ class ArchLinux():
         }
 
         # Execute commands
-        self.chroot_execute_command_List(chroot_commands)
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
 
         return result
 
-    def chroot_execute_set_root_Password(self):
+    def chroot_execute_set_root_Password(self, mount_Dir):
         """
         Set Root Password
         """
         # Initialize Variables
         str_root_passwd_change = "passwd || passwd;"
-        cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change)
+        cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change, mount_Dir)
         stderr = []
         stderr = []
         resultcode = 0
@@ -863,19 +859,31 @@ class ArchLinux():
 
         # Chroot Execute
         ## Synchronize Hardware Clock
-        self.chroot_execute_Timezone(region, city)
+        print("(+) Time Zones : Synchronize Hardware Clock")
+        self.chroot_execute_Timezone(dir_Mount, region, city)
+
+        print("")
 
         ## Enable locale/region
-        self.chroot_execute_Location(language)
+        print("(+) Enable Location/Region")
+        self.chroot_execute_Location(dir_Mount, language)
+
+        print("")
 
         ## Append Network Host file
-        self.chroot_execute_Network(hostname)
+        print("(+) Network Configuration")
+        self.chroot_execute_Network(dir_Mount, hostname)
+
+        print("")
 
         ## Format initial ramdisk
-        self.chroot_execute_format_Ramdisk(default_Kernel)
+        print("(+) Making Initial Ramdisk")
+        self.chroot_execute_format_Ramdisk(dir_Mount, default_Kernel)
+
+        print("")
 
         # Step 14: User Information - Set Root password
-        res = self.chroot_execute_set_root_Password()
+        res = self.chroot_execute_set_root_Password(dir_Mount)
         stdout = res["stdout"]
         stderr = res["stderr"]
         resultcode = res["resultcode"] 
