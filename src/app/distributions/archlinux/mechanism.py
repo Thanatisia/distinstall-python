@@ -1188,202 +1188,6 @@ class ArchLinux():
             "{}/{}".format(mount_Root, script_to_exe)
         )
 
-class PostInstallation():
-    """
-    Class for the Post-Installation functions in the installation library/framework
-    """
-    def __init__(self, cfg):
-        # Local Variables
-        self.cfg = cfg
-        dir_Mount = self.cfg["mount_Paths"]["Root"]
-        number_of_external_scripts = len(self.default_Var["external_scripts"])
-
-
-    def postinstall_todo(self):
-        msg = """
-- Please proceed to follow the 'Post-Installation' series of guides
-        and/or
-- Follow this list of recommendations:"
-
-[Post-Installation TODO]
-1. Enable multilib repository :
-    Summary:
-        If you want to run 32-bit applications on your 64-bit systems
-        Uncomment/enable the multilib repository
-    i. Edit '/etc/pacman.conf'
-    ii. Uncomment [multilib]
-    iii. Uncomment 'include = /etc/pacman.d/mirrorlist' below [multilib]
-    WIP:
-        - Automatic removal of comments in a file
-        
-# Command and Control
-2. [To validate if is done] Set sudo priviledges
-        Summary:
-            Ability to use 'sudo'
-        i. Use 'visudo' to enter the sudo file safely
-            i.e.
-                $EDITOR=vim sudo visudo
-        ii. Uncomment '%wheel ALL=(ALL) ALL' to allow all users under the group 'wheel' to access sudo (with password)
-
-# Administrative
-4. Create user account"
- 	Summary:"
- 		Create user account"
- 	i. Add user using the 'useradd' command"
- 		useradd -m -g <primary group (default: <username>) -G <secondary/supplementary groups (default: wheel)> -d <custom-profile-directory-path> <username>"
- 		i.e."
- 			useradd -m -g wheel -d /home/profiles/admin admin"
- 			useradd -m -g users -G wheel -d /home/profiles/admin admin"
- 	ii. Set password to username"
- 		passwd <username>"
- 		i.e."
- 			let <username> be 'admin':"
- 				passswd admin"
- 	iii. Test user"
- 		su - <username>"
- 		sudo whoami"
- 	iv. If part iii works : User has been created."
-
-# System Maintenance
-4. Swap File"
-		Summary:"
-			Instead of using swap partitions which are hard to change size, consider using swap files instead"
-			- Easy to resize"
-			- Easy to remove"
-			- Easy to add/allocate"
-		i. Allocate/Create swap file"
-			fallocate -l <size> /swapfile # <size> : in formats { MB | MiB | GB | GiB }"
-			i.e."
-				fallocate -l 8.0GB /swapfile"
-		ii. Change permission of swapfile to read + write"
-			chmod 600 /swapfile"
-		iii. Make swapfile"
-			mkswap /swapfile"
-		iv. Enable the swap file to begin using it"
-			swapon /swapfile"
-		v. The operating system needs to know that it is safe to use this file everytime it boots up"
-			echo \"# /swapfile\" | tee -a /etc/fstab"
-			echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
-			i.e."
-				swapfile size = 4GB"
-				fallocate -l 4G /swapfile"
-				chmod 600 /swapfile"
-				mkswap /swapfile"
-				swapon /swapfile"
-				echo \"# /swapfile\" | tee -a /etc/fstab"
-				echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
-		vi. Verify swap file"
-			ls -lh /swapfile"
-		vii. Verify swap file allocation"
-			free -h"
-		viii. If part vii works : Swap file has been created."
-        """
-        print(msg)
-
-    def postinstall_sanitize(self):
-        """
-        ==========================
-               Sanitize user      
-          To sanitize the account 
-        from any unnecessary files
-        ==========================
-        """
-        # Local Variables
-        cfg = self.cfg
-        dir_Mount = cfg["mount_Paths"]["Root"]
-        number_of_external_scripts = len(self.default_Var["external_scripts"])
-
-        print("External Scripts created:")
-        for i in range(number_of_external_scripts):
-            print("[{}] : [{}]".format(i, self.default_Var["external_scripts"][i]))
-
-        action = input("What would you like to do to the root scripts? [(C)opy to user|(D)elete|<Leave empty to do nothing>]: ")
-        if (action == "C") or (action == "Copy"):
-            users = input("Copy to which user? [(A)ll created users|(S)elect]: ")
-
-            # Copy to stated users
-            if (users == "A") or (users == "All"):
-                # Loop through all users in user_profiles and
-                # See if it exists, follow above documentation
-                for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
-                    # Get individual parameters
-                    u_primary_Group = u_Defn[0]         # Primary Group
-                    u_secondary_Groups = u_Defn[1]      # Secondary Groups
-                    u_home_Dir = u_Defn[2]              # Home Directory
-                    u_other_Params = u_Defn[3]          # Any other parameters after the first 3
-
-                    for i in range(number_of_external_scripts):
-                        curr_script = self.default_Var["external_scripts"][i]
-                        print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                        if self.env.MODE != "DEBUG":
-                            shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
-            elif (users == "S") or (users == "Select"):
-                # User Input
-                sel_uhome = input("User name: ")
-                sel_primary_group=""
-                sel_uhome_dir=""
-
-                # Check if username is in the dictionary
-                if sel_uhome in self.cfg["user_ProfileInfo"]:
-                    # Username is in
-                    # Get the target's profile info
-                    target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
-
-                    ## Split and obtain individual parameters
-                    u_primary_Group = target_user_profile[0]         # Primary Group
-                    u_secondary_Groups = target_user_profile[1]      # Secondary Groups
-                    u_home_Dir = target_user_profile[2]              # Home Directory
-                    u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
-
-                    # Check if user directory exists
-                    dir_to_Validate = "{}/{}".format(dir_Mount, u_home_Dir)
-                    if os.path.isdir(dir_to_Validate):
-                        ## Directory exists
-                        for i in range(number_of_external_scripts):
-                            curr_script = self.default_Var["external_scripts"][i]
-                            print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                            if self.env.MODE != "DEBUG":
-                                shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
-                    else:
-                        ## Directory does not exist
-                        print("User home directory [{}] does not exist.".format(dir_to_Validate))
-                else:
-                    print("User {} does not exist.".format(sel_uhome))
-
-            # Reset script to let user delete if they want to
-            self.postinstall_sanitize()
-        elif (action == "D") or (action == "Delete"):
-            del_conf = input("Delete the scripts? [(Y)es|(N)o|(S)elect]: ")
-            # Yes - Delete
-            # No - Nothing
-            # Select - Allow user to choose
-            if (del_conf == "Y") or (del_conf == "Yes"):
-                # Delete all
-                for i in range(number_of_external_scripts):
-                    if self.env.MODE == "DEBUG":
-                        print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
-                    else:
-                        os.remove(self.default_Var["external_scripts"][i])
-            elif (action == "S") or (action == "Select"):
-                # Let user choose
-                # Seperate all options with delimiter ','
-                print("Please enter all files you wish to delete\n	(Seperate all options with delimiter ',')")
-                del_selections = input("> : ")
-
-                # Seperate selected options with ',' delimited
-                arr_Selected = del_selections.split(",")
-
-                # Delete selected files if not empty
-                if del_selections != "":
-                    for sel in arr_Selected:
-                        # Delete selected files
-                        if self.env.MODE == "DEBUG":
-                            print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
-                        else:
-                            os.remove(self.default_Var["external_scripts"][sel])
-        else:
-            print("No action.")
-
     def installer(self):
         """
         Main setup installer
@@ -1588,3 +1392,198 @@ class PostInstallation():
 
         finish = input("(D) Finished, press anything to quit.")
 
+class PostInstallation():
+    """
+    Class for the Post-Installation functions in the installation library/framework
+    """
+    def __init__(self, cfg):
+        # Local Variables
+        self.cfg = cfg
+        dir_Mount = self.cfg["mount_Paths"]["Root"]
+        number_of_external_scripts = len(self.default_Var["external_scripts"])
+
+
+    def postinstall_todo(self):
+        msg = """
+- Please proceed to follow the 'Post-Installation' series of guides
+        and/or
+- Follow this list of recommendations:"
+
+[Post-Installation TODO]
+1. Enable multilib repository :
+    Summary:
+        If you want to run 32-bit applications on your 64-bit systems
+        Uncomment/enable the multilib repository
+    i. Edit '/etc/pacman.conf'
+    ii. Uncomment [multilib]
+    iii. Uncomment 'include = /etc/pacman.d/mirrorlist' below [multilib]
+    WIP:
+        - Automatic removal of comments in a file
+        
+# Command and Control
+2. [To validate if is done] Set sudo priviledges
+        Summary:
+            Ability to use 'sudo'
+        i. Use 'visudo' to enter the sudo file safely
+            i.e.
+                $EDITOR=vim sudo visudo
+        ii. Uncomment '%wheel ALL=(ALL) ALL' to allow all users under the group 'wheel' to access sudo (with password)
+
+# Administrative
+4. Create user account"
+ 	Summary:"
+ 		Create user account"
+ 	i. Add user using the 'useradd' command"
+ 		useradd -m -g <primary group (default: <username>) -G <secondary/supplementary groups (default: wheel)> -d <custom-profile-directory-path> <username>"
+ 		i.e."
+ 			useradd -m -g wheel -d /home/profiles/admin admin"
+ 			useradd -m -g users -G wheel -d /home/profiles/admin admin"
+ 	ii. Set password to username"
+ 		passwd <username>"
+ 		i.e."
+ 			let <username> be 'admin':"
+ 				passswd admin"
+ 	iii. Test user"
+ 		su - <username>"
+ 		sudo whoami"
+ 	iv. If part iii works : User has been created."
+
+# System Maintenance
+4. Swap File"
+		Summary:"
+			Instead of using swap partitions which are hard to change size, consider using swap files instead"
+			- Easy to resize"
+			- Easy to remove"
+			- Easy to add/allocate"
+		i. Allocate/Create swap file"
+			fallocate -l <size> /swapfile # <size> : in formats { MB | MiB | GB | GiB }"
+			i.e."
+				fallocate -l 8.0GB /swapfile"
+		ii. Change permission of swapfile to read + write"
+			chmod 600 /swapfile"
+		iii. Make swapfile"
+			mkswap /swapfile"
+		iv. Enable the swap file to begin using it"
+			swapon /swapfile"
+		v. The operating system needs to know that it is safe to use this file everytime it boots up"
+			echo \"# /swapfile\" | tee -a /etc/fstab"
+			echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
+			i.e."
+				swapfile size = 4GB"
+				fallocate -l 4G /swapfile"
+				chmod 600 /swapfile"
+				mkswap /swapfile"
+				swapon /swapfile"
+				echo \"# /swapfile\" | tee -a /etc/fstab"
+				echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
+		vi. Verify swap file"
+			ls -lh /swapfile"
+		vii. Verify swap file allocation"
+			free -h"
+		viii. If part vii works : Swap file has been created."
+        """
+        print(msg)
+
+    def postinstall_sanitize(self):
+        """
+        ==========================
+               Sanitize user      
+          To sanitize the account 
+        from any unnecessary files
+        ==========================
+        """
+        # Local Variables
+        cfg = self.cfg
+        dir_Mount = cfg["mount_Paths"]["Root"]
+        number_of_external_scripts = len(self.default_Var["external_scripts"])
+
+        print("External Scripts created:")
+        for i in range(number_of_external_scripts):
+            print("[{}] : [{}]".format(i, self.default_Var["external_scripts"][i]))
+
+        action = input("What would you like to do to the root scripts? [(C)opy to user|(D)elete|<Leave empty to do nothing>]: ")
+        if (action == "C") or (action == "Copy"):
+            users = input("Copy to which user? [(A)ll created users|(S)elect]: ")
+
+            # Copy to stated users
+            if (users == "A") or (users == "All"):
+                # Loop through all users in user_profiles and
+                # See if it exists, follow above documentation
+                for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
+                    # Get individual parameters
+                    u_primary_Group = u_Defn[0]         # Primary Group
+                    u_secondary_Groups = u_Defn[1]      # Secondary Groups
+                    u_home_Dir = u_Defn[2]              # Home Directory
+                    u_other_Params = u_Defn[3]          # Any other parameters after the first 3
+
+                    for i in range(number_of_external_scripts):
+                        curr_script = self.default_Var["external_scripts"][i]
+                        print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
+                        if self.env.MODE != "DEBUG":
+                            shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+            elif (users == "S") or (users == "Select"):
+                # User Input
+                sel_uhome = input("User name: ")
+                sel_primary_group=""
+                sel_uhome_dir=""
+
+                # Check if username is in the dictionary
+                if sel_uhome in self.cfg["user_ProfileInfo"]:
+                    # Username is in
+                    # Get the target's profile info
+                    target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
+
+                    ## Split and obtain individual parameters
+                    u_primary_Group = target_user_profile[0]         # Primary Group
+                    u_secondary_Groups = target_user_profile[1]      # Secondary Groups
+                    u_home_Dir = target_user_profile[2]              # Home Directory
+                    u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
+
+                    # Check if user directory exists
+                    dir_to_Validate = "{}/{}".format(dir_Mount, u_home_Dir)
+                    if os.path.isdir(dir_to_Validate):
+                        ## Directory exists
+                        for i in range(number_of_external_scripts):
+                            curr_script = self.default_Var["external_scripts"][i]
+                            print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
+                            if self.env.MODE != "DEBUG":
+                                shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+                    else:
+                        ## Directory does not exist
+                        print("User home directory [{}] does not exist.".format(dir_to_Validate))
+                else:
+                    print("User {} does not exist.".format(sel_uhome))
+
+            # Reset script to let user delete if they want to
+            self.postinstall_sanitize()
+        elif (action == "D") or (action == "Delete"):
+            del_conf = input("Delete the scripts? [(Y)es|(N)o|(S)elect]: ")
+            # Yes - Delete
+            # No - Nothing
+            # Select - Allow user to choose
+            if (del_conf == "Y") or (del_conf == "Yes"):
+                # Delete all
+                for i in range(number_of_external_scripts):
+                    if self.env.MODE == "DEBUG":
+                        print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
+                    else:
+                        os.remove(self.default_Var["external_scripts"][i])
+            elif (action == "S") or (action == "Select"):
+                # Let user choose
+                # Seperate all options with delimiter ','
+                print("Please enter all files you wish to delete\n	(Seperate all options with delimiter ',')")
+                del_selections = input("> : ")
+
+                # Seperate selected options with ',' delimited
+                arr_Selected = del_selections.split(",")
+
+                # Delete selected files if not empty
+                if del_selections != "":
+                    for sel in arr_Selected:
+                        # Delete selected files
+                        if self.env.MODE == "DEBUG":
+                            print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
+                        else:
+                            os.remove(self.default_Var["external_scripts"][sel])
+        else:
+            print("No action.")
