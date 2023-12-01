@@ -534,75 +534,161 @@ class ArchLinux():
                 # Error
                 print("Error obtaining genfstab: {}".format(stderr))
 
-    def arch_chroot_Exec(self):
+    def format_chroot_Subprocess(self, cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
         """
-        Execute commands using arch-chroot due to limitations with shellscripting
+        Format and returns the command string into the subprocess command list
         """
+        return [chroot_Command, mount_Dir, shell, "-c", cmd_str]
 
-        # --- Input
-        # Local Variables
-        cfg = self.cfg
-        disk_Label = cfg["disk_Label"]
-        partition_Table = cfg["disk_partition_Table"]
-        bootloader_firmware = cfg["bootloader_firmware"]
-        dir_Mount = cfg["mount_Paths"]["Root"]
-        region = cfg["location"]["Region"]
-        city = cfg["location"]["City"]
-        language = cfg["location"]["Language"]
-        keyboard_mapping = cfg["location"]["KeyboardMapping"]
-        hostname = cfg["networkConfig_hostname"]
-        default_Kernel = cfg["default_kernel"]
-        bootloader = cfg["bootloader"]
-        bootloader_directory = cfg["bootloader_directory"]
-        bootloader_optional_Params = cfg["bootloader_Params"]
-        bootloader_target_device_Type = cfg["platform_Arch"]
+    def chroot_execute_command(self, cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
+        """
+        Generalized chroot command execution
+        """
+        # Initialize Variables
+        chroot_cmd_fmt = [chroot_Command, mount_Dir, shell, "-c", cmd_str]
+        stdout = []
+        stderr = []
+        resultcode = 0
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
 
-        # Array
+        # Process
+        if self.env.MODE != "DEBUG":
+            stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+            if resultcode == 0:
+                # Success
+                print("Standard Output: {}".format(stdout))
+            else:
+                # Error
+                print("Error: {}".format(stderr))
 
-        # Associative Array
+            # Map/Append result results
+            result["stdout"] = stdout
+            result["stderr"] = stderr
+            result["resultcode"] = resultcode
 
-        # Step 10 - 13
-        chroot_commands_final_Configs = [
+        # Output
+        return result
+
+    def chroot_execute_command_List(self, cmd_List, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
+        """
+        Generalized chroot command list execution
+        """
+        # Initialize Variables
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
+
+        if len(cmd_List) > 0:
+            for i in range(len(cmd_List)):
+                # Get current cmd
+                cmd_str = cmd_List[i]
+
+                # Formulate chroot command
+                chroot_cmd_fmt = [chroot_Command, mount_Dir, shell, "-c", cmd_str]
+
+                print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+                if self.env.MODE != "DEBUG":
+                    stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                    if resultcode == 0:
+                        # Success
+                        print("Standard Output: {}".format(stdout))
+                    else:
+                        # Error
+                        print("Error: {}".format(stderr))
+
+                    # Map/Append result results
+                    result["stdout"].append(stdout)
+                    result["stderr"].append(stderr)
+                    result["resultcode"].append(resultcode)
+
+        return result
+
+    def chroot_execute_Timezone(self, region, city):
+        """
+        Synchronize Hardware Clock in chroot
+        """
+        chroot_commands = [
             # "echo ======= Time Zones ======"												            # Step 10: Time Zones
             "echo \"(+) Time Zones\"",
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
             "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
+        ]
+        self.chroot_execute_command_List(chroot_commands)
+
+    def chroot_execute_Location(self, language):
+        """
+        Uncomment and Enable locale/region
+        """
+        chroot_commands = [
             # "echo ======= Location ======"													        # Step 11: Localization;
             "echo \"(+) Location\"",
             "sed -i '/{}/s/^#//g' /etc/locale.gen".format(language), 									# Step 11: Localization; Uncomment locale using sed
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
             "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
+        ]
+        self.chroot_execute_command_List(chroot_commands)
+
+    def chroot_execute_Network(self, hostname):
+        """
+        Append Network Host file
+        """
+        chroot_commands = [
             # "echo ======= Network Configuration ======"										        # step 12: Network Configuration;
             "echo \"(+) Network Configuration\"",
             "echo \"{}\" | tee -a /etc/hostname".format(hostname),										# Step 12: Network Configuration; Set Network Hostname Configuration; Create hostname file
             "echo \"127.0.0.1   localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
+        ]
+        self.chroot_execute_command_List(chroot_commands)
+
+    def chroot_execute_format_Ramdisk(self, default_Kernel="linux"):
+        """
+        Format initial ramdisk
+        """
+        # Initialize Variables
+        chroot_commands = [
             # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
             "echo \"(+) Making Initial Ramdisk\"",
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
         ]
-        # cmd_str = ";\n".join(chroot_commands_final_Configs)
-        for i in range(len(chroot_commands_final_Configs)):
-            # Get current cmd
-            cmd_str = chroot_commands_final_Configs[i]
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
 
-            # Formulate chroot command
-            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", cmd_str]
+        # Execute commands
+        self.chroot_execute_command_List(chroot_commands)
 
-            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-            if self.env.MODE != "DEBUG":
-                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
-                if resultcode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
-                else:
-                    # Error
-                    print("Error: {}".format(stderr))
+        return result
 
-        # Step 14: User Information; Set Root Password
+    def chroot_execute_set_root_Password(self):
+        """
+        Set Root Password
+        """
+        # Initialize Variables
         str_root_passwd_change = "passwd || passwd;"
-        cmd_root_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", str_root_passwd_change]
+        cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change)
+        stderr = []
+        stderr = []
+        resultcode = 0
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
+
         print("======= Change Root Password =======")
         print("Executing: {}".format(' '.join(cmd_root_passwd_change)))
         if self.env.MODE != "DEBUG":
@@ -641,37 +727,34 @@ class ArchLinux():
             stdout = proc.stdout
             stderr = proc.stderr
             resultcode = proc.returncode
-            # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
-            if resultcode == 0:
-                # Success
-                print("Standard Output: {}".format(stdout))
-            else:
-                # Error
-                print("Error: {}".format(stderr))
 
-        # --- Extra Information
+            # Map/Append result results
+            result["stdout"].append(stdout)
+            result["stderr"].append(stderr)
+            result["resultcode"].append(resultcode)
 
-        #### Step 15: Install Bootloader
+        return result
+
+
+    def chroot_execute_install_Bootloader(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
+        """
+        Step 15: Install Bootloader
+        """
+        # Initialize Variables
         chroot_commands_Bootloader = []
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
 
         ### NOTE:
         ### 1. Please Edit [osdef] on top with the bootloader information before proceeding
         ####
-        # Default Bootloader
-        if bootloader == "":
-            # Empty : Reset to 'Grub'
-            print("(-) Bootloader is not specified, we will default to Grub(2.0)")
-            bootloader="grub"
 
-        # Step 15: Bootloader
         # Switch Case bootloader between grub and syslinux
         if (bootloader == "grub"):
-            # Default Bootloader Directory
-            if bootloader_directory == "":
-                # Empty : Reset to 'Grub'
-                print("(-) Sorry, $bootloader_directory is not provided, defaulting to /boot/grub")
-                bootloader_directory="/boot/grub"
-
             # Setup bootloader
             chroot_commands_Bootloader.append("echo \"(+) Installing Bootloader : Grub\"")
             chroot_commands_Bootloader.append("sudo pacman -S grub")						# Install Grub Package
@@ -682,7 +765,7 @@ class ArchLinux():
                 chroot_commands_Bootloader.append("sudo pacman -S efibootmgr")
     
             # Install Bootloader
-            chroot_commands_Bootloader.append("grub-install --target={} {} {}".format(bootloader_target_device_Type, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
+            chroot_commands_Bootloader.append("grub-install --target={} {} {}".format(bootloader_target_Architecture, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
 
             # Generate bootloader configuration file
             chroot_commands_Bootloader.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
@@ -707,6 +790,9 @@ class ArchLinux():
         # Combine into a string
         cmd_str = ";\n".join(chroot_commands_Bootloader)
 
+        # Map/Append Command String
+        result["command-string"] = cmd_str
+
         for i in range(len(chroot_commands_Bootloader)):
             # Get current command
             curr_cmd = chroot_commands_Bootloader[i]
@@ -715,27 +801,34 @@ class ArchLinux():
             print("Executing: {}".format(curr_cmd))
             if self.env.MODE != "DEBUG":
                 stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
-                if resultcode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
-                else:
-                    # Error
-                    print("Error: {}".format(stderr))
 
-        # Cat commands into script file in mount root
+                # Map/Append result results
+                result["stdout"].append(stdout)
+                result["stderr"].append(stderr)
+                result["resultcode"].append(resultcode)
+
+
+        # Return output
+        return result
+
+    def archive_command_Str(self, cmd_str, dir_Mount="/mnt"):
+        """
+        Output command string into a file for archiving
+        """
+        # Initialize Variables
         mount_Root="{}/root".format(dir_Mount)
         script_to_exe="chroot-comms.sh"
         target_directory = "{}/{}".format(mount_Root, script_to_exe)
-           
+
         # Write commands into file for reusing
         print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
         if self.env.MODE != "DEBUG":
             with open(target_directory, "a+") as write_chroot_Commands:
+                # Write to file
                 write_chroot_Commands.write(cmd_str)
+
                 # Close file after usage
                 write_chroot_Commands.close()
-
-        print("")
 
         # Execute in arch-chroot
         # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
@@ -744,6 +837,65 @@ class ArchLinux():
             ### Append all external scripts used ###
             "{}/{}".format(mount_Root, script_to_exe)
         )
+
+    def arch_chroot_Exec(self):
+        """
+        Execute commands using arch-chroot due to limitations with shellscripting
+        """
+
+        # --- Input
+        # Local Variables
+        cfg = self.cfg
+        disk_Label = cfg["disk_Label"]
+        partition_Table = cfg["disk_partition_Table"] # MBR|MSDOS / GPT
+        bootloader_firmware = cfg["bootloader_firmware"] # BIOS / UEFI
+        dir_Mount = cfg["mount_Paths"]["Root"]
+        region = cfg["location"]["Region"]
+        city = cfg["location"]["City"]
+        language = cfg["location"]["Language"]
+        keyboard_mapping = cfg["location"]["KeyboardMapping"]
+        hostname = cfg["networkConfig_hostname"]
+        default_Kernel = cfg["default_kernel"]
+        bootloader = cfg["bootloader"]
+        bootloader_directory = cfg["bootloader_directory"]
+        bootloader_optional_Params = cfg["bootloader_Params"]
+        bootloader_target_device_Type = cfg["platform_Arch"]
+
+        # Chroot Execute
+        ## Synchronize Hardware Clock
+        self.chroot_execute_Timezone(region, city)
+
+        ## Enable locale/region
+        self.chroot_execute_Location(language)
+
+        ## Append Network Host file
+        self.chroot_execute_Network(hostname)
+
+        ## Format initial ramdisk
+        self.chroot_execute_format_Ramdisk(default_Kernel)
+
+        # Step 14: User Information - Set Root password
+        stdout, stderr, resultcode = self.chroot_execute_set_root_Password()
+        if resultcode == 0:
+            # Success
+            print("Standard Output: {}".format(stdout))
+        else:
+            # Error
+            print("Error: {}".format(stderr))
+        
+        # Step 15: Install Bootloader
+        stdout, stderr, resultcode, cmd_str = self.chroot_execute_install_Bootloader(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+        if resultcode == 0:
+            # Success
+            print("Standard Output: {}".format(stdout))
+        else:
+            # Error
+            print("Error: {}".format(stderr))
+
+        # Archive the command string into a file
+        self.archive_command_Str(cmd_str)
+
+        print("")
 
     # =========================== #
     # Post-Installation Functions #
