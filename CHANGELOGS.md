@@ -13,7 +13,8 @@
     + v0.2.5  | 2023-11-28 2112H | Development
     + v0.2.6  | 2023-11-28 2200H | Development
     + v0.2.10 | 2023-11-29 2012H | Development
-    + v0.3.0  | 2023-11-29 2028H | Development
+    + v0.2.11 | 2023-12-02 0905H | Development
+    + v0.3.0  | - | Development
 
 ## Entries
 
@@ -232,6 +233,8 @@
     - Updated document 'setup.py' in 'src'
         - Added new key 'storage-controller' into template skeleton
 
+### v0.2.11
+
 ### v0.3.0
 - Feature Change
     - New Support
@@ -240,7 +243,10 @@
                 - SATA/AHCI => '/dev/sdX'
                 - NVME      => '/dev/nvme[device-number]p[partition-number]'
                 - Loopback  => '/dev/loop[device-number]p[partition-number]'
-        - Explicit stage selection : You can specify an installation step/stage to execute using '--execute-stage [stage-number]'. 
+
+    - New CLI options
+        - `--list-stages` : List all installation stages in the specified distribution
+        - `--execute-stage [stage-number]` : Explicit stage selection; You can specify an installation step/stage to execute. 
             + You can append this to execute multiple steps at a single operation
             + Ensure that you place all your steps in consecutive order
 
