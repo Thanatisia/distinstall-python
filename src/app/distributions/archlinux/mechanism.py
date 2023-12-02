@@ -7,7 +7,7 @@ import shutil
 from lib import utils, env, user_management, device_management, process
 from lib.env import Environment
 
-class ArchLinux():
+class BaseInstallation():
     def __init__(self, setup):
         # Initialize Environment variable class 
         self.update_setup(setup)
