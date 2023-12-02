@@ -16,7 +16,7 @@
     + v0.2.11 | 2023-12-02 0905H | Development
     + v0.2.12 | 2023-12-02 0949H | Development
     + v0.2.13 | 2023-12-02 1020H | Development
-    + v0.3.0  | - | Development
+    + v0.3.0  | 2023-12-02 1024H | Development
 
 ## Entries
 
