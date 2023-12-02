@@ -6,8 +6,8 @@
 - [Developers](#developers)
     - [Dependencies and Importing](#dependencies-and-importing)
         + [Modules](#importing-modules)
-    - [Class Initialization](#class-initialization)
-        + [Examples](#class-initialization-examples)
+    - [Using the distribution installer template as a standalone framework](#using-distribution-installer-template-as-a-standalone-framework)
+        - [Class Initialization](#class-initialization)
 - [Project Structure](#project-structure)
     + [Format](#format)
     + [Components](#project-components)
@@ -74,6 +74,7 @@
 
 ## Developers
 ### Dependencies and Importing
+
 #### Importing Modules
 - Linux Distributions Module
     ```python
@@ -92,18 +93,45 @@
     from lib import process
     ```
 
-### Class Initialization
-#### Class Initialization Examples
+### Using distribution installer template as a standalone framework
+
+#### Class Initialization
+- Initialize Setup class object
+    ```python
+    setup = Setup(...)
+    ```
+
 - Initialize distribution's Base Installation class object
-    - ArchLinux
-        ```python
-        self.installer_class = mechanism.ArchLinux(self.setup) # Import the distribution of choice's installation mechanism
-        ```
+    ```python
+    installer_class = mechanism.BaseInstallation(setup) # Import the distribution of choice's installation mechanism
+    ```
+
 - Initialize distribution's Post Installation class object
-    - ArchLinux
-        ```python
-        self.installer_class_PostInstall = mechanism.PostInstallation(self.setup, self.installer_class) # Import the distribution of choice's postinstallation class
-        ```
+    ```python
+    installer_class_PostInstall = mechanism.PostInstallation(setup, installer_class) # Import the distribution of choice's postinstallation class
+    ```
+
+#### Calling functions
+- Base Installation
+    ```python
+    self.installer_class.[functions-from-framework]()
+    ```
+
+- Post Installation
+    ```python
+    self.installer_class_PostInstall.[functions-from-framework]()
+    ```
+
+#### Attributes and Variables
+- Base Installation
+    ```python
+    self.installer_class.[attributes]
+    ```
+
+- Post Installation
+    ```python
+    self.installer_class_PostInstall.[attributes]
+    ```
 
 ## Project Structure
 ### Format

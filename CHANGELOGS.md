@@ -15,6 +15,7 @@
     + v0.2.10 | 2023-11-29 2012H | Development
     + v0.2.11 | 2023-12-02 0905H | Development
     + v0.2.12 | 2023-12-02 0949H | Development
+    + v0.2.13 | 2023-12-02 1020H | Development
     + v0.3.0  | - | Development
 
 ## Entries
@@ -248,6 +249,12 @@
     - Updated document 'main.py' in 'src/'
         - Added documentation and usage examples for '--list-stages' and '--execute-stage'
 
+### v0.2.13
+- Updates
+    - Updated document 'USAGE.md' 
+        - Reordered headers 'Class Initialization' to be a subheader under 'Using the distribution installer template as a standalone framework'
+        - Added new categories 'Calling Functions' and 'Attributes and Variables'
+
 ### v0.3.0
 - Feature Change
     - New Support
@@ -271,4 +278,9 @@
         - Post-Installation functions have been separated into its own standalone PostInstallation class for usage
             - It supports taking in the Base Installation class object to continue from the state of the Base Installation
         - Renamed Base Installation class 'ArchLinux' into 'BaseInstallation'
+
+    - Documentations
+        - Updated Documentations to match the latest version and options
+        - Added Usage examples
+
 
