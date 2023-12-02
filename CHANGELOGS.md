@@ -234,6 +234,11 @@
         - Added new key 'storage-controller' into template skeleton
 
 ### v0.2.11
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Renamed Base Installation class 'ArchLinux' into 'BaseInstallation'
+    - Updated document 'runner.py' in 'src/app'
+        - Changed base installation class from 'ArchLinux' into 'BaseInstallation'
 
 ### v0.3.0
 - Feature Change
@@ -257,4 +262,5 @@
         - Several functions in the mechanism framework has been separated into individual files
         - Post-Installation functions have been separated into its own standalone PostInstallation class for usage
             - It supports taking in the Base Installation class object to continue from the state of the Base Installation
+        - Renamed Base Installation class 'ArchLinux' into 'BaseInstallation'
 
