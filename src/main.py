@@ -17,7 +17,7 @@ def init():
 
     # Initialize and setup class
     setup = Setup()
-    setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v1.4.0", "DEBUG", "arch") # Initialize Program Information
+    setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v0.3.0", "DEBUG", "arch") # Initialize Program Information
 
     # Process CLI arguments
     fmt_Text = setup.fmt_Text
@@ -72,12 +72,14 @@ Command Line (CLI) Arguments:
             + -m [DEBUG|RELEASE]    | --mode        [DEBUG|RELEASE]    : Set mode (DEBUG|RELEASE)
             + --execute-stage [stage-number]                           : Specify an installation stage number to execute
         - Flags
+            + --display-options         : Display all options
             + -g | --generate-config    : Generate configuration file
             + --print-config            : Import configuration file, load it and print contents
             + -h | --help               : Display this help menu and all commands/command line arguments
             + --fdisk                   : Open up fdisk for manual partition configuration
             + --cfdisk                  : Open up cfdisk for manual partition configuration
             + --list-stages             : List all installation steps/stages of the target platform to install
+            + -v | --version            : Display system version information
 
     - Positional Parameters
         + start : Start the installer
@@ -87,49 +89,56 @@ Modes:
 	+ RELEASE : Performs the real RELEASE; must use with sudo
 
 Environment Variables:
-	+ TARGET_DISK_NAME : This is used in the environment variable to specify the target disk you want to install with
+    + TARGET_DISK_NAME : This is used in the environment variable to specify the target disk you want to install with
+    + MODE : This indicates the execution permission of the application; Default: DEBUG; Set this to 'RELEASE' to begin and commit execution and changes to be made
 
 Examples:
-    1. Default (Test Install; Did not specify target disk name explicitly)
-        {cliparser.exec} start
+    - Generate configuration file
+        python {cliparser.exec} --generate-config
 
-    2. Test Install; with target disk name specified as flag
-        {cliparser.exec} -d "/dev/sdX" start
+    - Default (Test Install; Did not specify target disk name explicitly)
+        python {cliparser.exec} start
 
-    3. Test Install; with target disk name specified with environment variable TARGET_DISK_NAME
-        TARGET_DISK_NAME="/dev/sdX" {cliparser.exec} start
+    - Test Install; with target disk name specified as flag
+        python {cliparser.exec} -d "/dev/sdX" start
 
-    4. Test Install; with custom configuration file
-        {cliparser.exec} -c "new config file" -d "/dev/sdX" start
+    - Test Install; with target disk name specified with environment variable TARGET_DISK_NAME
+        TARGET_DISK_NAME="/dev/sdX" python {cliparser.exec} start
 
-    5. Start installation (Did not specify target disk name explicitly)
-        sudo {cliparser.exec} -m RELEASE start
+    - Test Install; with custom configuration file
+        python {cliparser.exec} -c "new config file" -d "/dev/sdX" start
 
-    6. Start installation (with target disk name specified as flag)
-        sudo {cliparser.exec} -d "/dev/sdX" -m RELEASE start
+    - Start installation (Did not specify target disk name explicitly)
+        sudo python {cliparser.exec} -m RELEASE start
 
-    7. Start installation (with target disk name specified with environment variable TARGET_DISK_NAME)
-        sudo TARGET_DISK_NAME="/dev/sdX" {cliparser.exec} -m RELEASE start
+    - Start installation with the start mode specified with environment variable 'MODE'
+        sudo MODE=RELEASE python {cliparser.exec} start
 
-    8. Start installation (with custom configuration file)
-        sudo {cliparser.exec} -c "new config file" -d "/dev/sdX" -m RELEASE start
+    - Start installation (with target disk name specified as flag)
+        sudo python {cliparser.exec} -d "/dev/sdX" -m RELEASE start
 
-    9. Open up fdisk for manual partition configuration
-        sudo {cliparser.exec} --fdisk
+    - Start installation (with target disk name specified with environment variable TARGET_DISK_NAME)
+        sudo TARGET_DISK_NAME="/dev/sdX" python {cliparser.exec} -m RELEASE start
 
-    10. Open up fdisk for manual partition configuration
-        sudo {cliparser.exec} --cfdisk
+    - Start installation (with custom configuration file)
+        sudo python {cliparser.exec} -c "new config file" -d "/dev/sdX" -m RELEASE start
 
-    11. Test Install; using Makefile
+    - Open up fdisk for manual partition configuration
+        sudo python {cliparser.exec} --fdisk
+
+    - Open up fdisk for manual partition configuration
+        sudo python {cliparser.exec} --cfdisk
+
+    - Test Install; using Makefile
         make testinstall
 
-    12. Start installation; using Makefile
+    - Start installation; using Makefile
         sudo make install
 
-    13. Dis/Unmount using Makefile
+    - Dis/Unmount using Makefile
         sudo make clean
 
-    14. Download the important files (i.e. installer and generate config files) using Makefile
+    - Download the important files (i.e. installer and generate config files) using Makefile
         sudo make genscript
     """
     print(help_msg)
