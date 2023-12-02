@@ -32,7 +32,9 @@ class Setup():
 
     def init_defaults(self):
         self.cfg = {
+            "distribution-name" : "[arch]",
             "device_Type" : "<hdd|ssd|flashdrive|microSD>", # Your disk/device/file type; i.e. VHD|HDD|SSD|Flashdrive|Microsd etc
+            "storage-controller": "[your-storage-controller (ahci|nvme|loop)]",
             "device_Size" : "<x {GB | GiB | MB | MiB}>", # The total disk size
             "disk_Label" : os.environ.get("TARGET_DISK_NAME"), # The disk's name/label (i.e. /dev/sdX for SATA, /dev/nvme0np1 for NVME); Default: uses the environment variable '$TARGET_DISK_NAME'
             "disk_partition_Table" : "", # mbr/msdos | gpt
@@ -129,6 +131,31 @@ class Setup():
         self.DISTRO = distribution
         self.cfg_name = config_Name
 
+    def update_prog_variable(self, program_scriptname="", program_appName="", program_Type="", program_Version="", program_Mode="", distribution="", config_Name="config.yaml"):
+        """
+        Update and replace program information
+        """
+        if program_scriptname != "":
+            self.PROGRAM_SCRIPTNAME = program_scriptname
+
+        if program_appName != "":
+            self.PROGRAM_NAME = program_appName
+
+        if program_Type != "":
+            self.PROGRAM_TYPE = program_Type
+
+        if program_Version != "":
+            self.PROGRAM_VERSION = program_Version
+
+        if program_Mode != "":
+            self.MODE = program_Mode
+
+        if distribution != "":
+            self.DISTRO = distribution
+
+        if config_Name != "config.yaml":
+            self.cfg_name = config_Name
+
     def init_Variables(self):
         """
         Initialize Variables
@@ -160,7 +187,7 @@ class Setup():
             "linux" : {},
         }
 
-    def generate_config(self, cfg_fname="config.yaml"):
+    def generate_config_YAML(self, cfg_fname="config.yaml"):
         """
         Generate a template env config file
         that will contain the variables to be used 
@@ -169,6 +196,116 @@ class Setup():
         with open(cfg_fname, "a+") as write_config:
             # write_config.writelines(cfg)
             self.yaml.dump(self.cfg, write_config) # Dump dictionary object into YAML file
+            print("Config file template generated.")
+            # Close file after usage
+            write_config.close()
+
+    def generate_config_Raw(self, cfg_fname="config.yaml"):
+        """
+        Generate a template configuration file  
+        that will contain the variables to be used 
+        in the install script in Raw string
+        """
+        # Initialize Variables
+        config_Skeleton = """# Platform Management
+distribution-name: [arch]
+
+# Storage Disk/Device Firmware and Controller Settings
+device_Type: [your-device-type (VHD|VDI|QCOW2)]
+storage-controller: [your-storage-controller (ahci|nvme|loop)]
+device_Size: [total-storage-size (xMiB|xMB|xGiB|xGB)]
+disk_Label: [your-device-file (i.e. SATA|AHCI => /dev/sdX, NVME => /dev/nvme[device-number], Loopback device => /dev/loop[device-number])]
+disk_partition_Table: [partition-table (msdos|uefi)]
+bootloader_firmware: [motherboard-bootloader-firmware (mbr|gpt)]
+bootloader: [your-bootloader (grub)]
+
+# Partition Scheme/Layout
+partition_Scheme:
+  # Format:
+  # Partition-number:
+  #     - Partition-Label | Partition-Name
+  #     - Partition-Type
+  #     - Partition-Filesystem
+  #     - Partition-Starting position/size of partition (Integer|Percentage)
+  #     - Partition-Ending position/size of partition (Integer|Percentage)
+  1:
+    - Boot
+    - primary
+    - ext4
+    - 0%
+    - 1024MiB
+    - true
+    - NIL
+  2:
+    - Root
+    - primary
+    - ext4
+    - 1024MiB
+    - 32768MiB
+    - false
+    - NIL
+  3:
+    - Home
+    - primary
+    - ext4
+    - 32768MiB
+    - 100%
+    - false
+    - NIL
+
+# Filesystem Mounting
+mount_Paths:
+  # Key = Partition Name/ID
+  # Value = Mount Path/directory
+  Boot: /mnt/boot
+  Root: /mnt
+  Home: /mnt/home
+
+# System Management
+
+## Package Management
+base_pkgs:
+  # - Package Name
+  - base
+  - linux
+  - linux-firmware
+  - linux-lts
+  - linux-lts-headers
+  - base-devel
+  - nano
+  - vim
+  - networkmanager
+  - os-prober
+
+## System Location (Locale)
+location:
+  Region: your-region
+  City: your-city
+  Language: [locale].UTF-8
+  KeyboardMapping: en_UTF-8
+
+## User Profile
+user_ProfileInfo:
+  username:
+    - wheel
+    - users
+    - /home/profiles/username
+    - NIL
+
+## Network Management
+networkConfig_hostname: your-hostname
+
+## System Management
+bootloader_directory: /boot/grub
+bootloader_Params: ''
+default_kernel: [kernel-name (i.e. linux | linux-lts | linux-zen)]
+platform_Arch: [system-platform-architecture (i386-pc)]
+        """
+
+        # Open file to write
+        with open(cfg_fname, "a+") as write_config:
+            # Write skeleton into configuration
+            write_config.write(config_Skeleton)
             print("Config file template generated.")
             # Close file after usage
             write_config.close()

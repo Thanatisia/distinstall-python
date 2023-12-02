@@ -1,7 +1,24 @@
 # Quickstart Usage Reference Guide
 
-## Steps
-### Usage
+## Table of Contents
+- [Users](#users)
+    + [Steps](#steps)
+- [Developers](#developers)
+    - [Dependencies and Importing](#dependencies-and-importing)
+        + [Modules](#importing-modules)
+    - [Using the distribution installer template as a standalone framework](#using-distribution-installer-template-as-a-standalone-framework)
+        - [Class Initialization](#class-initialization)
+- [Project Structure](#project-structure)
+    + [Format](#format)
+    + [Components](#project-components)
+- [Configuration](#configuration)
+    + [Components](#configuration-components)
+    - [Template](#configuration-template)
+        + [Structure](#template-structure)
+        + [Examples](#template-examples)
+
+## Users
+### Steps
 - Research
     - Planning
         - You need to figure out afew things prior to installation
@@ -55,21 +72,145 @@
             sudo python main.py {options} -c [custom-configuration-file-name] -m RELEASE start
             ```
 
+## Developers
+### Dependencies and Importing
+
+#### Importing Modules
+- Linux Distributions Module
+    ```python
+    import app.distributions as dist
+    ```
+- Import target distribution Base installation mechanism
+    ```python
+    from app.distributions.[distribution] import mechanism
+    ```
+- Setup file
+    ```python
+    from setup import Setup
+    ```
+- Import a library/module from the collection of libraries
+    ```python
+    from lib import process
+    ```
+
+### Using distribution installer template as a standalone framework
+
+#### Class Initialization
+- Initialize Setup class object
+    ```python
+    setup = Setup(...)
+    ```
+
+- Initialize distribution's Base Installation class object
+    ```python
+    installer_class = mechanism.BaseInstallation(setup) # Import the distribution of choice's installation mechanism
+    ```
+
+- Initialize distribution's Post Installation class object
+    ```python
+    installer_class_PostInstall = mechanism.PostInstallation(setup, installer_class) # Import the distribution of choice's postinstallation class
+    ```
+
+#### Calling functions
+- Base Installation
+    ```python
+    self.installer_class.[functions-from-framework]()
+    ```
+
+- Post Installation
+    ```python
+    self.installer_class_PostInstall.[functions-from-framework]()
+    ```
+
+#### Attributes and Variables
+- Base Installation
+    ```python
+    self.installer_class.[attributes]
+    ```
+
+- Post Installation
+    ```python
+    self.installer_class_PostInstall.[attributes]
+    ```
+
+## Project Structure
+### Format
+```
+project-root/
+    |
+    |-- src/ 
+        |
+        |-- main.py  
+        |-- setup.py 
+        |-- unittest.py 
+        |-- app/ 
+            |
+            |-- runner.py 
+            |-- distributions/ 
+                |
+                |-- archlinux/ 
+                    |
+                    |-- mechanism.py 
+        |-- lib/ 
+            |
+            |-- cli.py 
+            |-- config_handler.py 
+            |-- const.py 
+            |-- device_management.py 
+            |-- env.py 
+            |-- format.py 
+            |-- process.py 
+            |-- user_management.py 
+            |-- utils.py 
+```
+
+### Project Components
+- project-root/
+    - src/ : For all project-related files
+        - main.py  : The main runner/launcher project code
+        - setup.py : Root setup file for the main runner/launcher
+        - unittest.py : WIP Unit Testing source file
+        - app/ : For all application-specific functionalities; Such as source files related to the installation mechanism of the various Distributions
+            - runner.py : This is the Distribution Switcher ("Load Balancer") that will process your target distribution name and separate to the appropriate distributions
+            - distributions/ : For all distribution classes
+                - archlinux/ : Contains ArchLinux installation functionality and archlinux-specific libraries
+                    - mechanism.py : The primary library containing the Base Installation and Post-Installation mechanism classes for the distribution
+        - lib/ : For all external/general libraries that are not application-specific
+            - cli.py : This contains functionality to Command Line Interface (CLI) Argument handling
+            - config_handler.py : This contains functionality to handling Configuration Files
+            - const.py : This contains constant variables and values
+            - device_management.py : This contains Device and Disk Handling functions
+            - env.py : This contains Environment Variables
+            - format.py : This contains string formatting support
+            - process.py : This contains Subprocess and systems command execution functions
+            - user_management.py : This contains User management functionalities
+            - utils.py : This contains general utilities
+
 ## Configuration
-### Template
-#### Components
+### Configuration Components
 - Key-Values
+    - distribution-name: The target distribution/platform you wish to install
+        - Valid Values
+            + arch : ArchLinux
+            + debian : (WIP) Debian
+            + gentoo : (WIP) Debian
     - device_Type: (Currently not in use); This specifies the type of storage medium/device you are using; i.e. SSD, HDD, VHD, VDI, QCOW2
         - Format
             ```yaml
             device_Type: VHD
             ```
-        - Storage Device Mediums
+        - Storage Medium Types
             + HDD : Hard Disk Drive
             + SSH : Solid State Drive
             + VHD : Virtual Hard Drive
             + VDI : Virtual Disk Image
             + QCOW2 : QEMU Image format
+    - storage-controller: Specify the storage controller used by the storage medium/device
+        - Storage Controllers
+            - Currently supported
+                + sata : For SATA/AHCI Controllers; Format: /dev/sdX
+                + nvme : For NVME Controllers; Format: /dev/nvmeXpN
+                + loop : Loopback Devices; Format: /dev/loopXpN
     - device_Size: This specifies the total disk/drive storage space/size
         - Format
             ```yaml
@@ -254,13 +395,116 @@
                 + ARM32
                 + ARM64
 
+### Configuration Template
 #### Template Structure
 - JSON
     + WIP
 - YAML
-    - /dev/sdX, 51200MIB Storage, MSDOS, BIOS, GRUB
+    ```yaml
+    ## Platform Management
+    distribution_Name: [arch] # The target distribution/platform you wish to install
+
+    # Storage Disk/Device Firmware and Controller Settings
+    device_Type: [your-device-type (VHD|VDI|QCOW2)]
+    storage-Controller: [your-storage-controller (ahci|nvme|loop)]
+    device_Size: [total-storage-size (xMiB|xMB|xGiB|xGB)]
+    disk_Label: [your-device-file (i.e. SATA|AHCI => /dev/sdX, NVME => /dev/nvme[device-number], Loopback device => /dev/loop[device-number])]
+    disk_partition_Table: [partition-table (msdos|uefi)]
+    bootloader_firmware: [motherboard-bootloader-firmware (mbr|gpt)]
+    bootloader: [your-bootloader (grub)]
+
+    # Partition Scheme/Layout
+    partition_Scheme:
+      # Format:
+      # Partition-number:
+      #     - Partition-Label | Partition-Name
+      #     - Partition-Type
+      #     - Partition-Filesystem
+      #     - Partition-Starting position/size of partition (Integer|Percentage)
+      #     - Partition-Ending position/size of partition (Integer|Percentage)
+      1:
+        - Boot
+        - primary
+        - ext4
+        - 0%
+        - 1024MiB
+        - true
+        - NIL
+      2:
+        - Root
+        - primary
+        - ext4
+        - 1024MiB
+        - 32768MiB
+        - false
+        - NIL
+      3:
+        - Home
+        - primary
+        - ext4
+        - 32768MiB
+        - 100%
+        - false
+        - NIL
+
+    # Filesystem Mounting
+    mount_Paths:
+      # Key = Partition Name/ID
+      # Value = Mount Path/directory
+      Boot: /mnt/boot
+      Root: /mnt
+      Home: /mnt/home
+
+    # System Management
+
+    ## Package Management
+    base_pkgs:
+      # - Package Name
+      - base
+      - linux
+      - linux-firmware
+      - linux-lts
+      - linux-lts-headers
+      - base-devel
+      - nano
+      - vim
+      - networkmanager
+      - os-prober
+
+    ## System Location (Locale)
+    location:
+      Region: your-region
+      City: your-city
+      Language: [locale].UTF-8
+      KeyboardMapping: en_UTF-8
+
+    ## User Profile
+    user_ProfileInfo:
+      username:
+        - wheel
+        - users
+        - /home/profiles/username
+        - NIL
+
+    ## Network Management
+    networkConfig_hostname: your-hostname
+
+    ## System Management
+    bootloader_directory: /boot/grub
+    bootloader_Params: ''
+    default_kernel: [kernel-name (i.e. linux | linux-lts | linux-zen)]
+    platform_Arch: [system-platform-architecture (i386-pc)]
+    ```
+
+#### Template Examples
+- JSON
+    + WIP
+- YAML
+    - ArchLinux (arch), /dev/sdX (sata|ahci), 51200MIB Storage, MSDOS, BIOS, GRUB
         ```yaml
+        distribution-name: arch
         device_Type: VHD
+        storage-controller: sata
         device_Size: 51200MiB
         disk_Label: /dev/sdX
         disk_partition_Table: msdos
@@ -324,4 +568,5 @@
         platform_Arch: i386-pc
         ```
 
-### For Developers
+
+

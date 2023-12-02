@@ -6,20 +6,18 @@ import os
 import sys
 
 ## External Libraries
-import app.distributions as dist
-from app.distributions.archlinux import mechanism
+import app.runner as app_runner
 from setup import Setup
 
 def init():
     """
     Application Initialization
     """
-    global setup, installer_archlinux, env, fmt_Text, cliparser, optionals, positionals
+    global setup, env, fmt_Text, cliparser, optionals, positionals
 
     # Initialize and setup class
     setup = Setup()
-    setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v1.4.0", "DEBUG", "ArchLinux") # Initialize Program Information
-    installer_archlinux = mechanism.ArchLinux(setup) # Import the distribution of choice's installation mechanism
+    setup.init_prog_Info("installer", "ArchLinux Profile Setup Installer", "Main", "v0.3.0", "DEBUG", "arch") # Initialize Program Information
 
     # Process CLI arguments
     fmt_Text = setup.fmt_Text
@@ -27,6 +25,26 @@ def init():
     env = setup.env
     optionals = cliparser.optionals
     positionals = cliparser.positionals
+
+def init_Application():
+    """ 
+    Initialize Application class
+    """
+    global app
+    # Initialize Class
+    app = app_runner.App(setup.DISTRO, setup, env)
+
+def display_info():
+    """
+    Print and display system information
+    """
+    print(f"""
+    Running as  : {env.USER}
+    Program Name: {setup.PROGRAM_NAME}
+    Program Type: {setup.PROGRAM_TYPE}
+    Distro: {setup.DISTRO}
+    MODE: {setup.env.MODE}
+          """)
 
 def display_help():
     """
@@ -52,64 +70,81 @@ Command Line (CLI) Arguments:
             + -d [target-disk-name] | --target-disk [target-disk-name] : Set target disk name
             + -e [default-editor]   | --editor      [default-editor]   : Set default text editor
             + -m [DEBUG|RELEASE]    | --mode        [DEBUG|RELEASE]    : Set mode (DEBUG|RELEASE)
+            + --execute-stage [stage-number]                           : Specify an installation stage number to execute
         - Flags
+            + --display-options         : Display all options
             + -g | --generate-config    : Generate configuration file
             + --print-config            : Import configuration file, load it and print contents
             + -h | --help               : Display this help menu and all commands/command line arguments
             + --fdisk                   : Open up fdisk for manual partition configuration
             + --cfdisk                  : Open up cfdisk for manual partition configuration
+            + --list-stages             : List all installation steps/stages of the target platform to install
+            + -v | --version            : Display system version information
+            + start                     : Start the full base installer + post-installer process
 
     - Positional Parameters
-        + start : Start the installer
 
 Modes:
 	+ DEBUG (Default) : Test install; Allows you to see all the commands that will be executed if you set the MODE to 'RELEASE'; set by default to prevent accidental reinstallation/overwriting
 	+ RELEASE : Performs the real RELEASE; must use with sudo
 
 Environment Variables:
-	+ TARGET_DISK_NAME : This is used in the environment variable to specify the target disk you want to install with
+    + TARGET_DISK_NAME : This is used in the environment variable to specify the target disk you want to install with
+    + MODE : This indicates the execution permission of the application; Default: DEBUG; Set this to 'RELEASE' to begin and commit execution and changes to be made
 
 Examples:
-    1. Default (Test Install; Did not specify target disk name explicitly)
-        {cliparser.exec} start
+    - Generate configuration file
+        python {cliparser.exec} --generate-config
 
-    2. Test Install; with target disk name specified as flag
-        {cliparser.exec} -d "/dev/sdX" start
+    - Default (Test Install; Did not specify target disk name explicitly)
+        python {cliparser.exec} start
 
-    3. Test Install; with target disk name specified with environment variable TARGET_DISK_NAME
-        TARGET_DISK_NAME="/dev/sdX" {cliparser.exec} start
+    - Test Install; with target disk name specified as flag
+        python {cliparser.exec} -d "/dev/sdX" start
 
-    4. Test Install; with custom configuration file
-        {cliparser.exec} -c "new config file" -d "/dev/sdX" start
+    - Test Install; with target disk name specified with environment variable TARGET_DISK_NAME
+        TARGET_DISK_NAME="/dev/sdX" python {cliparser.exec} start
 
-    5. Start installation (Did not specify target disk name explicitly)
-        sudo {cliparser.exec} -m RELEASE start
+    - Test Install; with custom configuration file
+        python {cliparser.exec} -c "new config file" -d "/dev/sdX" start
 
-    6. Start installation (with target disk name specified as flag)
-        sudo {cliparser.exec} -d "/dev/sdX" -m RELEASE start
+    - Start installation (Did not specify target disk name explicitly)
+        sudo python {cliparser.exec} -m RELEASE start
 
-    7. Start installation (with target disk name specified with environment variable TARGET_DISK_NAME)
-        sudo TARGET_DISK_NAME="/dev/sdX" {cliparser.exec} -m RELEASE start
+    - Start installation with the start mode specified with environment variable 'MODE'
+        sudo MODE=RELEASE python {cliparser.exec} start
 
-    8. Start installation (with custom configuration file)
-        sudo {cliparser.exec} -c "new config file" -d "/dev/sdX" -m RELEASE start
+    - Start installation (with target disk name specified as flag)
+        sudo python {cliparser.exec} -d "/dev/sdX" -m RELEASE start
 
-    9. Open up fdisk for manual partition configuration
-        sudo {cliparser.exec} --fdisk
+    - Start installation (with target disk name specified with environment variable TARGET_DISK_NAME)
+        sudo TARGET_DISK_NAME="/dev/sdX" python {cliparser.exec} -m RELEASE start
 
-    10. Open up fdisk for manual partition configuration
-        sudo {cliparser.exec} --cfdisk
+    - Start installation (with custom configuration file)
+        sudo python {cliparser.exec} -c "new config file" -d "/dev/sdX" -m RELEASE start
 
-    11. Test Install; using Makefile
+    - List all installation stages
+        sudo python {cliparser.exec} --list-stages
+
+    - Execute specific stages
+        sudo python {cliparser.exec} --execute-stage 1 --execute-stage 2 .... -m RELEASE
+
+    - Open up fdisk for manual partition configuration
+        sudo python {cliparser.exec} --fdisk
+
+    - Open up fdisk for manual partition configuration
+        sudo python {cliparser.exec} --cfdisk
+
+    - Test Install; using Makefile
         make testinstall
 
-    12. Start installation; using Makefile
+    - Start installation; using Makefile
         sudo make install
 
-    13. Dis/Unmount using Makefile
+    - Dis/Unmount using Makefile
         sudo make clean
 
-    14. Download the important files (i.e. installer and generate config files) using Makefile
+    - Download the important files (i.e. installer and generate config files) using Makefile
         sudo make genscript
     """
     print(help_msg)
@@ -128,37 +163,32 @@ def display_Options():
         curr_pos = positionals[i]
         print("\t{}: {}".format(i, curr_pos))
 
-def init_check():
+def verify_Init():
     """
     Perform distribution installer pre-processing and pre-startup check
     """
-    print(f"""
-(S) Starting Initialization...
-    Running as  : {env.USER}
-    Program Name: {setup.PROGRAM_NAME}
-    Program Type: {setup.PROGRAM_TYPE}
-    Distro: {setup.DISTRO}
-    MODE: {setup.env.MODE}
-          """)
+    # Get custom configuration file name (if any)
+    cfg_name = cliparser.configurations["optionals"]["CUSTOM_CONFIGURATION_FILENAME"]
 
     # Check if configuration file exists
-    if os.path.isfile(setup.cfg_name):
+    if os.path.isfile(cfg_name):
         # File exists
+
         # Import Configuration File
         print("(+) Import Configuration File")
-        setup.cfg = setup.load_config()
+        setup.cfg = setup.load_config(cfg_name)
     else:
-        setup.generate_config()
+        setup.generate_config_Raw(cfg_name)
         print("please modify the variables and rerun the program again, thank you!")
         exit(1)
 
     # Initialize Variables
     setup.init_Variables()
 
-    print("")
-
-    print("(+) Verifying Environment Variables...")
-
+def verify_Env():
+    """
+    Verify Environment Variables
+    """
     # Check if environment variables are empty
     disk_Label = env.TARGET_DISK_NAME
     if disk_Label == "":
@@ -175,27 +205,32 @@ def init_check():
         # Set target disk name to configuration set
         setup.cfg["disk_Label"] = disk_Label
 
-    print("")
-
-    print("(D) Initialization completed")
-
 def begin_installer():
     """
     Begin installation process
     """
-    if setup.DISTRO == "ArchLinux":
-        print("Installing: {}".format(setup.DISTRO))
-
-        # Update installer one more time
-        installer_archlinux.update_setup(setup)
-
-        # Start installer
-        installer_archlinux.installer()
+    app.update_setup()
+    app.begin()
 
 def body():
     """
     Begin CLI argument processing
     """
+    # Initialize and perform pre-processing and pre-startup checks
+    print("(S) Starting Initialization...")
+    verify_Init()
+
+    # Verify Environment Variables
+    print("(+) Verifying Environment Variables...")
+    verify_Env()
+
+    # Initialize Application class after importing configurations
+    init_Application()
+
+    # Initialization Completed
+    print("(D) Initialization completed")
+    print("")
+
     ## Switch-case CLI optionals
     for k,v in optionals.items():
         # Get keyword and value
@@ -216,7 +251,7 @@ def body():
             if (curr_opt_val == True):
                 # Get the new custom configuration file name (if any)
                 cfg_name = cliparser.configurations["optionals"]["CUSTOM_CONFIGURATION_FILENAME"]
-                setup.generate_config(cfg_name)
+                setup.generate_config_Raw(cfg_name)
                 exit(1)
         elif (curr_opt == "print-config"):
             if (curr_opt_val == True):
@@ -230,6 +265,10 @@ def body():
                 for k,v in setup.cfg.items():
                     print("{} : {}".format(k,v))
                 exit(1)
+        elif (curr_opt == "list-stages"):
+            if (curr_opt_val == True):
+                app.list_steps()
+                exit(1)
         elif (curr_opt == "MODE"):
             if (curr_opt_val != None):
                 # Get the new mode (if any)
@@ -237,6 +276,21 @@ def body():
 
                 # Set the new mode into the Environment Variable class variable
                 setup.env.MODE = new_mode
+        elif (curr_opt == "STAGES"):
+            """
+            Execute the specific stage
+            """
+            if (curr_opt_val != None):
+                # Get the list of stages to execute
+                target_stages = cliparser.configurations["optionals"]["STAGES"]
+
+                # Loop through list of stages
+                for curr_stage_Number in target_stages:
+                    # Execute in the launcher
+                    print("Executing stage number: {}".format(curr_stage_Number))
+                    app.update_setup()
+                    app.execute_Step(curr_stage_Number)
+                    print("")
 
     ## Switch-case CLI positionals
     for i in range(len(positionals)):
@@ -245,8 +299,7 @@ def body():
             """
             Start the Installer
             """
-            # Initialize and perform pre-processing and pre-startup checks
-            init_check()
+            display_info()
 
             print("")
             print("(+) Beginning Installation...")

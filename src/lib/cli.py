@@ -20,6 +20,7 @@ class CLIParser():
                 "display-options" : False,
                 "generate-config" : False,
                 "print-config" : False,
+                "list-stages" : False,
                 ## Configurations
                 "CUSTOM_CONFIGURATION_FILENAME" : "config.yaml",
                 "TARGET_DISK_NAME" : None,
@@ -27,6 +28,7 @@ class CLIParser():
                 "MODE" : "DEBUG",
                 "CFDISK_TARGET" : None,
                 "FDISK_TARGET" : None,
+                "STAGES" : [],
             },
             "positionals" : []
         }
@@ -121,6 +123,25 @@ class CLIParser():
                     Display Options only
                     """
                     configurations["optionals"]["display-options"] = True
+                elif (curr_arg == "--list-stages"):
+                    """
+                    List all installation steps/stages of the target platform to install
+                    """
+                    # Set element into configurations file
+                    configurations["optionals"]["list-stages"] = True
+                elif (curr_arg == "--execute-stage"):
+                    """
+                    Execute the specific stage only
+                    """
+                    ## Get installation stage to execute
+                    i, target_Stage = self.get_cli_subarguments(argv, i)
+
+                    ### Check if argument is empty
+                    if target_Stage != "":
+                        # Target is specified
+
+                        # Set target into configurations file
+                        configurations["optionals"]["STAGES"].append(target_Stage)
                 elif (curr_arg == "--print-config"):
                     """
                     Load/Import configuration file and print it

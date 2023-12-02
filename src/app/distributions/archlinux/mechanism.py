@@ -3,12 +3,11 @@ Primary Installation Mechanism
 """
 import os
 import sys
-import yaml
 import shutil
-from lib import utils, env, user_management, process
+from lib import utils, env, user_management, device_management, process
 from lib.env import Environment
 
-class ArchLinux():
+class BaseInstallation():
     def __init__(self, setup):
         # Initialize Environment variable class 
         self.update_setup(setup)
@@ -24,17 +23,24 @@ class ArchLinux():
         print(self.cfg)
 
     # Installation stages
-    def verify_network(self):
+    def verify_network(self, ping_Count=5, ipv4_address="8.8.8.8"):
         """
         Step 1: Verify that the host network is working
         """
-        ping_Count = 5
-        ipv4_address = "8.8.8.8"
-        ret_Code:int = os.system("ping -c {} {}".format(ping_Count, ipv4_address))
+        # Initialize Variables
+        cmd_str = "ping -c {} {}".format(ping_Count, ipv4_address)
         res = False
-        if ret_Code != 0:
-            # Success
-            res=True
+
+        if self.env.MODE == "DEBUG":
+            print(cmd_str)
+            res = True
+        else:
+            ret_Code:int = os.system(cmd_str)
+            if ret_Code != 0:
+                # Success
+                res=True
+
+        # Output
         return res
 
     def verify_boot_Mode(self):
@@ -44,13 +50,19 @@ class ArchLinux():
         - BIOS : Legacy
         - UEFI : Modern Universal EFI mode
         """
+        # Initialize Variables
         boot_Mode:str = "bios"
+        cmd_str:str = "ls /sys/firmware/efi/efivars"
 
-        # Check if sytem has EFI
-        ret_Code:int = os.system("ls /sys/firmware/efi/efivars")
-        if ret_Code == 0:
-            # UEFI
-            boot_Mode="uefi"
+        if self.env.MODE == "DEBUG":
+            print(cmd_str)
+        else:
+            # Check if sytem has EFI
+            ret_Code:int = os.system(cmd_str)
+            if ret_Code == 0:
+                # UEFI
+                boot_Mode="uefi"
+
         return boot_Mode
 
     def update_system_Clock(self):
@@ -103,6 +115,10 @@ class ArchLinux():
         partition_Table = cfg["disk_partition_Table"]
         partition_Scheme = cfg["partition_Scheme"]
 
+        # Check Device Type (i.e. sdX, nvme, loop)
+        device_medium_Type = cfg["device_Type"]
+        storage_controller = cfg["storage-controller"]
+
         print("")
 
         print("(+) Get User Input - Partition Information")
@@ -124,7 +140,6 @@ class ArchLinux():
                 # Open Subprocess Pipe
                 # proc = Popen(["parted", device_Name, "mklabel", device_Label])
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Return Code: {}".format(returncode))
                 if returncode == 0:
                     # Success
                     print("Standard Output: {}".format(stdout))
@@ -169,15 +184,18 @@ class ArchLinux():
                     stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                     print("Standard Output: {}".format(stdout))
 
+                ## Prepare and Format Partition according to Device Storage Controller Type
+                curr_part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
+
                 ## Format file system
                 if part_filesystem == "fat32":
-                    cmd_str = "mkfs.fat -F32 {}{}".format(disk_Label, part_ID)
+                    cmd_str = "mkfs.fat -F32 {}".format(curr_part)
                 elif part_filesystem == "ext4":
-                    cmd_str = "mkfs.ext4 {}{}".format(disk_Label, part_ID)
+                    cmd_str = "mkfs.ext4 {}".format(curr_part)
                 elif part_filesystem == "swap":
-                    cmd_str = "mkswap {}{}".format(disk_Label, part_ID)
+                    cmd_str = "mkswap {}{}".format(curr_part)
                 else:
-                    print("(-) Unknown File System: [$part_file_Type]")
+                    print("(-) Unknown File System: [{}]".format(part_filesystem))
 
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
@@ -225,6 +243,8 @@ class ArchLinux():
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"]
+        device_medium_Type = cfg["device_Type"]
+        storage_controller = cfg["storage-controller"]
 
         """
         Mount root partition
@@ -269,18 +289,20 @@ class ArchLinux():
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
 
+        #### Prepare and Format Partition according to Device Storage Controller Type for Root partition
+        target_disk_root_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
+
         #### Check filesystem of current partition
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
         if (curr_filesystem == "fat32"):
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Root)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_root_Part, mount_dir_Root)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Check filesystem for FAT32
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Standard Output: {}".format(stdout))
                 if returncode == 0:
                     # Success
                     print("Partition [Root] Mounted.")
@@ -294,14 +316,13 @@ class ArchLinux():
             mount -t ext4 /dev/sdX1 /mnt/boot 
             mount -t ext4 /dev/sdX3 /mnt/home
             """
-            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Root)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_root_Part, mount_dir_Root)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Check other filesystems
                 # stdout, stderr = process.subprocess_Sync(cmd_str)
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Standard Output: {}".format(stdout))
                 if returncode == 0:
                     # Success
                     print("Partition [Root] Mounted.")
@@ -359,11 +380,14 @@ class ArchLinux():
 
         ## --- Processing
         ### Mount the volume to the path
+        #### Prepare and Format Partition according to Device Storage Controller Type for Boot partition
+        target_disk_boot_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
+
         #### Check filesystem
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {}{} {}".format(disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_boot_Part, mount_dir_Boot)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -379,7 +403,7 @@ class ArchLinux():
                     print("Error mounting Partition [Boot]")
         else:
             # Any other filesystems
-            cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, curr_part_Number, mount_dir_Boot)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_boot_Part, mount_dir_Boot)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -431,10 +455,13 @@ class ArchLinux():
 
             ## --- Processing
             ### Mount the volume to the path
+            #### Prepare and Format Partition according to Device Storage Controller Type for the current partition
+            target_disk_curr_Part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
+
             #### Check filesystem
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if part_filesystem == "fat32":
-                cmd_str = "mount -t vfat {}{} {}".format(disk_Label, part_ID, part_mount_dir)
+                cmd_str = "mount -t vfat {} {}".format(target_disk_curr_Part, part_mount_dir)
 
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
@@ -449,7 +476,7 @@ class ArchLinux():
                         # Error
                         print("Error mounting Partition [{}]".format(part_Name))
             else:
-                cmd_str = "mount -t {} {}{} {}".format(curr_filesystem, disk_Label, part_ID, part_mount_dir)
+                cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_curr_Part, part_mount_dir)
                     
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
@@ -488,8 +515,7 @@ class ArchLinux():
         print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
-            stdout, stderr, resultcode = process.subprocess_Line(cmd_str)
-            print("Standard Output: {}".format(stdout))
+            stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
 
     def fstab_Generate(self):
         """
@@ -521,76 +547,160 @@ class ArchLinux():
                 # Error
                 print("Error obtaining genfstab: {}".format(stderr))
 
-    def arch_chroot_Exec(self):
+    """
+    Chroot Actions
+    """
+    def format_chroot_Subprocess(self, cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
         """
-        Execute commands using arch-chroot due to limitations with shellscripting
+        Format and returns the command string into the subprocess command list
         """
+        return [chroot_Command, mount_Dir, shell, "-c", cmd_str]
 
-        # --- Input
-        # Local Variables
-        cfg = self.cfg
-        disk_Label = cfg["disk_Label"]
-        partition_Table = cfg["disk_partition_Table"]
-        bootloader_firmware = cfg["bootloader_firmware"]
-        dir_Mount = cfg["mount_Paths"]["Root"]
-        region = cfg["location"]["Region"]
-        city = cfg["location"]["City"]
-        language = cfg["location"]["Language"]
-        keyboard_mapping = cfg["location"]["KeyboardMapping"]
-        hostname = cfg["networkConfig_hostname"]
-        default_Kernel = cfg["default_kernel"]
-        bootloader = cfg["bootloader"]
-        bootloader_directory = cfg["bootloader_directory"]
-        bootloader_optional_Params = cfg["bootloader_Params"]
-        bootloader_target_device_Type = cfg["platform_Arch"]
+    def chroot_execute_command(self, cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
+        """
+        Generalized chroot command execution
+        """
+        # Initialize Variables
+        chroot_cmd_fmt = [chroot_Command, mount_Dir, shell, "-c", cmd_str]
+        stdout = []
+        stderr = []
+        resultcode = 0
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
 
-        # Array
+        # Process
+        if self.env.MODE != "DEBUG":
+            stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+            if resultcode == 0:
+                # Success
+                print("Standard Output: {}".format(stdout))
+            else:
+                # Error
+                print("Error: {}".format(stderr))
 
-        # Associative Array
+            # Map/Append result results
+            result["stdout"] = stdout
+            result["stderr"] = stderr
+            result["resultcode"] = resultcode
 
-        # Step 10 - 13
-        chroot_commands_final_Configs = [
+        # Output
+        return result
+
+    def chroot_execute_command_List(self, cmd_List, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
+        """
+        Generalized chroot command list execution
+        """
+        # Initialize Variables
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
+
+        if len(cmd_List) > 0:
+            for i in range(len(cmd_List)):
+                # Get current cmd
+                cmd_str = cmd_List[i]
+
+                # Formulate chroot command
+                chroot_cmd_fmt = [chroot_Command, mount_Dir, shell, "-c", cmd_str]
+
+                print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+                if self.env.MODE != "DEBUG":
+                    stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                    if resultcode == 0:
+                        # Success
+                        print("Standard Output: {}".format(stdout))
+                    else:
+                        # Error
+                        print("Error: {}".format(stderr))
+
+                    # Map/Append result results
+                    result["stdout"].append(stdout)
+                    result["stderr"].append(stderr)
+                    result["resultcode"].append(resultcode)
+
+        return result
+
+    def sync_Timezone(self, mount_Dir, region, city):
+        """
+        Synchronize Hardware Clock in chroot
+        """
+        chroot_commands = [
             # "echo ======= Time Zones ======"												            # Step 10: Time Zones
-            "echo \"(+) Time Zones\"",
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
             "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
+        ]
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
+
+    def enable_Locale(self, mount_Dir, language):
+        """
+        Uncomment and Enable locale/region
+        """
+        chroot_commands = [
             # "echo ======= Location ======"													        # Step 11: Localization;
-            "echo \"(+) Location\"",
             "sed -i '/{}/s/^#//g' /etc/locale.gen".format(language), 									# Step 11: Localization; Uncomment locale using sed
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
             "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
+        ]
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
+
+    def network_Management(self, mount_Dir, hostname):
+        """
+        Append Network Host file
+        """
+        chroot_commands = [
             # "echo ======= Network Configuration ======"										        # step 12: Network Configuration;
-            "echo \"(+) Network Configuration\"",
             "echo \"{}\" | tee -a /etc/hostname".format(hostname),										# Step 12: Network Configuration; Set Network Hostname Configuration; Create hostname file
             "echo \"127.0.0.1   localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
+        ]
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
+
+    def initialize_Ramdisk(self, mount_Dir, default_Kernel="linux"):
+        """
+        Format initial ramdisk
+        """
+        # Initialize Variables
+        chroot_commands = [
             # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
-            "echo \"(+) Making Initial Ramdisk\"",
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
         ]
-        # cmd_str = ";\n".join(chroot_commands_final_Configs)
-        for i in range(len(chroot_commands_final_Configs)):
-            # Get current cmd
-            cmd_str = chroot_commands_final_Configs[i]
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
 
-            # Formulate chroot command
-            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", cmd_str]
+        # Execute commands
+        self.chroot_execute_command_List(chroot_commands, mount_Dir)
 
-            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-            if self.env.MODE != "DEBUG":
-                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
-                if resultcode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
-                else:
-                    # Error
-                    print("Error: {}".format(stderr))
+        return result
 
-        # Step 14: User Information; Set Root Password
+    def set_root_Password(self, mount_Dir):
+        """
+        Set Root Password
+        """
+        # Initialize Variables
         str_root_passwd_change = "passwd || passwd;"
-        cmd_root_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", str_root_passwd_change]
-        print("======= Change Root Password =======")
+        cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change, mount_Dir)
+        stderr = []
+        stderr = []
+        resultcode = 0
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
+
         print("Executing: {}".format(' '.join(cmd_root_passwd_change)))
         if self.env.MODE != "DEBUG":
             proc = process.subprocess_Open(cmd_root_passwd_change, stdout=process.PIPE)
@@ -599,11 +709,9 @@ class ArchLinux():
             line = ""
             is_alive = proc.poll()
             while is_alive is None:
+                # Still working
                 print("Loading...")
 
-                # Still working
-                print("Line: {}".format(line))
-                
                 # Check if standard output stream is empty
                 if proc.stdout != None:
                     line = proc.stdout.readline()
@@ -630,104 +738,245 @@ class ArchLinux():
             stdout = proc.stdout
             stderr = proc.stderr
             resultcode = proc.returncode
-            # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
-            if resultcode == 0:
-                # Success
-                print("Standard Output: {}".format(stdout))
-            else:
-                # Error
-                print("Error: {}".format(stderr))
 
-        # --- Extra Information
+            # Map/Append result results
+            result["stdout"].append(stdout)
+            result["stderr"].append(stderr)
+            result["resultcode"].append(resultcode)
 
-        #### Step 15: Install Bootloader
-        chroot_commands_Bootloader = []
+        return result
 
-        ### NOTE:
-        ### 1. Please Edit [osdef] on top with the bootloader information before proceeding
-        ####
-        # Default Bootloader
-        if bootloader == "":
-            # Empty : Reset to 'Grub'
-            print("(-) Bootloader is not specified, we will default to Grub(2.0)")
-            bootloader="grub"
+    def install_bootloader_Packages(self, dir_Mount="/mnt", bootloader="grub", partition_Table="msdos"):
+        """
+        Install bootloader packages
+        """
+        # Initialize Variables
+        chroot_commands = []
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
 
-        # Step 15: Bootloader
         # Switch Case bootloader between grub and syslinux
+        chroot_commands.append("echo \"(+) Installing Bootloader : {}\"".format(bootloader))
         if (bootloader == "grub"):
-            # Default Bootloader Directory
-            if bootloader_directory == "":
-                # Empty : Reset to 'Grub'
-                print("(-) Sorry, $bootloader_directory is not provided, defaulting to /boot/grub")
-                bootloader_directory="/boot/grub"
-
             # Setup bootloader
-            chroot_commands_Bootloader.append("echo \"(+) Installing Bootloader : Grub\"")
-            chroot_commands_Bootloader.append("sudo pacman -S grub")						# Install Grub Package
+            chroot_commands.append("sudo pacman -S grub") # Install Grub Package
 
             # Check if partition table is GPT
             if partition_Table == "gpt":
                 # Install GPT/(U)EFI dependencies
-                chroot_commands_Bootloader.append("sudo pacman -S efibootmgr")
-    
-            # Install Bootloader
-            chroot_commands_Bootloader.append("grub-install --target={} {} {}".format(bootloader_target_device_Type, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
-
-            # Generate bootloader configuration file
-            chroot_commands_Bootloader.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
-            chroot_commands_Bootloader.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
+                chroot_commands.append("sudo pacman -S efibootmgr")
         elif bootloader == "syslinux":
             ### Syslinux bootloader support is currently still a WIP and Testing
-            chroot_commands_Bootloader.append("echo \"(+) Installing Bootloader : Syslinux\"")
-            chroot_commands_Bootloader.append("sudo pacman -S syslinux")
-            chroot_commands_Bootloader.append("mkdir -p /boot/syslinux")
-            chroot_commands_Bootloader.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
-            chroot_commands_Bootloader.append("extlinux --install /boot/syslinux")
-
-            # Check partition table
-            if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                chroot_commands_Bootloader.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
-            elif (partition_Table == "gpt"):
-                chroot_commands_Bootloader.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
-                chroot_commands_Bootloader.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
+            chroot_commands.append("sudo pacman -S syslinux")
 
         # --- Processing
 
         # Combine into a string
-        cmd_str = ";\n".join(chroot_commands_Bootloader)
-        """
-        for c in "${chroot_commands[@]}"; do
-            cmd_str+="\n$c;"
-        done
-        """
-        for i in range(len(chroot_commands_Bootloader)):
+        cmd_str = ";\n".join(chroot_commands)
+
+        # Map/Append Command String
+        result["command-string"] = cmd_str
+
+        for i in range(len(chroot_commands)):
             # Get current command
-            curr_cmd = chroot_commands_Bootloader[i]
+            curr_cmd = chroot_commands[i]
 
             # Begin
             print("Executing: {}".format(curr_cmd))
             if self.env.MODE != "DEBUG":
-                stdout, stderr, resultcode = process.chroot_exec(curr_cmd)
-                if resultcode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
-                else:
-                    # Error
-                    print("Error: {}".format(stderr))
+                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
 
-        # Cat commands into script file in mount root
+                # Map/Append result results
+                result["stdout"].append(stdout)
+                result["stderr"].append(stderr)
+                result["resultcode"].append(resultcode)
+
+        return result
+
+    def prepare_Bootloader(self, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub"):
+        """
+        Prepare Bootloader directories and Pre-Requisites
+        """
+        # Initialize Variables
+        chroot_commands = []
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
+        # Switch Case bootloader between grub and syslinux
+        if (bootloader == "grub"):
+            chroot_commands.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
+        elif bootloader == "syslinux":
+            ### Syslinux bootloader support is currently still a WIP and Testing
+            chroot_commands.append("mkdir -p /boot/syslinux")
+            chroot_commands.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
+
+        # --- Processing
+
+        # Combine into a string
+        cmd_str = ";\n".join(chroot_commands)
+
+        # Map/Append Command String
+        result["command-string"] = cmd_str
+
+        for i in range(len(chroot_commands)):
+            # Get current command
+            curr_cmd = chroot_commands[i]
+
+            # Begin
+            print("Executing: {}".format(curr_cmd))
+            if self.env.MODE != "DEBUG":
+                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
+
+                # Map/Append result results
+                result["stdout"].append(stdout)
+                result["stderr"].append(stderr)
+                result["resultcode"].append(resultcode)
+
+        return result
+
+    def install_Bootloader(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
+        """
+        Install Bootloader to the Partition Table
+        """
+        # Initialize Variables
+        chroot_commands = []
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
+        # Switch Case bootloader between grub and syslinux
+        if (bootloader == "grub"):
+            # Install Bootloader
+            chroot_commands.append("grub-install --target={} {} {}".format(bootloader_target_Architecture, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
+        elif bootloader == "syslinux":
+            ### Syslinux bootloader support is currently still a WIP and Testing
+            chroot_commands.append("extlinux --install /boot/syslinux")
+
+        # --- Processing
+
+        # Combine into a string
+        cmd_str = ";\n".join(chroot_commands)
+
+        # Map/Append Command String
+        result["command-string"] = cmd_str
+
+        for i in range(len(chroot_commands)):
+            # Get current command
+            curr_cmd = chroot_commands[i]
+
+            # Begin
+            print("Executing: {}".format(curr_cmd))
+            if self.env.MODE != "DEBUG":
+                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
+
+                # Map/Append result results
+                result["stdout"].append(stdout)
+                result["stderr"].append(stderr)
+                result["resultcode"].append(resultcode)
+
+        return result
+
+    def generate_bootloader_Configs(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
+        # Initialize Variables
+        chroot_commands = []
+        result = {
+            "stdout" : [],
+            "stderr" : [],
+            "resultcode" : [],
+            "command-string" : ""
+        }
+
+        # Switch Case bootloader between grub and syslinux
+        if (bootloader == "grub"):
+            # Generate bootloader configuration file
+            chroot_commands.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
+        elif bootloader == "syslinux":
+            ### Syslinux bootloader support is currently still a WIP and Testing
+            # Check partition table
+            if (partition_Table == "msdos") or (partition_Table == "mbr"):
+                chroot_commands.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
+            elif (partition_Table == "gpt"):
+                chroot_commands.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
+                chroot_commands.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
+
+        # --- Processing
+
+        # Combine into a string
+        cmd_str = ";\n".join(chroot_commands)
+
+        # Map/Append Command String
+        result["command-string"] = cmd_str
+
+        for i in range(len(chroot_commands)):
+            # Get current command
+            curr_cmd = chroot_commands[i]
+
+            # Begin
+            print("Executing: {}".format(curr_cmd))
+            if self.env.MODE != "DEBUG":
+                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
+
+                # Map/Append result results
+                result["stdout"].append(stdout)
+                result["stderr"].append(stderr)
+                result["resultcode"].append(resultcode)
+
+        return result
+
+    def bootloader_Management(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
+        """
+        NOTE:
+        1. Please Edit [osdef] on top with the bootloader information before proceeding
+        """
+        # Initialize Variables
+        combined_res = []
+
+        # Install bootloader packages
+        res = self.install_bootloader_Packages(dir_Mount, bootloader, partition_Table)
+        combined_res.append(res)
+
+        # Prepare Bootloader dependencies
+        res = self.prepare_Bootloader(dir_Mount, bootloader, bootloader_directory)
+        combined_res.append(res)
+
+        # Install Bootloader to partition table
+        res = self.install_Bootloader(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)
+        combined_res.append(res)
+
+        # Generate Bootloader configurations
+        res = self.generate_bootloader_Configs(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)
+        combined_res.append(res)
+
+        # Return output
+        return combined_res
+
+    def archive_command_Str(self, cmd_str, dir_Mount="/mnt"):
+        """
+        Output command string into a file for archiving
+        """
+        # Initialize Variables
         mount_Root="{}/root".format(dir_Mount)
         script_to_exe="chroot-comms.sh"
         target_directory = "{}/{}".format(mount_Root, script_to_exe)
-            
+
+        # Write commands into file for reusing
         print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
         if self.env.MODE != "DEBUG":
             with open(target_directory, "a+") as write_chroot_Commands:
+                # Write to file
                 write_chroot_Commands.write(cmd_str)
+
                 # Close file after usage
                 write_chroot_Commands.close()
-
-        print("")
 
         # Execute in arch-chroot
         # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
@@ -737,550 +986,75 @@ class ArchLinux():
             "{}/{}".format(mount_Root, script_to_exe)
         )
 
+    def arch_chroot_Exec(self):
         """
-        cmd_copy = [
-            "chmod +x {}/{}".format(mount_Root, script_to_exe), 
-            "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
-        ]
-        if self.env.MODE != "DEBUG":
-            # Loop through all actions
-            for cmd in cmd_copy:
-                ## Begin executing commands
-                print("Executing: {}".format(cmd))
-                stdout, stderr, returncode = process.subprocess_Line(cmd, stdin=process.PIPE)
-                if returncode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
+        Execute commands using arch-chroot due to limitations with shellscripting
         """
 
-    # =========================== #
-    # Post-Installation Functions #
-    # =========================== #
-    # User Management
-    def get_users_Home(self, user_name):
-        """
-        Get the home directory of a user
-
-        :: Params
-        - user_name : The name of the target user
-            Type: String
-        """
-        # Initialize Variables
-        home_dir = ""
-
-        # Validate user name is not empty
-        if user_name != "":
-            # Not Empty
-            # Get the home directory of the user
-            cmd_str = "su - {} -c \"echo $HOME\""
-            home_dir, stderr, returncode = process.subprocess_Sync(cmd_str)
-        return home_dir
-
-    def check_user_Exists(self, user_name):
-        """
-        Check if user exists
-        
-        :: Params 
-        - user_name : Specify the target user to check if exists
-            Type: String
-        """
-        exist_Token=False
-        delimiter=":"
-        cmd_res_Existence="getent passwd {}".format(user_name)
-
-        # Check if user exists
-        res_Existence, stderr, returncode = process.subprocess_Sync(cmd_res_Existence)
-
-        if res_Existence != "":
-            # Something is found
-            # Check if is the user
-            res_is_User = "echo \"{}\" | grep \"^{}:\" | cut -d ':' -f1".format(res_Existence, user_name)
-
-            if res_is_User == user_name:
-                exist_Token = True
-
-        return exist_Token
-
-    def useradd_get_default_Params(self):
-        """
-        Useradd
-            - Get Default Parameters
-        """
-        # Initialize Variables
-        user_params = {
-            # Keyword = parameters
-            "GROUP" : "",
-            "HOME"  : "",
-            "INACTIVE" : "",
-            "EXPIRE" : "",
-            "SHELL" : "",
-            "SKEL" : "",
-            "CREATE_MAIL_SPOOL" : "",
-        }
-
-        # Iterate and loop through all keywords to obtain the default parameter
-        for k,_ in user_params.items():
-            # Get parameter for specified keyword
-            tmp_cmd_str = "useradd -D | grep {} | cut -d '=' -f2".format(k)
-            curr_keyword_default_Param, stderr, returncode = process.subprocess_Sync(tmp_cmd_str)
-
-            # Map keyword to result default parameters
-            user_params[k] = curr_keyword_default_Param
-
-        # Output
-        return user_params
-
-    # Post-Installation Stages
-    def enable_sudo(self, dir_Mount="/mnt"):
-        """
-        Enabling sudo in /etc/sudoers via command line
-        """
-        # Initialize Variables
-        return_val = [] # List containing the list [stdout, stderr, resultcode] for each command output
-        postinstall_commands = [
-            ### Body ###
-            # Enable Sudo
-            "echo \"(+) Enable sudo\"",
-            # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
-            "sed -i 's/^#\\s*\\(%wheel\\s\\+ALL=(ALL:ALL)\\s\\+ALL\\)/\\1/' /etc/sudoers",
-        ]
-
-        # Run the currently set commands via chroot
-        for i in range(len(postinstall_commands)):
-            # Get current cmd
-            curr_cmd = postinstall_commands[i]
-
-            # Formulate chroot command
-            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
-
-            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-            if self.env.MODE != "DEBUG":
-                # Execute command line-by-line
-                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
-
-                # Append result to entry
-                return_val.append([stdout, stderr, resultcode])
-
-        return return_val
-
-    def postinstallation(self):
-        """
-        Post-Installation Recommendations and TODOs 
-        - To be seperated into its own individual scripts for running
-        """ 
-        ### Header ###
-
-        # Local Variable
-        dir_Mount = self.cfg["mount_Paths"]["Root"] # Look for root/mount partition
-        postinstall_commands = []
-
-        # Enable sudo
-        result = self.enable_sudo(dir_Mount)
-
-        for i in range(len(result)):
-            # Get current result
-            curr_cmd_result = result[i]
-
-            # Expand out
-            stdout, stderr, resultcode = curr_cmd_result
-
-            if resultcode == 0:
-                # Success
-                print("Standard Output: {}".format(stdout))
-            else:
-                # Error
-                print("Error: {}".format(stderr))
-
-
-        ## User Management and Creation
-        # User Management
-        print("(+) User Management")
-
-        # Loop through all users in user_profiles and
-        # See if it exists, follow above documentation
-        for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
-            # Get individual parameters
-            u_primary_Group = u_Defn[0]         # Primary Group
-            u_secondary_Groups = u_Defn[1]      # Secondary Groups
-            u_home_Dir = u_Defn[2]              # Home Directory
-            u_other_Params = u_Defn[3]          # Any other parameters after the first 3
-
-            # Check if user exists
-            print("(+) Checking for user {}...".format(u_Name))
-            if self.env.MODE == "DEBUG":
-                u_Exists = ""
-            else:
-                # Check if user exists | Empty if Not Found
-                cmd_get_Entry = "getent passwd {}".format(u_Name)
-                u_Exists, stderr, returncode = process.chroot_exec(cmd_get_Entry)
-
-            if u_Exists == "":
-                # 0 : Does not exist
-                print("(-) User [{}] does not exist".format(u_Name))
-
-                u_create_Command="useradd"
-
-                # Get Parameters
-                if u_home_Dir != "NIL":
-                    # If Home Directory is not Empty
-                    u_create_Command += " -m "
-                    u_create_Command += " -d {} ".format(u_home_Dir)
-
-                if u_primary_Group != "NIL":
-                    # If Primary Group is Not Empty
-                    u_create_Command+=" -g {} ".format(u_primary_Group)
-
-                if u_secondary_Groups != "NIL":
-                    # If Primary Group is Not Empty
-                    u_create_Command+=" -G {} ".format(u_secondary_Groups)
-
-                if u_other_Params != "NIL":
-                    # If there are any miscellenous parameters
-                    u_create_Command+=" {} ".format(u_other_Params)
-
-                u_create_Command += u_Name
-                
-                # Append the user creation process
-                postinstall_commands.append("{}".format(u_create_Command))
-
-                """
-                postinstall_commands.append("echo \"\t(+) Password change for {}\"".format(u_Name))
-                postinstall_commands.append("if [[ \"$?\" == \"0\" ]]; then")
-                postinstall_commands.append("	passwd {}".format(u_Name))
-                postinstall_commands.append("fi")
-                """
-                for i in range(len(postinstall_commands)):
-                    # Get current cmd
-                    curr_cmd = postinstall_commands[i]
-
-                    # Formulate chroot command
-                    chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
-
-                    print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-                    if self.env.MODE != "DEBUG":
-                        stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
-                        if resultcode == 0:
-                            # Success
-                            # User is created
-                            print("Standard Output: {}".format(stdout))
-
-                            # password change for the new user
-                            print("\t(+) Password change for {}\"".format(u_Name))
-                            passwd_change = "passwd {}".format(u_Name)
-                            cmd_user_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", passwd_change]
-
-                            print("Executing: {}".format(' '.join(cmd_user_passwd_change)))
-                            if self.env.MODE != "DEBUG":
-                                proc = process.subprocess_Open(cmd_user_passwd_change, stdout=process.PIPE)
-
-                                # While the process is still working
-                                line = ""
-                                is_alive = proc.poll()
-                                while is_alive is None:
-                                    print("Loading...")
-
-                                    # Still working
-                                    print("Line: {}".format(line))
-                                    
-                                    # Check if standard output stream is empty
-                                    if proc.stdout != None:
-                                        line = proc.stdout.readline()
-
-                                    # Check if standard input stream is empty
-                                    if proc.stdin != None:
-                                        # Check if line is entered
-                                        if line != "":
-                                            # Enter your secret line into the tty
-                                            proc.stdin.write('{}\n'.format(line))
-
-                                            # Enter one more time
-                                            proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
-
-                                            # Flush the standard input stream
-                                            proc.stdin.flush()
-
-                                    # Poll and check if is alive
-                                    # If poll == None: Alive, else not Alive
-                                    is_alive = proc.poll()
-                                    print("Status: {}".format(is_alive))
-
-                                # Get output, error and status code
-                                stdout = proc.stdout
-                                stderr = proc.stderr
-                                resultcode = proc.returncode
-                                # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
-                                if resultcode == 0:
-                                    # Success
-                                    print("Standard Output: {}".format(stdout))
-                                else:
-                                    # Error
-                                    print("Error: {}".format(stderr))
-                        else:
-                            # Error
-                            print("Error: {}".format(stderr))
-
-        ### Footer ###
-
-        # =============== #
-        # Execute Command #
-        # =============== #
-
-        # Combine into a string
-        cmd_str = ";\n".join(postinstall_commands)
-        """
-        cmd_str=""
-        for c in "${postinstall_commands[@]}"; do
-            cmd_str+="\n$c"
-        done
-        """
-        
-        # Cat commands into script file in mount root
-        mount_Root = "{}/root".format(dir_Mount)
-        script_to_exe = "postinstall-comms.sh"
-        target_file = "{}/{}".format(mount_Root, script_to_exe)
-
-        print("Executing: {}".format(cmd_str))
-        if self.env.MODE != "DEBUG":
-            # echo "echo -e "$cmd_str" > $mount_Root/$script_to_exe"
-            with open(target_file, "a+") as write_postinstall_Commands:
-                write_postinstall_Commands.write(cmd_str)
-                # Close file after usage
-                write_postinstall_Commands.close()
-
-        chroot_exec_Script = [
-            "chmod +x {}/{}".format(mount_Root, script_to_exe),
-            "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
-        ]
-
-        """
-        # Iterate and loop through elements of chroot_exec_Script
-        for script in chroot_exec_Script:
-            print("Executing: {}".format(script))
-            if self.env.MODE != "DEBUG":
-                # Change Permission and Execute command
-                stdout, stderr, returncode = process.subprocess_Line(script, stdin=process.PIPE)
-
-                if returncode == 0:
-                    # Success
-                    print("Standard Output: {}".format(stdout))
-        """
-
-        # Append external script path to the default variable key "external_scripts"
-        self.default_Var["external_scripts"].append(
-            ### Append all external scripts used ###
-            "{}/{}".format(mount_Root, script_to_exe)
-        )
-
-    def postinstall_todo(self):
-        msg = """
-- Please proceed to follow the 'Post-Installation' series of guides
-        and/or
-- Follow this list of recommendations:"
-
-[Post-Installation TODO]
-1. Enable multilib repository :
-    Summary:
-        If you want to run 32-bit applications on your 64-bit systems
-        Uncomment/enable the multilib repository
-    i. Edit '/etc/pacman.conf'
-    ii. Uncomment [multilib]
-    iii. Uncomment 'include = /etc/pacman.d/mirrorlist' below [multilib]
-    WIP:
-        - Automatic removal of comments in a file
-        
-# Command and Control
-2. [To validate if is done] Set sudo priviledges
-        Summary:
-            Ability to use 'sudo'
-        i. Use 'visudo' to enter the sudo file safely
-            i.e.
-                $EDITOR=vim sudo visudo
-        ii. Uncomment '%wheel ALL=(ALL) ALL' to allow all users under the group 'wheel' to access sudo (with password)
-
-# Administrative
-4. Create user account"
- 	Summary:"
- 		Create user account"
- 	i. Add user using the 'useradd' command"
- 		useradd -m -g <primary group (default: <username>) -G <secondary/supplementary groups (default: wheel)> -d <custom-profile-directory-path> <username>"
- 		i.e."
- 			useradd -m -g wheel -d /home/profiles/admin admin"
- 			useradd -m -g users -G wheel -d /home/profiles/admin admin"
- 	ii. Set password to username"
- 		passwd <username>"
- 		i.e."
- 			let <username> be 'admin':"
- 				passswd admin"
- 	iii. Test user"
- 		su - <username>"
- 		sudo whoami"
- 	iv. If part iii works : User has been created."
-
-# System Maintenance
-4. Swap File"
-		Summary:"
-			Instead of using swap partitions which are hard to change size, consider using swap files instead"
-			- Easy to resize"
-			- Easy to remove"
-			- Easy to add/allocate"
-		i. Allocate/Create swap file"
-			fallocate -l <size> /swapfile # <size> : in formats { MB | MiB | GB | GiB }"
-			i.e."
-				fallocate -l 8.0GB /swapfile"
-		ii. Change permission of swapfile to read + write"
-			chmod 600 /swapfile"
-		iii. Make swapfile"
-			mkswap /swapfile"
-		iv. Enable the swap file to begin using it"
-			swapon /swapfile"
-		v. The operating system needs to know that it is safe to use this file everytime it boots up"
-			echo \"# /swapfile\" | tee -a /etc/fstab"
-			echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
-			i.e."
-				swapfile size = 4GB"
-				fallocate -l 4G /swapfile"
-				chmod 600 /swapfile"
-				mkswap /swapfile"
-				swapon /swapfile"
-				echo \"# /swapfile\" | tee -a /etc/fstab"
-				echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
-		vi. Verify swap file"
-			ls -lh /swapfile"
-		vii. Verify swap file allocation"
-			free -h"
-		viii. If part vii works : Swap file has been created."
-        """
-        print(msg)
-
-    def postinstall_sanitize(self):
-        """
-        ==========================
-               Sanitize user      
-          To sanitize the account 
-        from any unnecessary files
-        ==========================
-        """
+        # --- Input
         # Local Variables
         cfg = self.cfg
+        disk_Label = cfg["disk_Label"]
+        partition_Table = cfg["disk_partition_Table"] # MBR|MSDOS / GPT
+        bootloader_firmware = cfg["bootloader_firmware"] # BIOS / UEFI
         dir_Mount = cfg["mount_Paths"]["Root"]
-        number_of_external_scripts = len(self.default_Var["external_scripts"])
+        region = cfg["location"]["Region"]
+        city = cfg["location"]["City"]
+        language = cfg["location"]["Language"]
+        keyboard_mapping = cfg["location"]["KeyboardMapping"]
+        hostname = cfg["networkConfig_hostname"]
+        default_Kernel = cfg["default_kernel"]
+        bootloader = cfg["bootloader"]
+        bootloader_directory = cfg["bootloader_directory"]
+        bootloader_optional_Params = cfg["bootloader_Params"]
+        bootloader_target_device_Type = cfg["platform_Arch"]
 
-        print("External Scripts created:")
-        for i in range(number_of_external_scripts):
-            print("[{}] : [{}]".format(i, self.default_Var["external_scripts"][i]))
-
-        action = input("What would you like to do to the root scripts? [(C)opy to user|(D)elete|<Leave empty to do nothing>]: ")
-        if (action == "C") or (action == "Copy"):
-            users = input("Copy to which user? [(A)ll created users|(S)elect]: ")
-
-            # Copy to stated users
-            if (users == "A") or (users == "All"):
-                # Loop through all users in user_profiles and
-                # See if it exists, follow above documentation
-                for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
-                    # Get individual parameters
-                    u_primary_Group = u_Defn[0]         # Primary Group
-                    u_secondary_Groups = u_Defn[1]      # Secondary Groups
-                    u_home_Dir = u_Defn[2]              # Home Directory
-                    u_other_Params = u_Defn[3]          # Any other parameters after the first 3
-
-                    for i in range(number_of_external_scripts):
-                        curr_script = self.default_Var["external_scripts"][i]
-                        print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                        if self.env.MODE != "DEBUG":
-                            shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
-            elif (users == "S") or (users == "Select"):
-                # User Input
-                sel_uhome = input("User name: ")
-                sel_primary_group=""
-                sel_uhome_dir=""
-
-                """
-                cmd_to_exec = [
-                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $(id -gn {})'".format(sel_uhome, sel_uhome)],
-                    ["arch-chroot", dir_Mount, "/bin/bash", "-c", "su - {} -c 'echo $HOME'".format(sel_uhome, sel_uhome)]
-                ]
-
-                if self.env.MODE == "DEBUG":
-                    print("Executing: {}".format(' '.join(cmd_to_exec[0])))
-                    print("Executing: {}".format(' '.join(cmd_to_exec[1])))
-                else:
-                    # Get the primary group of the user
-                    sel_primary_group, stderr, returncode = process.subprocess_Sync(cmd_to_exec[0])
-                    if returncode == 0:
-                        # Success
-                        print("Primary Group: {}".format(sel_primary_group))
-                    else:
-                        # Error
-                        print("Error: {}".format(stderr))
-
-                    # Get the home directory of the user
-                    sel_uhome_dir, stderr, returncode = process.subprocess_Sync(cmd_to_exec[1])
-                    if returncode == 0:
-                        # Success
-                        print("Home Directory: {}".format(sel_uhome_dir))
-                    else:
-                        # Error
-                        print("Error: {}".format(stderr))
-
-                    # Start copy
-                    for i in range(number_of_external_scripts):
-                        curr_script = self.default_Var["external_scripts"][i]
-                        print("Copying from [{}] : {} => {}/{}/".format(dir_Mount, curr_script, dir_Mount, sel_uhome_dir))
-                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, sel_uhome_dir.rstrip()))
-                """
-                # Get the target's profile info
-                target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
-
-                ## Split and obtain individual parameters
-                u_primary_Group = target_user_profile[0]         # Primary Group
-                u_secondary_Groups = target_user_profile[1]      # Secondary Groups
-                u_home_Dir = target_user_profile[2]              # Home Directory
-                u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
-
-                for i in range(number_of_external_scripts):
-                    curr_script = self.default_Var["external_scripts"][i]
-                    print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                    if self.env.MODE != "DEBUG":
-                        shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
-
-            # Reset script to let user delete if they want to
-            self.postinstall_sanitize()
-        elif (action == "D") or (action == "Delete"):
-            del_conf = input("Delete the scripts? [(Y)es|(N)o|(S)elect]: ")
-            # Yes - Delete
-            # No - Nothing
-            # Select - Allow user to choose
-            if (del_conf == "Y") or (del_conf == "Yes"):
-                # Delete all
-                for i in range(number_of_external_scripts):
-                    if self.env.MODE == "DEBUG":
-                        print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
-                    else:
-                        os.remove(self.default_Var["external_scripts"][i])
-        elif (action == "S") or (action == "Select"):
-            # Let user choose
-            # Seperate all options with delimiter ','
-            print("Please enter all files you wish to delete\n	(Seperate all options with delimiter ',')")
-            del_selections = input("> : ")
-
-            # Seperate selected options with ',' delimited
-            arr_Selected = del_selections.split(",")
-
-            # Delete selected files if not empty
-            if del_selections != "":
-                for sel in arr_Selected:
-                    # Delete selected files
-                    if self.env.MODE == "DEBUG":
-                        print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
-                    else:
-                        os.remove(self.default_Var["external_scripts"][sel])
-        else:
-            print("No action.")
+        # Chroot Execute
+        ## Synchronize Hardware Clock
+        print("(+) Time Zones : Synchronize Hardware Clock")
+        self.sync_Timezone(dir_Mount, region, city)
 
         print("")
 
-        print("Sanitization Completed.")
+        ## Enable locale/region
+        print("(+) Enable Location/Region")
+        self.enable_Locale(dir_Mount, language)
+
+        print("")
+
+        ## Append Network Host file
+        print("(+) Network Configuration")
+        self.network_Management(dir_Mount, hostname)
+
+        print("")
+
+        ## Format initial ramdisk
+        print("(+) Making Initial Ramdisk")
+        self.initialize_Ramdisk(dir_Mount, default_Kernel)
+
+        print("")
+
+        # Step 14: User Information - Set Root password
+        print("======= Change Root Password =======")
+        res = self.set_root_Password(dir_Mount)
+        stdout = res["stdout"]
+        stderr = res["stderr"]
+        resultcode = res["resultcode"] 
+        cmd_str = res["command-string"]
+        if resultcode == 0:
+            # Success
+            print("Standard Output: {}".format(stdout))
+        else:
+            # Error
+            print("Error: {}".format(stderr))
+        
+        # Step 15: Install Bootloader
+        combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+
+        # Archive the command string into a file
+        self.archive_command_Str(cmd_str, dir_Mount)
+
+        print("")
 
     def installer(self):
         """
@@ -1447,6 +1221,522 @@ class ArchLinux():
         print("Installation Completed.")
         print("=======================")
 
+
+# =========================== #
+# Post-Installation Functions #
+# =========================== #
+class PostInstallation():
+    """
+    Class for the Post-Installation functions in the installation library/framework
+    """
+    def __init__(self, setup, base_mechanism_Obj=None):
+        # Local Variables
+        self.setup = setup
+        self.cfg = self.setup.cfg
+        dir_Mount = self.cfg["mount_Paths"]["Root"]
+        number_of_external_scripts = len(base_mechanism_Obj.default_Var["external_scripts"])
+
+        if base_mechanism_Obj == None:
+            # Initialize defaults from configuration file if no base installation object is specified
+            self.init_Config()
+
+    def init_Config(self):
+        """
+        Initialize defaults from configuration file if base installation is not used
+        """
+        # Update setup to the latest
+        self.update_setup(self.setup)
+
+    # Callback/Event Utility functions
+    def update_setup(self, setup):
+        self.setup = setup
+        self.env = setup.env
+        self.cfg = setup.cfg
+        self.default_Var = setup.default_Var
+
+    def print_configurations(self):
+        print(self.cfg)
+
+    def postinstall_todo(self):
+        msg = """
+- Please proceed to follow the 'Post-Installation' series of guides
+        and/or
+- Follow this list of recommendations:"
+
+[Post-Installation TODO]
+1. Enable multilib repository :
+    Summary:
+        If you want to run 32-bit applications on your 64-bit systems
+        Uncomment/enable the multilib repository
+    i. Edit '/etc/pacman.conf'
+    ii. Uncomment [multilib]
+    iii. Uncomment 'include = /etc/pacman.d/mirrorlist' below [multilib]
+    WIP:
+        - Automatic removal of comments in a file
+        
+# Command and Control
+2. [To validate if is done] Set sudo priviledges
+        Summary:
+            Ability to use 'sudo'
+        i. Use 'visudo' to enter the sudo file safely
+            i.e.
+                $EDITOR=vim sudo visudo
+        ii. Uncomment '%wheel ALL=(ALL) ALL' to allow all users under the group 'wheel' to access sudo (with password)
+
+# Administrative
+4. Create user account"
+ 	Summary:"
+ 		Create user account"
+ 	i. Add user using the 'useradd' command"
+ 		useradd -m -g <primary group (default: <username>) -G <secondary/supplementary groups (default: wheel)> -d <custom-profile-directory-path> <username>"
+ 		i.e."
+ 			useradd -m -g wheel -d /home/profiles/admin admin"
+ 			useradd -m -g users -G wheel -d /home/profiles/admin admin"
+ 	ii. Set password to username"
+ 		passwd <username>"
+ 		i.e."
+ 			let <username> be 'admin':"
+ 				passswd admin"
+ 	iii. Test user"
+ 		su - <username>"
+ 		sudo whoami"
+ 	iv. If part iii works : User has been created."
+
+# System Maintenance
+4. Swap File"
+		Summary:"
+			Instead of using swap partitions which are hard to change size, consider using swap files instead"
+			- Easy to resize"
+			- Easy to remove"
+			- Easy to add/allocate"
+		i. Allocate/Create swap file"
+			fallocate -l <size> /swapfile # <size> : in formats { MB | MiB | GB | GiB }"
+			i.e."
+				fallocate -l 8.0GB /swapfile"
+		ii. Change permission of swapfile to read + write"
+			chmod 600 /swapfile"
+		iii. Make swapfile"
+			mkswap /swapfile"
+		iv. Enable the swap file to begin using it"
+			swapon /swapfile"
+		v. The operating system needs to know that it is safe to use this file everytime it boots up"
+			echo \"# /swapfile\" | tee -a /etc/fstab"
+			echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
+			i.e."
+				swapfile size = 4GB"
+				fallocate -l 4G /swapfile"
+				chmod 600 /swapfile"
+				mkswap /swapfile"
+				swapon /swapfile"
+				echo \"# /swapfile\" | tee -a /etc/fstab"
+				echo \"/swapfile none swap defaults 0 0\" | tee -a /etc/fstab"
+		vi. Verify swap file"
+			ls -lh /swapfile"
+		vii. Verify swap file allocation"
+			free -h"
+		viii. If part vii works : Swap file has been created."
+        """
+        print(msg)
+
+    def postinstall_sanitize(self):
+        """
+        ==========================
+               Sanitize user      
+          To sanitize the account 
+        from any unnecessary files
+        ==========================
+        """
+        # Local Variables
+        cfg = self.cfg
+        dir_Mount = cfg["mount_Paths"]["Root"]
+        number_of_external_scripts = len(self.default_Var["external_scripts"])
+
+        print("External Scripts created:")
+        for i in range(number_of_external_scripts):
+            print("[{}] : [{}]".format(i, self.default_Var["external_scripts"][i]))
+
+        print("")
+
+        action = input("What would you like to do to the root scripts? [(C)opy to user|(D)elete|<Leave empty to do nothing>]: ")
+        if (action == "C") or (action == "Copy"):
+            users = input("Copy to which user? [(A)ll created users|(S)elect]: ")
+
+            # Copy to stated users
+            if (users == "A") or (users == "All"):
+                # Loop through all users in user_profiles and
+                # See if it exists, follow above documentation
+                for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
+                    # Get individual parameters
+                    u_primary_Group = u_Defn[0]         # Primary Group
+                    u_secondary_Groups = u_Defn[1]      # Secondary Groups
+                    u_home_Dir = u_Defn[2]              # Home Directory
+                    u_other_Params = u_Defn[3]          # Any other parameters after the first 3
+
+                    for i in range(number_of_external_scripts):
+                        curr_script = self.default_Var["external_scripts"][i]
+                        print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
+                        if self.env.MODE != "DEBUG":
+                            shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+            elif (users == "S") or (users == "Select"):
+                # User Input
+                sel_uhome = input("User name: ")
+                sel_primary_group=""
+                sel_uhome_dir=""
+
+                # Check if username is in the dictionary
+                if sel_uhome in self.cfg["user_ProfileInfo"]:
+                    # Username is in
+                    # Get the target's profile info
+                    target_user_profile = self.cfg["user_ProfileInfo"][sel_uhome]
+
+                    ## Split and obtain individual parameters
+                    u_primary_Group = target_user_profile[0]         # Primary Group
+                    u_secondary_Groups = target_user_profile[1]      # Secondary Groups
+                    u_home_Dir = target_user_profile[2]              # Home Directory
+                    u_other_Params = target_user_profile[3]          # Any other parameters after the first 3
+
+                    # Check if user directory exists
+                    dir_to_Validate = "{}/{}".format(dir_Mount, u_home_Dir)
+                    if os.path.isdir(dir_to_Validate):
+                        ## Directory exists
+                        for i in range(number_of_external_scripts):
+                            curr_script = self.default_Var["external_scripts"][i]
+                            print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
+                            if self.env.MODE != "DEBUG":
+                                shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
+                    else:
+                        ## Directory does not exist
+                        print("User home directory [{}] does not exist.".format(dir_to_Validate))
+                else:
+                    print("User {} does not exist.".format(sel_uhome))
+
+            print("")
+
+            # Reset script to let user delete if they want to
+            self.postinstall_sanitize()
+        elif (action == "D") or (action == "Delete"):
+            del_conf = input("Delete the scripts? [(Y)es|(N)o|(S)elect]: ")
+            # Yes - Delete
+            # No - Nothing
+            # Select - Allow user to choose
+            if (del_conf == "Y") or (del_conf == "Yes"):
+                # Delete all
+                for i in range(number_of_external_scripts):
+                    if self.env.MODE == "DEBUG":
+                        print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
+                    else:
+                        os.remove(self.default_Var["external_scripts"][i])
+            elif (action == "S") or (action == "Select"):
+                # Let user choose
+                # Seperate all options with delimiter ','
+                print("Please enter all files you wish to delete\n	(Seperate all options with delimiter ',')")
+                del_selections = input("> : ")
+
+                # Seperate selected options with ',' delimited
+                arr_Selected = del_selections.split(",")
+
+                # Delete selected files if not empty
+                if del_selections != "":
+                    for sel in arr_Selected:
+                        # Delete selected files
+                        if self.env.MODE == "DEBUG":
+                            print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
+                        else:
+                            os.remove(self.default_Var["external_scripts"][sel])
+        else:
+            print("No action.")
+
+    # User Management
+    def get_users_Home(self, user_name):
+        """
+        Get the home directory of a user
+
+        :: Params
+        - user_name : The name of the target user
+            Type: String
+        """
+        # Initialize Variables
+        home_dir = ""
+
+        # Validate user name is not empty
+        if user_name != "":
+            # Not Empty
+            # Get the home directory of the user
+            cmd_str = "su - {} -c \"echo $HOME\""
+            home_dir, stderr, returncode = process.subprocess_Sync(cmd_str)
+        return home_dir
+
+    def check_user_Exists(self, user_name):
+        """
+        Check if user exists
+        
+        :: Params 
+        - user_name : Specify the target user to check if exists
+            Type: String
+        """
+        exist_Token=False
+        delimiter=":"
+        cmd_res_Existence="getent passwd {}".format(user_name)
+
+        # Check if user exists
+        res_Existence, stderr, returncode = process.subprocess_Sync(cmd_res_Existence)
+
+        if res_Existence != "":
+            # Something is found
+            # Check if is the user
+            res_is_User = "echo \"{}\" | grep \"^{}:\" | cut -d ':' -f1".format(res_Existence, user_name)
+
+            if res_is_User == user_name:
+                exist_Token = True
+
+        return exist_Token
+
+    def useradd_get_default_Params(self):
+        """
+        Useradd
+            - Get Default Parameters
+        """
+        # Initialize Variables
+        user_params = {
+            # Keyword = parameters
+            "GROUP" : "",
+            "HOME"  : "",
+            "INACTIVE" : "",
+            "EXPIRE" : "",
+            "SHELL" : "",
+            "SKEL" : "",
+            "CREATE_MAIL_SPOOL" : "",
+        }
+
+        # Iterate and loop through all keywords to obtain the default parameter
+        for k,_ in user_params.items():
+            # Get parameter for specified keyword
+            tmp_cmd_str = "useradd -D | grep {} | cut -d '=' -f2".format(k)
+            curr_keyword_default_Param, stderr, returncode = process.subprocess_Sync(tmp_cmd_str)
+
+            # Map keyword to result default parameters
+            user_params[k] = curr_keyword_default_Param
+
+        # Output
+        return user_params
+
+    # Post-Installation Stages
+    def enable_sudo(self, dir_Mount="/mnt"):
+        """
+        Enabling sudo in /etc/sudoers via command line
+        """
+        # Initialize Variables
+        return_val = [] # List containing the list [stdout, stderr, resultcode] for each command output
+        postinstall_commands = [
+            ### Body ###
+            # Enable Sudo
+            # PostInstall Must Do | Step 1: Enable sudo for group 'wheel'
+            "sed -i 's/^#\\s*\\(%wheel\\s\\+ALL=(ALL:ALL)\\s\\+ALL\\)/\\1/' /etc/sudoers",
+        ]
+
+        # Run the currently set commands via chroot
+        for i in range(len(postinstall_commands)):
+            # Get current cmd
+            curr_cmd = postinstall_commands[i]
+
+            # Formulate chroot command
+            chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
+
+            print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+            if self.env.MODE != "DEBUG":
+                # Execute command line-by-line
+                stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+
+                # Append result to entry
+                return_val.append([stdout, stderr, resultcode])
+
+        return return_val
+
+    def postinstallation(self):
+        """
+        Post-Installation Recommendations and TODOs 
+        - To be seperated into its own individual scripts for running
+        """ 
+        ### Header ###
+
+        # Local Variable
+        dir_Mount = self.cfg["mount_Paths"]["Root"] # Look for root/mount partition
+        postinstall_commands = []
+
+        # Enable sudo
+        print("(+) Enable sudo")
+        result = self.enable_sudo(dir_Mount)
+
+        for i in range(len(result)):
+            # Get current result
+            curr_cmd_result = result[i]
+
+            # Expand out
+            stdout, stderr, resultcode = curr_cmd_result
+
+            if resultcode == 0:
+                # Success
+                print("Standard Output: {}".format(stdout))
+            else:
+                # Error
+                print("Error: {}".format(stderr))
+
+        print("")
+
+        ## User Management and Creation
+        # User Management
+        print("(+) User Management")
+
+        # Loop through all users in user_profiles and
+        # See if it exists, follow above documentation
+        for u_Name, u_Defn in self.cfg["user_ProfileInfo"].items():
+            # Get individual parameters
+            u_primary_Group = u_Defn[0]         # Primary Group
+            u_secondary_Groups = u_Defn[1]      # Secondary Groups
+            u_home_Dir = u_Defn[2]              # Home Directory
+            u_other_Params = u_Defn[3]          # Any other parameters after the first 3
+
+            # Check if user exists
+            print("(+) Checking for user {}...".format(u_Name))
+            if self.env.MODE == "DEBUG":
+                u_Exists = ""
+            else:
+                # Check if user exists | Empty if Not Found
+                cmd_get_Entry = "getent passwd {}".format(u_Name)
+                u_Exists, stderr, returncode = process.chroot_exec(cmd_get_Entry, dir_Mount=dir_Mount)
+
+            if u_Exists == "":
+                # 0 : Does not exist
+                print("(-) User [{}] does not exist".format(u_Name))
+
+                u_create_Command="useradd"
+
+                # Get Parameters
+                if u_home_Dir != "NIL":
+                    # If Home Directory is not Empty
+                    u_create_Command += " -m "
+                    u_create_Command += " -d {} ".format(u_home_Dir)
+
+                if u_primary_Group != "NIL":
+                    # If Primary Group is Not Empty
+                    u_create_Command+=" -g {} ".format(u_primary_Group)
+
+                if u_secondary_Groups != "NIL":
+                    # If Primary Group is Not Empty
+                    u_create_Command+=" -G {} ".format(u_secondary_Groups)
+
+                if u_other_Params != "NIL":
+                    # If there are any miscellenous parameters
+                    u_create_Command+=" {} ".format(u_other_Params)
+
+                u_create_Command += u_Name
+                
+                # Append the user creation process
+                postinstall_commands.append("{}".format(u_create_Command))
+
+                for i in range(len(postinstall_commands)):
+                    # Get current cmd
+                    curr_cmd = postinstall_commands[i]
+
+                    # Formulate chroot command
+                    chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
+
+                    print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
+                    if self.env.MODE != "DEBUG":
+                        stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                        if resultcode == 0:
+                            # Success
+                            # User is created
+                            print("Standard Output: {}".format(stdout))
+
+                            # password change for the new user
+                            print("\t(+) Password change for {}\"".format(u_Name))
+                            passwd_change = "passwd {}".format(u_Name)
+                            cmd_user_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", passwd_change]
+
+                            print("Executing: {}".format(' '.join(cmd_user_passwd_change)))
+                            if self.env.MODE != "DEBUG":
+                                proc = process.subprocess_Open(cmd_user_passwd_change, stdout=process.PIPE)
+
+                                # While the process is still working
+                                line = ""
+                                is_alive = proc.poll()
+                                while is_alive is None:
+                                    # Still working
+                                    print("Loading...")
+
+                                    # Check if standard output stream is empty
+                                    if proc.stdout != None:
+                                        line = proc.stdout.readline()
+
+                                    # Check if standard input stream is empty
+                                    if proc.stdin != None:
+                                        # Check if line is entered
+                                        if line != "":
+                                            # Enter your secret line into the tty
+                                            proc.stdin.write('{}\n'.format(line))
+
+                                            # Enter one more time
+                                            proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
+
+                                            # Flush the standard input stream
+                                            proc.stdin.flush()
+
+                                    # Poll and check if is alive
+                                    # If poll == None: Alive, else not Alive
+                                    is_alive = proc.poll()
+                                    print("Status: {}".format(is_alive))
+
+                                # Get output, error and status code
+                                stdout = proc.stdout
+                                stderr = proc.stderr
+                                resultcode = proc.returncode
+                                # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
+                                if resultcode == 0:
+                                    # Success
+                                    print("Standard Output: {}".format(stdout))
+                                else:
+                                    # Error
+                                    print("Error: {}".format(stderr))
+                        else:
+                            # Error
+                            print("Error: {}".format(stderr))
+
+        ### Footer ###
+
+        # =============== #
+        # Execute Command #
+        # =============== #
+
+        # Combine into a string
+        cmd_str = ";\n".join(postinstall_commands)
+        
+        # Cat commands into script file in mount root
+        mount_Root = "{}/root".format(dir_Mount)
+        script_to_exe = "postinstall-comms.sh"
+        target_file = "{}/{}".format(mount_Root, script_to_exe)
+
+        print("Executing: {}".format(cmd_str))
+        if self.env.MODE != "DEBUG":
+            # echo "echo -e "$cmd_str" > $mount_Root/$script_to_exe"
+            with open(target_file, "a+") as write_postinstall_Commands:
+                write_postinstall_Commands.write(cmd_str)
+                # Close file after usage
+                write_postinstall_Commands.close()
+
+        chroot_exec_Script = [
+            "chmod +x {}/{}".format(mount_Root, script_to_exe),
+            "arch-chroot {} /bin/bash -c \"/root/{}\"".format(dir_Mount, script_to_exe)
+        ]
+
+        # Append external script path to the default variable key "external_scripts"
+        self.default_Var["external_scripts"].append(
+            ### Append all external scripts used ###
+            "{}/{}".format(mount_Root, script_to_exe)
+        )
+
+    # Main Post-Installer
+    def postinstaller(self):
         print("")
 
         print("=================")
@@ -1485,4 +1775,5 @@ class ArchLinux():
         print("(D) Basic Post-Installation processes completed.")
 
         finish = input("(D) Finished, press anything to quit.")
+
 
