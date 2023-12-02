@@ -14,6 +14,7 @@
     + v0.2.6  | 2023-11-28 2200H | Development
     + v0.2.10 | 2023-11-29 2012H | Development
     + v0.2.11 | 2023-12-02 0905H | Development
+    + v0.2.12 | 2023-12-02 0949H | Development
     + v0.3.0  | - | Development
 
 ## Entries
@@ -239,6 +240,13 @@
         - Renamed Base Installation class 'ArchLinux' into 'BaseInstallation'
     - Updated document 'runner.py' in 'src/app'
         - Changed base installation class from 'ArchLinux' into 'BaseInstallation'
+
+### v0.2.12
+- Updates
+    - Updated document 'README.md' 
+        - Added primary documentations - synopsis/syntax, parameters and usage
+    - Updated document 'main.py' in 'src/'
+        - Added documentation and usage examples for '--list-stages' and '--execute-stage'
 
 ### v0.3.0
 - Feature Change

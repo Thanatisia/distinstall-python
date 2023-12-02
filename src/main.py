@@ -80,9 +80,9 @@ Command Line (CLI) Arguments:
             + --cfdisk                  : Open up cfdisk for manual partition configuration
             + --list-stages             : List all installation steps/stages of the target platform to install
             + -v | --version            : Display system version information
+            + start                     : Start the full base installer + post-installer process
 
     - Positional Parameters
-        + start : Start the installer
 
 Modes:
 	+ DEBUG (Default) : Test install; Allows you to see all the commands that will be executed if you set the MODE to 'RELEASE'; set by default to prevent accidental reinstallation/overwriting
@@ -122,6 +122,12 @@ Examples:
 
     - Start installation (with custom configuration file)
         sudo python {cliparser.exec} -c "new config file" -d "/dev/sdX" -m RELEASE start
+
+    - List all installation stages
+        sudo python {cliparser.exec} --list-stages
+
+    - Execute specific stages
+        sudo python {cliparser.exec} --execute-stage 1 --execute-stage 2 .... -m RELEASE
 
     - Open up fdisk for manual partition configuration
         sudo python {cliparser.exec} --fdisk

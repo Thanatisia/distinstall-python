@@ -144,14 +144,102 @@ Currently, this rewrite is in python as it is a good language for prototyping an
 
 ### Parameters
 - Positionals
-    + start : Confirm and Begin the installation
 - Optionals
     - With Arguments
-        + `--execute-stage [stage-number]` : Specify a target installation stage number to execute and executes it; You can append this option to execute all the steps in chronological order
-        + `-m | --mode [DEBUG|RELEASE]` : Explicitly specify the program run mode; Default: DEBUG; Set this to 'RELEASE' to allow changes to be made; You can also set the Environment Variable 'MODE' to 'RELEASE'.
+        + `-c [config-file-name] | --config      [config-file-name]` : Set custom configuration file name
+        + `-d [target-disk-name] | --target-disk [target-disk-name]` : Set target disk name
+        + `-e [default-editor]   | --editor      [default-editor]`   : Set default text editor
+        + `-m [DEBUG|RELEASE]    | --mode        [DEBUG|RELEASE]`    : Set mode (DEBUG|RELEASE)
+        + `--execute-stage [stage-number]`                           : Specify an installation stage number to execute
     - Flags
+        + --display-options         : Display all options
+        + -g | --generate-config    : Generate configuration file
+        + --print-config            : Import configuration file, load it and print contents
+        + -h | --help               : Display this help menu and all commands/command line arguments
+        + --fdisk                   : Open up fdisk for manual partition configuration
+        + --cfdisk                  : Open up cfdisk for manual partition configuration
+        + --list-stages             : List all installation steps/stages of the target platform to install
+        + -v | --version            : Display system version information
+        + start                     : Start the full base installer + post-installer process
+
+### Modes
++ DEBUG (Default) : Test install; Allows you to see all the commands that will be executed if you set the MODE to 'RELEASE'; set by default to prevent accidental reinstallation/overwriting
++ RELEASE : Performs the real RELEASE; must use with sudo
+
+### Environment Variables
++ TARGET_DISK_NAME : This is used in the environment variable to specify the target disk you want to install with
++ MODE : This indicates the execution permission of the application; Default: DEBUG; Set this to 'RELEASE' to begin and commit execution and changes to be made
 
 ### Usage
+- Generate configuration file
+    ```console
+    python main.py --generate-config
+    ```
+
+- Default (Test Install; Did not specify target disk name explicitly)
+    ```console
+    sudo python main.py start
+    ```
+
+- Test Install; with target disk name specified as flag
+    ```console
+    sudo python main.py -d "/dev/sdX" start
+    ```
+
+- Test Install; with target disk name specified with environment variable TARGET_DISK_NAME
+    ```console
+    sudo TARGET_DISK_NAME="/dev/sdX" python main.py start
+    ```
+
+- Test Install; with custom configuration file
+    ```console
+    sudo python main.py -c "new config file" -d "/dev/sdX" start
+    ```
+
+- Start installation (Did not specify target disk name explicitly)
+    ```console
+    sudo python main.py -m RELEASE start
+    ```
+
+- Start installation with the start mode specified with environment variable 'MODE'
+    ```console
+    sudo MODE=RELEASE python main.py start
+    ```
+
+- Start installation (with target disk name specified as flag)
+    ```console
+    sudo python main.py -d "/dev/sdX" -m RELEASE start
+    ```
+
+- Start installation (with target disk name specified with environment variable TARGET_DISK_NAME)
+    ```console
+    sudo TARGET_DISK_NAME="/dev/sdX" python main.py -m RELEASE start
+    ```
+
+- Start installation (with custom configuration file)
+    ```console
+    sudo python main.py -c "new config file" -d "/dev/sdX" -m RELEASE start
+    ```
+
+- List all installation stages
+    ```console
+    sudo python main.py --list-stages
+    ```
+
+- Execute specific stages
+    ```console
+    sudo python main.py --execute-stage 1 --execute-stage 2 .... -m RELEASE
+    ```
+
+- Open up fdisk for manual partition configuration
+    ```console
+    sudo python main.py --fdisk
+    ```
+
+- Open up fdisk for manual partition configuration
+    ```console
+    sudo python main.py --cfdisk
+    ```
 
 ### Notes
 + For more information on usage and customization, please refer to [USAGE.md](USAGE.md)
