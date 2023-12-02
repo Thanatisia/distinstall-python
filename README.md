@@ -193,15 +193,15 @@ project-root/
 + [ ] Migration from Linux Bash Shellscript to Python
 - [ ] Configuration File Handling and Support
     - [ ] Key-Values
-        - [ ] user_ProfileInfo
-            - [ ] Change ['secondary_Groups'] into a list instead of a standalone
-        - [ ] Plan to rename "device_Type" into "storage_Controller" for a better, more accurate name, OR to add a separate group called "storage_Controller"
+        - [X] user_ProfileInfo
+            - [X] Change ['secondary_Groups'] into a list instead of a standalone
+        - [X] Plan to rename "device_Type" into "storage_Controller" for a better, more accurate name, OR to add a separate group called "storage_Controller"
         - [ ] Change configuration naming scheme
     - [ ] Support for JSON
-    - [ ] Support for segmented running - Running only specific steps at any one time
-    - [ ] Support for different disk medium typings
-        - [O] NVME : /dev/nvme[disk-number]p[partition-number]
-        - [O] Loopback device : /dev/loop[loopback-number]p[partition-number]
+    - [X] Support for segmented running - Running only specific steps at any one time
+    - Support for different disk medium typings
+        - [X] NVME : /dev/nvme[disk-number]p[partition-number]
+        - [X] Loopback device : /dev/loop[loopback-number]p[partition-number]
 - [ ] Planned Quality-of-Life changes
     - [ ] Improved Readability
         + [ ] Usage of proper data structure objects such as Dictionary for Key-value mappings and Lists for Arrays and iterative data objects
@@ -209,6 +209,7 @@ project-root/
     - [ ] Improved portability, customizability and modularity
         + [ ] Configuration File I/O: Using YAML serialized data object for configuration file handling instead of shellscript sourcing (and potentially classic JSON support, as well as other configuration file types if enough support and works)
         + [ ] Convenience: Easier to perform rewrites (if necessary)
+        + [ ] Easier distribution methods - i.e. Compilation into binary using compilers for python like pyinstaller
 - [ ] Bug Fixes
     + [ ] Fixed technical terminologies and makes it easier to understand
 

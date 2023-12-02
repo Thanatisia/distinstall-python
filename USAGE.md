@@ -4,7 +4,10 @@
 - [Users](#users)
     + [Steps](#steps)
 - [Developers](#developers)
-    + [Dependencies and Importing](#dependencies-and-importing)
+    - [Dependencies and Importing](#dependencies-and-importing)
+        + [Modules](#importing-modules)
+    - [Class Initialization](#class-initialization)
+        + [Examples](#class-initialization-examples)
 - [Project Structure](#project-structure)
     + [Format](#format)
     + [Components](#project-components)
@@ -71,7 +74,7 @@
 
 ## Developers
 ### Dependencies and Importing
-#### Modules
+#### Importing Modules
 - Linux Distributions Module
     ```python
     import app.distributions as dist
@@ -90,7 +93,7 @@
     ```
 
 ### Class Initialization
-#### Examples
+#### Class Initialization Examples
 - Initialize distribution's Base Installation class object
     - ArchLinux
         ```python
