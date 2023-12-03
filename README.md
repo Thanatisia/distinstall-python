@@ -35,26 +35,7 @@
             [virtual-environment]\Scripts\activate
             ```
 
-- Install dependencies
-    - From requirements.txt
-        ```console
-        python -m pip install -Ur requirements.txt
-        ```
-
-- (Optional) If you are installing into a Virtual Disk Image on Host
-    - Mount Disk Image and Partitions as loopback devices
-        - Using losetup
-            - Pre-Requisites
-                + losetup
-            - Explanation
-                - Parameters
-                    + -P
-                    + -f : Print the first available loop device
-            ```console
-            sudo losetup -Pf [path-to-virtual-hard-disk-img]
-            ```
-
-- Performing within a non-ArchLinux system
+- (Optional) Performing within a non-ArchLinux system
     - Create a chroot environment with pacman/for ArchLinux
         - Using 'archlinux/devtools'
             - Dependencies
@@ -72,7 +53,7 @@
                         - Afterwhich, the packages and package groups specified - in this case, 'base' - will be bootstrapped and installed into the chroot environment's filesystem
                             + 'base' is the package group that contains the root filesystem, this is necessary to make a working environment
                 ```console
-                mkarchchroot chroots/root base
+                mkarchchroot chroots/root base base-devel vim dhcpcd python3 python-pip python-ruamel-yaml
                 ```
 
         - Edit the mirrorlist within the chroot environment to facilitate the downgrade
@@ -101,6 +82,25 @@
                 ```console
                 pacman -Syu
                 ```
+
+- Install dependencies
+    - From requirements.txt
+        ```console
+        python -m pip install -Ur requirements.txt
+        ```
+
+- (Optional) If you are installing into a Virtual Disk Image on Host
+    - Mount Disk Image and Partitions as loopback devices
+        - Using losetup
+            - Pre-Requisites
+                + losetup
+            - Explanation
+                - Parameters
+                    + -P
+                    + -f : Print the first available loop device
+            ```console
+            sudo losetup -Pf [path-to-virtual-hard-disk-img]
+            ```
 
 ### Compiling into an executable
 > Still undergoing tests

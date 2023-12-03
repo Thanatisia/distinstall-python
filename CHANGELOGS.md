@@ -18,6 +18,7 @@
     + v0.2.13 | 2023-12-02 1020H | Merged to main
     + v0.3.0  | 2023-12-02 1024H | Merged to main
     + v0.3.1  | 2023-12-03 2251H | Development
+    + v0.3.2  | 2023-12-03 2344H | Development
 
 ## Entries
 
@@ -294,4 +295,10 @@
 - Testing
     - Installing using a non-ArchLinux system
          - Debian
+
+### v0.3.2
+- Updates
+    - README.md
+        - Reorganized and placed pre-rquisite 'If you are using a non-ArchLinux distribution' above 'Install Dependencies'
+        - Added additional packages to the mkarchroot corresponding to the depedencies when bootstrapping the root filesystem
 
