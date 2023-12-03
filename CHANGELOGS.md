@@ -19,6 +19,7 @@
     + v0.3.0  | 2023-12-02 1024H | Merged to main
     + v0.3.1  | 2023-12-03 2251H | Development
     + v0.3.2  | 2023-12-03 2344H | Development
+    + v0.3.3  | 2023-12-03 2354H | Development
 
 ## Entries
 
@@ -301,4 +302,9 @@
     - README.md
         - Reorganized and placed pre-rquisite 'If you are using a non-ArchLinux distribution' above 'Install Dependencies'
         - Added additional packages to the mkarchroot corresponding to the depedencies when bootstrapping the root filesystem
+
+### v0.3.3
+- Upates
+    - README.md
+        - Added 'git' and 'arch-install-scripts' into the bootstrap package list
 
