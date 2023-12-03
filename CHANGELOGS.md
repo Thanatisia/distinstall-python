@@ -7,16 +7,17 @@
     + v0.1.1  | 2023-09-26 2223H | Merged to main
     + v0.2.0  | 2023-09-27 2106H | Merged to main
     + v0.2.1  | 2023-09-30 1650H | Merged to main
-    + v0.2.2  | 2023-11-28 1708H | Development
-    + v0.2.3  | 2023-11-28 1945H | Development
-    + v0.2.4  | 2023-11-28 2018H | Development
-    + v0.2.5  | 2023-11-28 2112H | Development
-    + v0.2.6  | 2023-11-28 2200H | Development
-    + v0.2.10 | 2023-11-29 2012H | Development
-    + v0.2.11 | 2023-12-02 0905H | Development
-    + v0.2.12 | 2023-12-02 0949H | Development
-    + v0.2.13 | 2023-12-02 1020H | Development
-    + v0.3.0  | 2023-12-02 1024H | Development
+    + v0.2.2  | 2023-11-28 1708H | Merged to main
+    + v0.2.3  | 2023-11-28 1945H | Merged to main
+    + v0.2.4  | 2023-11-28 2018H | Merged to main
+    + v0.2.5  | 2023-11-28 2112H | Merged to main
+    + v0.2.6  | 2023-11-28 2200H | Merged to main
+    + v0.2.10 | 2023-11-29 2012H | Merged to main
+    + v0.2.11 | 2023-12-02 0905H | Merged to main
+    + v0.2.12 | 2023-12-02 0949H | Merged to main
+    + v0.2.13 | 2023-12-02 1020H | Merged to main
+    + v0.3.0  | 2023-12-02 1024H | Merged to main
+    + v0.3.1  | 2023-12-03 2251H | Development
 
 ## Entries
 
@@ -283,4 +284,14 @@
         - Updated Documentations to match the latest version and options
         - Added Usage examples
 
+### v0.3.1
+- Updates
+    - README.md
+         - Converted 'Information' from a block into sentences
+         - Added additional dependencies
+         - Added new pre-requisite: If you are using a non-ArchLinux distribution
+
+- Testing
+    - Installing using a non-ArchLinux system
+         - Debian
 
