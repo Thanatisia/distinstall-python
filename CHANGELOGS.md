@@ -24,6 +24,7 @@
     + v0.3.5  | 2023-12-04 1253H | Development
     + v0.3.6  | 2023-12-04 1331H | Development
     + v0.3.7  | 2023-12-04 2141H | Development
+    + v0.3.8  | 2023-12-04 2200H | Development
 
 ## Entries
 
@@ -348,4 +349,11 @@
         - Added links
     - Updated document 'pkglist.txt'
         - Added 'vim'
+
+### v0.3.8
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Added function 'check_package_manager_Configurations(self, mount_Dir)' to check for the package manager's configuration files (i.e. pacman.conf) because certain scenarios 
+            - may cause pacstrap to generate a rootfs without pacman.conf
+        - Added class variable 'package_manager_Configurations' to hold the package manager's configuration file default template
 
