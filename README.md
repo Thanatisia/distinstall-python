@@ -135,6 +135,15 @@
                 ```console
                 docker exec -it [container-name] [shell]
                 ```
+            - (Optional) If you are using the default official image(s)
+                - ArchLinux
+                    ```console
+                    docker exec -it [container-name] /bin/bash -c "pacman -Syu && pacman -S base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml
+                    ```
+                - Debian
+                    ```console
+                    docker exec -it [container-name] /bin/bash -c "apt update -y && apt upgrade -y && apt install -y base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml
+                    ```
 
         - In the chroot environment
             - Update accordingly

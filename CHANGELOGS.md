@@ -25,6 +25,7 @@
     + v0.3.6  | 2023-12-04 1331H | Development
     + v0.3.7  | 2023-12-04 2141H | Development
     + v0.3.8  | 2023-12-04 2200H | Development
+    + v0.3.9  | 2023-12-04 2243H | Development
 
 ## Entries
 
@@ -356,4 +357,14 @@
         - Added function 'check_package_manager_Configurations(self, mount_Dir)' to check for the package manager's configuration files (i.e. pacman.conf) because certain scenarios 
             - may cause pacstrap to generate a rootfs without pacman.conf
         - Added class variable 'package_manager_Configurations' to hold the package manager's configuration file default template
+
+### v0.3.9
+- Updates
+    - Updated document 'README.md'
+         - Added optional step for setting up the docker chroot environment if using the official images
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Added and tested package manager configuration file checking and validation for ArchLinux - in this case, /etc/pacman.conf - within the generated rootfs using pacstrap
+            - If the bootstrapped root filesystem contents do not contain '/etc/pacman.conf', it will copy from the host
+            - If the copy fails, it will generate from the package manager configuration file template string class variable in the Class
+                - Each distribution installer template will contain a different configuration file template
 

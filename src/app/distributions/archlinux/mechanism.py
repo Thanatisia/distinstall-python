@@ -645,9 +645,10 @@ Include = /etc/pacman.d/mirrorlist
         cfg = self.cfg
         base_packages = cfg["base_pkgs"]
         mount_Point = cfg["mount_Paths"]["Root"]
-
-        # Check package manager configuration file
-        self.check_package_manager_Configurations(mount_Point)
+        stdout = None
+        stderr = None
+        resultcode = -1
+        success_Flag = False
 
         # --- Processing
         cmd_str = "pacstrap {} {}".format(mount_Point, ' '.join(base_packages))
@@ -656,6 +657,15 @@ Include = /etc/pacman.d/mirrorlist
         if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
             stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
+
+        # Check package manager configuration file
+        self.check_package_manager_Configurations(mount_Point)
+
+        # Check result code
+        if resultcode == 0:
+            success_Flag = True
+
+        return stdout, stderr, resultcode
 
     def fstab_Generate(self):
         """
