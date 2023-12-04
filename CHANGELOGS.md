@@ -26,6 +26,7 @@
     + v0.3.7  | 2023-12-04 2141H | Development
     + v0.3.8  | 2023-12-04 2200H | Development
     + v0.3.9  | 2023-12-04 2243H | Development
+    + v0.3.10 | 2023-12-04 2333H | Development
 
 ## Entries
 
@@ -367,4 +368,15 @@
             - If the bootstrapped root filesystem contents do not contain '/etc/pacman.conf', it will copy from the host
             - If the copy fails, it will generate from the package manager configuration file template string class variable in the Class
                 - Each distribution installer template will contain a different configuration file template
+
+### v0.3.10
+- New
+    - Added new document 'setup-debian.sh' and 'setup-archlinux.sh' in 'docker'
+        - Shellscript to automatically startup the docker image of the respective chroot environments you wish to startup, and install the dependencies to prepare for use
+        - Use this if you wish to use the official images and not the prebuilt Dockerfiles
+- Updates
+    - Updated document 'README.md'
+        - Added basic docker setup instructions
+    - Updated document 'debian.Dockerfile' in 'docker'
+        - Changed packages and dependencies
 

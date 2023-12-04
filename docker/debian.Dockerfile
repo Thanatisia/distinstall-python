@@ -7,7 +7,7 @@ FROM debian:latest
 
 ## Update packages and Install dependencies
 RUN apt update -y && apt upgrade -y && \
-    apt install -y git base-devel vim arch-install-scripts parted
+    apt install -y git build-essential vim arch-install-scripts parted
 
 ## Set Networking
 

@@ -80,6 +80,18 @@
                 ```
 
         - Using docker
+            - Setup
+                - Dependencies
+                    + docker
+                    + (Optional) docker-compose
+                - Add your user into the 'docker' group to be able to use docker-compose and docker functionalities
+                    ```console
+                    sudo usermod -aG docker [username]
+                    ```
+                - Restart your system to refresh the permission
+                    ```console
+                    sudo reboot now
+                    ```
             - Pull latest archlinux image
                 ```console
                 docker pull archlinux:latest
@@ -138,11 +150,11 @@
             - (Optional) If you are using the default official image(s)
                 - ArchLinux
                     ```console
-                    docker exec -it [container-name] /bin/bash -c "pacman -Syu && pacman -S base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml
+                    docker exec -it [container-name] /bin/bash -c "pacman -Syu && pacman -S base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml"
                     ```
                 - Debian
                     ```console
-                    docker exec -it [container-name] /bin/bash -c "apt update -y && apt upgrade -y && apt install -y base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml
+                    docker exec -it [container-name] /bin/bash -c "apt update -y && apt upgrade -y && apt install -y base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml"
                     ```
 
         - In the chroot environment
