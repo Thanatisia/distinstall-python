@@ -23,6 +23,7 @@
     + v0.3.4  | 2023-12-04 1246H | Development
     + v0.3.5  | 2023-12-04 1253H | Development
     + v0.3.6  | 2023-12-04 1331H | Development
+    + v0.3.7  | 2023-12-04 2141H | Development
 
 ## Entries
 
@@ -333,4 +334,18 @@
         - Added CLI support for new parameter '-u | --unmount'
     - README.md
         - Added documentation for new parameter '-u | --unmount' 
+
+### v0.3.7
+- New
+    - Added folder 'docker' for storing docker-support files
+        - Added document 'archlinux.Dockerfile' in 'docker' for creating a pre-defined ArchLinux chroot environment for installation by creating a docker container for each distribution (In case is necessary) with useful and essential packages
+        - Added document 'debian.Dockerfile' in 'docker' for creating a pre-defined Debian chroot environment for installation by creating a docker container for each distribution (In case is necessary) with useful and essential packages
+- Updates
+    - Updated document 'README.md'
+        - Added instructions on how to create a root filesystem chroot environment using docker
+        - Indenting
+    - Updated document 'REFERENCES.md' in folder 'docs'
+        - Added links
+    - Updated document 'pkglist.txt'
+        - Added 'vim'
 
