@@ -1,0 +1,5 @@
+arch-install-scripts
+dhcpcd
+parted
+python3
+

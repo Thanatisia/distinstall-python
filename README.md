@@ -84,7 +84,18 @@
                 pacman -Syu
                 ```
 
-- Install dependencies
+- Install system dependencies
+    - From pkglist
+        - If using pacman
+            ```console
+            pacman -S - < pkglist.txt
+            ```
+        - If using apt
+            ```console
+            apt install < pkglist.txt
+            ```
+
+- Install python dependencies
     - From requirements.txt
         ```console
         python -m pip install -Ur requirements.txt

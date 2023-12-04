@@ -21,6 +21,7 @@
     + v0.3.2  | 2023-12-03 2344H | Development
     + v0.3.3  | 2023-12-03 2354H | Development
     + v0.3.4  | 2023-12-04 1246H | Development
+    + v0.3.5  | 2023-12-04 1253H | Development
 
 ## Entries
 
@@ -313,4 +314,14 @@
 - Upates
     - README.md
         - Added 'parted' into the bootstrap package list
+
+### v0.3.5
+- New
+    - Added new document 'pkglist.txt' containing all system-related dependencies/packages
+
+- Upates
+    - README.md
+        - Added instructions to install system dependencies from file 'pkglist.txt
+        - Added 'python' to the existing python-related dependency installation instructions
+
 
