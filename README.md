@@ -212,6 +212,7 @@
         + `-d [target-disk-name] | --target-disk [target-disk-name]` : Set target disk name
         + `-e [default-editor]   | --editor      [default-editor]`   : Set default text editor
         + `-m [DEBUG|RELEASE]    | --mode        [DEBUG|RELEASE]`    : Set mode (DEBUG|RELEASE)
+        + `-u [mount-point]      | --unmount     [mount-point]`      : Unmount the drive from the mount points specified in the configuration file
         + `--execute-stage [stage-number]`                           : Specify an installation stage number to execute
     - Flags
         + --display-options         : Display all options
@@ -241,6 +242,11 @@
 - Default (Test Install; Did not specify target disk name explicitly)
     ```console
     sudo python main.py start
+    ```
+
+- Unmount the drive from the mount points specified in the configuration file
+    ```console
+    sudo python main.py -u [root-mount-point]
     ```
 
 - Test Install; with target disk name specified as flag

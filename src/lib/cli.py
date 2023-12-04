@@ -21,6 +21,7 @@ class CLIParser():
                 "generate-config" : False,
                 "print-config" : False,
                 "list-stages" : False,
+                "unmount" : False,
                 ## Configurations
                 "CUSTOM_CONFIGURATION_FILENAME" : "config.yaml",
                 "TARGET_DISK_NAME" : None,
@@ -28,6 +29,7 @@ class CLIParser():
                 "MODE" : "DEBUG",
                 "CFDISK_TARGET" : None,
                 "FDISK_TARGET" : None,
+                "ROOTFS_MOUNT_PATH" : None,
                 "STAGES" : [],
             },
             "positionals" : []
@@ -118,6 +120,20 @@ class CLIParser():
 
                     # Set element into configurations file
                     configurations["optionals"]["MODE"] = mode
+                elif (curr_arg == "-u") or (curr_arg == "--unmount"):
+                    """
+                    Unmount the drive from the mount points specified in the configuration file
+                    """
+                    # Set as true
+                    configurations["optionals"]["unmount"] = True
+
+                    ## Set editor
+                    i, rootfs_mount_Path = self.get_cli_subarguments(argv, i)
+                    ### Check if argument is empty
+                    if rootfs_mount_Path != "":
+                        # Not Empty
+                        # Set element into configurations file
+                        configurations["optionals"]["ROOTFS_MOUNT_PATH"] = rootfs_mount_Path
                 elif (curr_arg == "--display-options"):
                     """
                     Display Options only

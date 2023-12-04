@@ -70,6 +70,7 @@ Command Line (CLI) Arguments:
             + -d [target-disk-name] | --target-disk [target-disk-name] : Set target disk name
             + -e [default-editor]   | --editor      [default-editor]   : Set default text editor
             + -m [DEBUG|RELEASE]    | --mode        [DEBUG|RELEASE]    : Set mode (DEBUG|RELEASE)
+            + -u [mount-point]      | --unmount     [mount-point]      : Unmount the drive from the mount points specified in the configuration file
             + --execute-stage [stage-number]                           : Specify an installation stage number to execute
         - Flags
             + --display-options         : Display all options
@@ -98,6 +99,9 @@ Examples:
 
     - Default (Test Install; Did not specify target disk name explicitly)
         python {cliparser.exec} start
+
+    - Unmount the drive from the mount points specified in the configuration file
+        sudo python {cliparser.exec} -u [root-mount-point]
 
     - Test Install; with target disk name specified as flag
         python {cliparser.exec} -d "/dev/sdX" start
@@ -269,6 +273,25 @@ def body():
             if (curr_opt_val == True):
                 app.list_steps()
                 exit(1)
+        elif (curr_opt == "unmount"):
+            if (curr_opt_val == True):
+                # Get the specified mount point (if any)
+                ## Check if 'Root' is in mount paths
+                if "Root" in list(setup.cfg["mount_Paths"].keys()):
+                    ## Root is specified
+                    dir_Mount = setup.cfg["mount_Paths"]["Root"]
+                else:
+                    ## Root is not specified
+                    dir_Mount = cliparser.configurations["optionals"]["ROOTFS_MOUNT_PATH"]
+
+                # Unmount the drive from the mount points specified in the configuration file
+                result_code:int = os.system("umount -l {}".format(dir_Mount))
+                if result_code == 0:
+                    # Success
+                    print("Mount point [{}] Unmounted.".format(dir_Mount))
+                else:
+                    # Error
+                    print("Error encountered: result code = {}".format(result_code))
         elif (curr_opt == "MODE"):
             if (curr_opt_val != None):
                 # Get the new mode (if any)

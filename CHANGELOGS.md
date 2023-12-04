@@ -22,6 +22,7 @@
     + v0.3.3  | 2023-12-03 2354H | Development
     + v0.3.4  | 2023-12-04 1246H | Development
     + v0.3.5  | 2023-12-04 1253H | Development
+    + v0.3.6  | 2023-12-04 1331H | Development
 
 ## Entries
 
@@ -319,9 +320,17 @@
 - New
     - Added new document 'pkglist.txt' containing all system-related dependencies/packages
 
-- Upates
+- Updates
     - README.md
         - Added instructions to install system dependencies from file 'pkglist.txt
         - Added 'python' to the existing python-related dependency installation instructions
 
+### v0.3.6
+- Updates
+    - main.py
+        - Added calling and runner support for new parameter '-u | --unmount' for Unmounting the drive from the mount points specified in the config file
+    - cli.py
+        - Added CLI support for new parameter '-u | --unmount'
+    - README.md
+        - Added documentation for new parameter '-u | --unmount' 
 
