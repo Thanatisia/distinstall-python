@@ -9,6 +9,7 @@
 ## Setup
 ### Dependencies
 - pacman
+- parted
 - arch-install-scripts
     + pacstrap
 + dd
@@ -53,7 +54,7 @@
                         - Afterwhich, the packages and package groups specified - in this case, 'base' - will be bootstrapped and installed into the chroot environment's filesystem
                             + 'base' is the package group that contains the root filesystem, this is necessary to make a working environment
                 ```console
-                mkarchchroot chroots/root base base-devel git arch-install-scripts vim dhcpcd python3 python-pip python-ruamel-yaml
+                mkarchchroot chroots/root base base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml
                 ```
 
         - Edit the mirrorlist within the chroot environment to facilitate the downgrade

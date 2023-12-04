@@ -20,6 +20,7 @@
     + v0.3.1  | 2023-12-03 2251H | Development
     + v0.3.2  | 2023-12-03 2344H | Development
     + v0.3.3  | 2023-12-03 2354H | Development
+    + v0.3.4  | 2023-12-04 1246H | Development
 
 ## Entries
 
@@ -307,4 +308,9 @@
 - Upates
     - README.md
         - Added 'git' and 'arch-install-scripts' into the bootstrap package list
+
+### v0.3.4
+- Upates
+    - README.md
+        - Added 'parted' into the bootstrap package list
 
