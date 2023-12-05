@@ -116,7 +116,7 @@ def subprocess_Line(cmd_str, **opts):
 
     proc.wait()
 
-    stdout = proc.stdout
+    # stdout = proc.stdout
     stderr = proc.stderr
     ret_Code = proc.returncode
 

@@ -156,6 +156,13 @@
                     ```console
                     docker exec -it [container-name] /bin/bash -c "apt update -y && apt upgrade -y && apt install -y base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml"
                     ```
+            - After initial startup 
+                - Explanation
+                    + If you did not remove the container, you can just start the container back up after every restart if you require the chroot environment
+                - Start up the container
+                    ```console
+                    docker start [container-name]
+                    ```
 
         - In the chroot environment
             - Update accordingly

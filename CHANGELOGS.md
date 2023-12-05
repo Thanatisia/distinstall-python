@@ -27,6 +27,7 @@
     + v0.3.8  | 2023-12-04 2200H | Development
     + v0.3.9  | 2023-12-04 2243H | Development
     + v0.3.10 | 2023-12-04 2333H | Development
+    + v0.3.11 | 2023-12-05 1946H | Development
 
 ## Entries
 
@@ -379,4 +380,14 @@
         - Added basic docker setup instructions
     - Updated document 'debian.Dockerfile' in 'docker'
         - Changed packages and dependencies
+
+### v0.3.11
+- Updates
+    - Updated document 'README.md'
+        - Added steps for after initial startup of docker chroot environment
+    - Updated document 'device_management.py' in 'src/lib'
+        - Added a simple implementation of a blkid UUID reference function
+    - Updated document 'process.py' in 'src/lib'
+        - Changed result 'stdout' in function 'subprocess_Line()' to not take in from the process pipe instead
+
 
