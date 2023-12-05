@@ -674,28 +674,56 @@ Include = /etc/pacman.d/mirrorlist
         # --- Input
         # Local Variables
         cfg = self.cfg
-        dir_Mount = cfg["mount_Paths"]["Root"] # Look for root/mount partition
+        disk_Label = cfg["disk_Label"]
+        mount_Points = cfg["mount_Paths"]
+        partition_Scheme = cfg["partition_Scheme"]
+        dir_Mount = mount_Points["Root"] # Look for root/mount partition
+        fstab_Contents = []
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
-        cmd_str = "genfstab -U {}".format(dir_Mount)
+        # cmd_str = "genfstab -U {}".format(dir_Mount)
 
         # Execute and get fstab content from command and write into /etc/fstab
-        print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
+            # Obtain disk block information
+            block_Info:dict = device_management.get_block_Information(disk_Label)
+            curr_disk_block_info = block_Info[disk_Label]
+
             ## Begin generating filesystems table
-            filesystems_table, stderr, returncode = process.subprocess_Sync(cmd_str)
-            if returncode == 0:
+            if len(curr_disk_block_info) > 0:
                 # Success
                 # Write into [mount-point]/etc/fstab
                 with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
+                    # Loop through all key values in block information
+                    for i in range(len(curr_disk_block_info)):
+                        # Get current row dictionary
+                        curr_Row = curr_disk_block_info[i]
+                        
+                        # Get current partition's mount point
+                        curr_partition = partition_Scheme[i]
+                        curr_partition_Name = curr_partition[0]
+                        curr_partition_mount_Point = mount_Points[curr_partition_Name]
+
+                        # Get block details
+                        partition_Label = curr_Row["partition-label"]
+                        device_UUID = curr_Row["device-uuid"]
+                        block_Size = curr_Row["block-size"]
+                        filesystem_Type = curr_Row["filesystem-type"]
+                        partition_UUID = curr_Row["partition-uuid"]
+
+                        # Append row into contents list
+                        if curr_partition_Name == "Root":
+                            filesystem_Entry = "{}\nUUID={}\t{}\t{}\t{}rw,relatime\t0 1".format(partition_Label, partition_UUID, curr_partition_mount_Point, filesystem_Type)
+                        else:
+                            filesystem_Entry = "{}\nUUID={}\t{}\t{}\t{}rw,relatime\t0 2".format(partition_Label, partition_UUID, curr_partition_mount_Point, filesystem_Type)
+
+                        fstab_Contents.append(filesystem_Entry)
+
                     # Write fstab content into file
-                    write_fstab.writelines(filesystems_table)
+                    write_fstab.writelines(fstab_Contents)
 
                     # Close file after usage
                     write_fstab.close()
-            else:
-                # Error
-                print("Error obtaining genfstab: {}".format(stderr))
 
     """
     Chroot Actions
