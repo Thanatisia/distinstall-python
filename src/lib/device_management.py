@@ -49,40 +49,68 @@ def get_block_Information(disk_Label):
     block_Information = {disk_Label : []}
 
     # Obtain block information
-    cmd_str = "blkid {}".format(disk_Label)
-    stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+    cmd_str = "blkid".format(disk_Label)
+    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
+
+    print("Standard Output: {}".format(stdout))
 
     # Format stdout to block information
     if stdout != None:
+        # Split standard output into rows of entries
+        block_Entries = stdout.split("\n")[::-1][1:][::-1]
+        print("ITERATING")
         # Iterate through every row
-        for i in range(len(stdout)):
+        for i in range(len(block_Entries)):
             # Get current row
-            curr_row = stdout[i]
+            curr_row = block_Entries[i]
+            print("Current Row: {}".format(curr_row))
 
             # Split the current row by the spacing
             curr_row_spl = curr_row.split(" ")
 
+            print("Split value: {}".format(curr_row_spl))
+
+            print("Disk Label: {}".format(disk_Label))
+
             # Split the first element by the delimiter ': '
-            partition_label = curr_row_spl[0].split(": ")[0]
+            partition_label = curr_row_spl[0].split(":")[0]
+            print("Partition Label: {}".format(partition_label))
 
-            # Obtain other block info
-            curr_row_block_Info = curr_row_spl[1:]
+            # Check if specified partition label is in the disk label string
+            print(partition_label.split(disk_Label))
+            if (len(partition_label.split(disk_Label)) > 1):
+                # After split, there are multiple entries because split was successful
+                print("IS IN")
+                print(partition_label)
 
-            # Split the block info into keywords and values
-            curr_row_block_Mapping = {
-                "partition-label" : partition_label,
-                "device-uuid" : curr_row_block_Info[0].split("=")[1],
-                "block-size" : curr_row_block_Info[1].split("=")[1],
-                "filesystem-type" : curr_row_block_Info[2].split("=")[1],
-                "partition-uuid" : curr_row_block_Info[3].split("=")[1]
-            }
+                # Get partition number from partition label
+                partition_Number = partition_label.split(disk_Label)[1:][0]
+                print("Partition Number: {}".format(partition_Number))
 
-            # Map current row disk label to the block information
-            block_Information[disk_Label].append(
-                {
-                    i : curr_row_block_Mapping
+                # Obtain other block info
+                curr_row_block_Info = curr_row_spl[1:]
+                print("Block Info: {}".format(curr_row_block_Info))
+
+                # Split the block info into keywords and values
+                curr_row_block_Mapping = {
+                    "partition-label" : partition_label,
+                    "device-uuid" : curr_row_block_Info[0].split("=")[1],
+                    "block-size" : curr_row_block_Info[1].split("=")[1],
+                    "filesystem-type" : curr_row_block_Info[2].split("=")[1],
+                    "partuuid" : curr_row_block_Info[3].split("=")[1]
                 }
-            )
+
+                # Map current row disk label to the block information
+                block_Information[disk_Label].append(
+                    {
+                        partition_Number : curr_row_block_Mapping
+                    }
+                )
+
+                print("Append!")
+            print("")
+
+    print("COMPLETE")
 
     return block_Information
 

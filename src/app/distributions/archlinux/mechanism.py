@@ -656,7 +656,8 @@ Include = /etc/pacman.d/mirrorlist
         print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
-            stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
+            # stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
+            resultcode = os.system(cmd_str)
 
         # Check package manager configuration file
         self.check_package_manager_Configurations(mount_Point)
@@ -673,6 +674,7 @@ Include = /etc/pacman.d/mirrorlist
         """
         # --- Input
         # Local Variables
+        default_root_Path = "/"
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         mount_Points = cfg["mount_Paths"]
@@ -688,37 +690,83 @@ Include = /etc/pacman.d/mirrorlist
             # Obtain disk block information
             block_Info:dict = device_management.get_block_Information(disk_Label)
             curr_disk_block_info = block_Info[disk_Label]
+            for i in range(len(curr_disk_block_info)):
+                curr_block = curr_disk_block_info[i]
+                print("Current Block: {}".format(curr_block))
 
             ## Begin generating filesystems table
             if len(curr_disk_block_info) > 0:
                 # Success
+                print("Success!")
                 # Write into [mount-point]/etc/fstab
-                with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
+                with open("{}/etc/fstab".format("."), "a+") as write_fstab:
                     # Loop through all key values in block information
+                    print(curr_disk_block_info)
                     for i in range(len(curr_disk_block_info)):
-                        # Get current row dictionary
-                        curr_Row = curr_disk_block_info[i]
-                        
                         # Get current partition's mount point
-                        curr_partition = partition_Scheme[i]
-                        curr_partition_Name = curr_partition[0]
-                        curr_partition_mount_Point = mount_Points[curr_partition_Name]
+                        curr_partition_Mappings = curr_disk_block_info[i]
+                        print("Current Partition Mapping: {}".format(curr_partition_Mappings))
+                        print("Partition Scheme: {}".format(partition_Scheme))
 
-                        # Get block details
-                        partition_Label = curr_Row["partition-label"]
-                        device_UUID = curr_Row["device-uuid"]
-                        block_Size = curr_Row["block-size"]
-                        filesystem_Type = curr_Row["filesystem-type"]
-                        partition_UUID = curr_Row["partition-uuid"]
+                        # Loop through current partition key value mappings
+                        for part_Number,part_Details in curr_partition_Mappings.items():
+                            # Convert partition number to integer
+                            part_Number = int(part_Number)
 
-                        # Append row into contents list
-                        if curr_partition_Name == "Root":
-                            filesystem_Entry = "{}\nUUID={}\t{}\t{}\t{}rw,relatime\t0 1".format(partition_Label, partition_UUID, curr_partition_mount_Point, filesystem_Type)
-                        else:
-                            filesystem_Entry = "{}\nUUID={}\t{}\t{}\t{}rw,relatime\t0 2".format(partition_Label, partition_UUID, curr_partition_mount_Point, filesystem_Type)
+                            # Get partition scheme corresponding to the current partition number
+                            curr_partition = partition_Scheme[part_Number]
+                            print("Current Partition Scheme: {}".format(curr_partition))
 
-                        fstab_Contents.append(filesystem_Entry)
+                            # Get current partition's number
+                            curr_partition_Name = curr_partition[0]
+                            print("Current Partition Name: {}".format(curr_partition_Name))
 
+                            # Get current partition's mount point
+                            curr_partition_mount_Point = mount_Points[curr_partition_Name]
+                            print("Current Partition Mount Point: {}".format(curr_partition_mount_Point))
+
+                            # Get block details
+                            partition_Label = part_Details["partition-label"]
+                            device_UUID = part_Details["device-uuid"]
+                            block_Size = part_Details["block-size"]
+                            filesystem_Type = part_Details["filesystem-type"]
+                            partition_UUID = part_Details["partuuid"]
+
+                            print("Append")
+
+                            # Get partition number
+                            partition_Number = partition_Label.split(disk_Label)[1:][0]
+                            print("Partition Number: {}".format(partition_Number))
+
+                            # Format mount path
+                            ## Remove mount directory from current path
+                            system_mount_Dir = curr_partition_mount_Point.split(dir_Mount)[1:][0]
+
+                            ## Set default path if mount path not found (Root)
+                            if system_mount_Dir == "":
+                                system_mount_Dir = default_root_Path
+                            
+                            print("System Mount Directory: {}".format(system_mount_Dir))
+
+                            # Design filesystem entry for this row
+                            filesystem_Entry = "# {}\nUUID={}\t{}\t{}\trw,relatime\t".format(partition_Label, device_UUID, system_mount_Dir, filesystem_Type)
+
+                            if curr_partition_Name == "Root":
+                                filesystem_Entry += "0 1"
+                            else:
+                                filesystem_Entry += "0 2"
+
+                            print("Current Row's Filesystem Entry: {}".format(filesystem_Entry))
+
+                            # Append row into contents list
+                            fstab_Contents.append(filesystem_Entry)
+
+                            # Append newline
+                            fstab_Contents.append("\n")
+
+                            print("")
+
+                    print("File contents: {}".format(fstab_Contents))
                     # Write fstab content into file
                     write_fstab.writelines(fstab_Contents)
 
