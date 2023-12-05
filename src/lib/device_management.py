@@ -3,7 +3,7 @@ Device and Disk Management
 """
 import os
 import sys
-import process
+import lib.process as process
 
 def format_partition_str(disk_Label, partition_Number=0, storage_Controller="sata"):
     """

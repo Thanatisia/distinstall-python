@@ -28,6 +28,7 @@
     + v0.3.9  | 2023-12-04 2243H | Development
     + v0.3.10 | 2023-12-04 2333H | Development
     + v0.3.11 | 2023-12-05 1946H | Development
+    + v0.3.12 | 2023-12-05 2006H | Development
 
 ## Entries
 
@@ -390,4 +391,8 @@
     - Updated document 'process.py' in 'src/lib'
         - Changed result 'stdout' in function 'subprocess_Line()' to not take in from the process pipe instead
 
+### v0.3.12
+- Updates
+    - Updated document 'device_management.py' in 'src/lib'
+        - Fixed import mistake
 
