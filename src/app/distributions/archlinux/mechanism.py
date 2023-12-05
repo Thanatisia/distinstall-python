@@ -699,7 +699,7 @@ Include = /etc/pacman.d/mirrorlist
                 # Success
                 print("Success!")
                 # Write into [mount-point]/etc/fstab
-                with open("{}/etc/fstab".format("."), "a+") as write_fstab:
+                with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
                     # Loop through all key values in block information
                     print(curr_disk_block_info)
                     for i in range(len(curr_disk_block_info)):
