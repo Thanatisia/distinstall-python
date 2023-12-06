@@ -725,12 +725,12 @@ Include = /etc/pacman.d/mirrorlist
                             curr_partition_mount_Point = mount_Points[curr_partition_Name]
                             print("Current Partition Mount Point: {}".format(curr_partition_mount_Point))
 
-                            # Get block details
-                            partition_Label = part_Details["partition-label"]
-                            device_UUID = part_Details["device-uuid"]
-                            block_Size = part_Details["block-size"]
-                            filesystem_Type = part_Details["filesystem-type"]
-                            partition_UUID = part_Details["partuuid"]
+                            # Get block details and Sanitize block details
+                            partition_Label = part_Details["partition-label"].strip('\"')
+                            device_UUID = part_Details["device-uuid"].strip('\"')
+                            block_Size = part_Details["block-size"].strip('\"')
+                            filesystem_Type = part_Details["filesystem-type"].strip('\"')
+                            partition_UUID = part_Details["partuuid"].strip('\"')
 
                             print("Append")
 
