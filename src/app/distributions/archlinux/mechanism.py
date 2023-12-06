@@ -690,23 +690,16 @@ Include = /etc/pacman.d/mirrorlist
             # Obtain disk block information
             block_Info:dict = device_management.get_block_Information(disk_Label)
             curr_disk_block_info = block_Info[disk_Label]
-            for i in range(len(curr_disk_block_info)):
-                curr_block = curr_disk_block_info[i]
-                print("Current Block: {}".format(curr_block))
 
             ## Begin generating filesystems table
             if len(curr_disk_block_info) > 0:
                 # Success
-                print("Success!")
                 # Write into [mount-point]/etc/fstab
                 with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
                     # Loop through all key values in block information
-                    print(curr_disk_block_info)
                     for i in range(len(curr_disk_block_info)):
                         # Get current partition's mount point
                         curr_partition_Mappings = curr_disk_block_info[i]
-                        print("Current Partition Mapping: {}".format(curr_partition_Mappings))
-                        print("Partition Scheme: {}".format(partition_Scheme))
 
                         # Loop through current partition key value mappings
                         for part_Number,part_Details in curr_partition_Mappings.items():
@@ -715,15 +708,12 @@ Include = /etc/pacman.d/mirrorlist
 
                             # Get partition scheme corresponding to the current partition number
                             curr_partition = partition_Scheme[part_Number]
-                            print("Current Partition Scheme: {}".format(curr_partition))
 
                             # Get current partition's number
                             curr_partition_Name = curr_partition[0]
-                            print("Current Partition Name: {}".format(curr_partition_Name))
 
                             # Get current partition's mount point
                             curr_partition_mount_Point = mount_Points[curr_partition_Name]
-                            print("Current Partition Mount Point: {}".format(curr_partition_mount_Point))
 
                             # Get block details and Sanitize block details
                             partition_Label = part_Details["partition-label"].strip('\"')
@@ -732,11 +722,8 @@ Include = /etc/pacman.d/mirrorlist
                             filesystem_Type = part_Details["filesystem-type"].strip('\"')
                             partition_UUID = part_Details["partuuid"].strip('\"')
 
-                            print("Append")
-
                             # Get partition number
                             partition_Number = partition_Label.split(disk_Label)[1:][0]
-                            print("Partition Number: {}".format(partition_Number))
 
                             # Format mount path
                             ## Remove mount directory from current path
@@ -746,8 +733,6 @@ Include = /etc/pacman.d/mirrorlist
                             if system_mount_Dir == "":
                                 system_mount_Dir = default_root_Path
                             
-                            print("System Mount Directory: {}".format(system_mount_Dir))
-
                             # Design filesystem entry for this row
                             filesystem_Entry = "# {}\nUUID={}\t{}\t{}\trw,relatime\t".format(partition_Label, device_UUID, system_mount_Dir, filesystem_Type)
 
@@ -756,17 +741,12 @@ Include = /etc/pacman.d/mirrorlist
                             else:
                                 filesystem_Entry += "0 2"
 
-                            print("Current Row's Filesystem Entry: {}".format(filesystem_Entry))
-
                             # Append row into contents list
                             fstab_Contents.append(filesystem_Entry)
 
                             # Append newline
                             fstab_Contents.append("\n")
 
-                            print("")
-
-                    print("File contents: {}".format(fstab_Contents))
                     # Write fstab content into file
                     write_fstab.writelines(fstab_Contents)
 
