@@ -340,30 +340,33 @@ Include = /etc/pacman.d/mirrorlist
 
         print("(D) Partition Completed. ")
 
-    def mount_Disks(self):
+    def mount_partition_Root(self, disk_Label, root_Dir, partition_Scheme, storage_controller, partition_Name="Root", partition_Number=1):
         """
-        Mount Disks and Partitions
-        """
-        
-        # --- Input
-        # Local Variables
-        cfg = self.cfg
-        disk_Label = cfg["disk_Label"]
-        partition_Table = cfg["disk_partition_Table"]
-        device_medium_Type = cfg["device_Type"]
-        storage_controller = cfg["storage-controller"]
+        Mount Root Partition
 
+        :: Params
+        - root_Dir : The root partition mount path
+            Type: String
+
+        - partition_Scheme : Key-Value Mapping of the partition scheme design
+            Type: Dictionary
+
+        - partition_Name : Name of the current partition
+            Type: String
+            Default: Root
+
+        - partition_Number : The partition number
+            Type: Integer
+            Default: 1
         """
-        Mount root partition
-        """
-        mount_dir_Root = cfg["mount_Paths"]["Root"]
+        # Initialize Variables
 
         ## Create directories if does not exists
-        if not (os.path.isdir(mount_dir_Root)):
+        if not (os.path.isdir(root_Dir)):
             ### Directory does not exist
-            cmd_str = "mkdir -p {}".format(mount_dir_Root)
+            cmd_str = "mkdir -p {}".format(root_Dir)
 
-            print("Directory {} does not exist, creating directory...".format(mount_dir_Root))
+            print("Directory {} does not exist, creating directory...".format(root_Dir))
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Mount root partition
@@ -371,14 +374,13 @@ Include = /etc/pacman.d/mirrorlist
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
-            print("Directory {} exists.".format(mount_dir_Root))
+            print("Directory {} exists.".format(root_Dir))
 
         ## --- Processing
         ### Mount the volume to the path
         #### Get information of current partition
-        partition_Scheme = cfg["partition_Scheme"].copy()
-        target_Partition = "Root"
-        curr_part_Number = 1
+        target_Partition = partition_Name
+        curr_part_Number = partition_Number
 
         ##### Search for partition number of the Root partition
         for k,v in partition_Scheme.items():
@@ -403,7 +405,7 @@ Include = /etc/pacman.d/mirrorlist
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
         if (curr_filesystem == "fat32"):
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {} {}".format(target_disk_root_Part, mount_dir_Root)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_root_Part, root_Dir)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -423,7 +425,7 @@ Include = /etc/pacman.d/mirrorlist
             mount -t ext4 /dev/sdX1 /mnt/boot 
             mount -t ext4 /dev/sdX3 /mnt/home
             """
-            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_root_Part, mount_dir_Root)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_root_Part, root_Dir)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -440,19 +442,33 @@ Include = /etc/pacman.d/mirrorlist
         ### Unset/Remove Root partition from mount list
         partition_Scheme.pop(curr_part_Number)
 
-        print("")
+    def mount_partition_Boot(self, disk_Label, boot_Dir, partition_Scheme, storage_controller, partition_Name="Boot", partition_Number=2):
+        """
+        Mount Boot Partition
 
+        :: Params
+        - root_Dir : The root partition mount path
+            Type: String
+
+        - partition_Scheme : Key-Value Mapping of the partition scheme design
+            Type: Dictionary
+
+        - partition_Name : Name of the current partition
+            Type: String
+            Default: Root
+
+        - partition_Number : The partition number
+            Type: Integer
+            Default: 1
         """
-        Mount boot partition
-        """
-        mount_dir_Boot = cfg["mount_Paths"]["Boot"]
+        # Initialize Variables
 
         ## Create directories if does not exists
-        if not (os.path.isdir(mount_dir_Boot)):
+        if not (os.path.isdir(boot_Dir)):
             ### Directory does not exist
-            cmd_str = "mkdir -p {}".format(mount_dir_Boot)
+            cmd_str = "mkdir -p {}".format(boot_Dir)
 
-            print("Directory {} does not exist, creating directory...".format(mount_dir_Boot))
+            print("Directory {} does not exist, creating directory...".format(boot_Dir))
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Mount boot partition
@@ -460,13 +476,13 @@ Include = /etc/pacman.d/mirrorlist
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
-            print("Directory {} exists.".format(mount_dir_Boot))
+            print("Directory {} exists.".format(boot_Dir))
 
         ## --- Processing
         ### Mount the volume to the path
         #### Get information of current partition
-        target_Partition = "Boot"
-        curr_part_Number = 1
+        target_Partition = partition_Name
+        curr_part_Number = partition_Number
 
         ##### Search for partition number of the Root partition
         for k,v in partition_Scheme.items():
@@ -493,7 +509,7 @@ Include = /etc/pacman.d/mirrorlist
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {} {}".format(target_disk_boot_Part, mount_dir_Boot)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_boot_Part, boot_Dir)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -509,7 +525,7 @@ Include = /etc/pacman.d/mirrorlist
                     print("Error mounting Partition [Boot]")
         else:
             # Any other filesystems
-            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_boot_Part, mount_dir_Boot)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_boot_Part, boot_Dir)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -526,11 +542,24 @@ Include = /etc/pacman.d/mirrorlist
 
         ### Unset/Remove Boot partition from mount list
         partition_Scheme.pop(curr_part_Number)
-        
-        print("")
 
+    def mount_partition_Remaining(self, disk_Label, mount_Paths, partition_Scheme, storage_controller):
         """
         Mount all other partitions
+
+        :: Params
+        - disk_Label : The target disk you wish to write into
+            Type: String
+
+        - partition_Scheme : Key-Value Mapping of the partition scheme design
+            Type: Dictionary
+
+        - storage_controller : The type of storage controller your device/disk uses
+            Data Type: String
+            Controllers:
+                AHCI/SATA
+                NVME
+                Loop
         """
         print("Partition Scheme: {}".format(partition_Scheme))
         for k,v in partition_Scheme.items():
@@ -543,7 +572,7 @@ Include = /etc/pacman.d/mirrorlist
             part_filesystem = v[2]
 
             # Get mount directory/path
-            part_mount_dir = cfg["mount_Paths"][part_Name]
+            part_mount_dir = mount_Paths[part_Name]
 
             ## Create directories if does not exists
             if not (os.path.isdir(part_mount_dir)):
@@ -582,7 +611,7 @@ Include = /etc/pacman.d/mirrorlist
                         # Error
                         print("Error mounting Partition [{}]".format(part_Name))
             else:
-                cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_curr_Part, part_mount_dir)
+                cmd_str = "mount -t {} {} {}".format(part_filesystem, target_disk_curr_Part, part_mount_dir)
                     
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
@@ -598,6 +627,51 @@ Include = /etc/pacman.d/mirrorlist
                         print("Error mounting Partition [{}]".format(part_Name))
         
             print("")
+
+    def mount_Disks(self):
+        """
+        Mount Disks and Partitions
+        """
+        
+        # --- Input
+        # Local Variables
+        cfg = self.cfg
+        disk_Label = cfg["disk_Label"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
+        partition_Table = cfg["disk_partition_Table"]
+        device_medium_Type = cfg["device_Type"]
+        storage_controller = cfg["storage-controller"]
+        mount_Paths = cfg["mount_Paths"]
+        
+        print("")
+
+        """
+        Mount Root Partition
+        """
+        mount_dir_Root = mount_Paths["Root"]
+        self.mount_partition_Root(disk_Label, mount_dir_Root, partition_Scheme, storage_controller, "Root", 1)
+
+        print("Configurations after mounting root: {}".format(self.cfg))
+
+        print("")
+
+        """
+        Mount Boot Partition
+        """
+        mount_dir_Boot = mount_Paths["Boot"]
+        self.mount_partition_Boot(disk_Label, mount_dir_Boot, partition_Scheme, storage_controller, "Boot", 2)
+        
+        print("")
+
+        print("Configurations after mounting boot: {}".format(self.cfg))
+
+        print("")
+
+        self.mount_partition_Remaining(disk_Label, mount_Paths, partition_Scheme, storage_controller)
+
+        print("Configurations after mounting remainder: {}".format(self.cfg))
+
+        print("")
 
     def check_package_manager_Configurations(self, mount_Dir):
         """
