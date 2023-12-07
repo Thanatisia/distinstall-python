@@ -123,8 +123,8 @@ Include = /etc/pacman.d/mirrorlist
     def update_setup(self, setup):
         self.setup = setup
         self.env = setup.env
-        self.cfg = setup.cfg
-        self.default_Var = setup.default_Var
+        self.cfg = setup.cfg.copy()
+        self.default_Var = setup.default_Var.copy()
 
     def print_configurations(self):
         print(self.cfg)
@@ -220,7 +220,7 @@ Include = /etc/pacman.d/mirrorlist
 
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"]
-        partition_Scheme = cfg["partition_Scheme"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
 
         # Check Device Type (i.e. sdX, nvme, loop)
         device_medium_Type = cfg["device_Type"]
@@ -376,7 +376,7 @@ Include = /etc/pacman.d/mirrorlist
         ## --- Processing
         ### Mount the volume to the path
         #### Get information of current partition
-        partition_Scheme = cfg["partition_Scheme"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
         target_Partition = "Root"
         curr_part_Number = 1
 
@@ -465,7 +465,6 @@ Include = /etc/pacman.d/mirrorlist
         ## --- Processing
         ### Mount the volume to the path
         #### Get information of current partition
-        partition_Scheme = cfg["partition_Scheme"]
         target_Partition = "Boot"
         curr_part_Number = 1
 
@@ -677,10 +676,13 @@ Include = /etc/pacman.d/mirrorlist
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         mount_Points = cfg["mount_Paths"]
-        partition_Scheme = cfg["partition_Scheme"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
         dir_Mount = mount_Points["Root"] # Look for root/mount partition
         fstab_Contents = []
         success_Flag = False
+
+
+        print("CONFIGURATION AT THE START OF FSTAB_GENERATE: {}".format(partition_Scheme))
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
         # cmd_str = "genfstab -U {}".format(dir_Mount)
