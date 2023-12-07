@@ -674,89 +674,58 @@ Include = /etc/pacman.d/mirrorlist
         """
         # --- Input
         # Local Variables
-        default_root_Path = "/"
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         mount_Points = cfg["mount_Paths"]
         partition_Scheme = cfg["partition_Scheme"]
         dir_Mount = mount_Points["Root"] # Look for root/mount partition
         fstab_Contents = []
+        success_Flag = False
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
         # cmd_str = "genfstab -U {}".format(dir_Mount)
 
         # Execute and get fstab content from command and write into /etc/fstab
         if self.env.MODE != "DEBUG":
-            # Obtain disk block information
-            block_Info:dict = device_management.get_block_Information(disk_Label)
-            curr_disk_block_info = block_Info[disk_Label]
+            try:
+                # Obtain disk block information
+                block_Info:dict = device_management.get_block_Information(disk_Label)
+                curr_disk_block_info = block_Info[disk_Label]
 
-            ## Begin generating filesystems table
-            if len(curr_disk_block_info) > 0:
-                # Success
-                # Write into [mount-point]/etc/fstab
-                with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
-                    # Loop through all key values in block information
-                    for i in range(len(curr_disk_block_info)):
-                        # Get current partition's mount point
-                        curr_partition_Mappings = curr_disk_block_info[i]
+                ## Begin generating filesystems table
+                if len(curr_disk_block_info) > 0:
+                    # Success
+                    # Generate filesystems table
+                    fstab_Contents = device_management.design_filesystems_Table(disk_Label, \
+                            dir_Mount, \
+                            curr_disk_block_info, \
+                            partition_Scheme, \
+                            mount_Points \
+                    )
 
-                        # Loop through current partition key value mappings
-                        for part_Number,part_Details in curr_partition_Mappings.items():
-                            # Convert partition number to integer
-                            part_Number = int(part_Number)
+                    # Write into [mount-point]/etc/fstab
+                    with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
+                        # Write fstab content into file
+                        write_fstab.writelines(fstab_Contents)
 
-                            # Get partition scheme corresponding to the current partition number
-                            curr_partition = partition_Scheme[part_Number]
+                        # Close file after usage
+                        write_fstab.close()
 
-                            # Get current partition's number
-                            curr_partition_Name = curr_partition[0]
+                success_Flag = True
+            except Exception as ex:
+                print("Exception : {}".format(ex))
 
-                            # Get current partition's mount point
-                            curr_partition_mount_Point = mount_Points[curr_partition_Name]
-
-                            # Get block details and Sanitize block details
-                            partition_Label = part_Details["partition-label"].strip('\"')
-                            device_UUID = part_Details["device-uuid"].strip('\"')
-                            block_Size = part_Details["block-size"].strip('\"')
-                            filesystem_Type = part_Details["filesystem-type"].strip('\"')
-                            partition_UUID = part_Details["partuuid"].strip('\"')
-
-                            # Get partition number
-                            partition_Number = partition_Label.split(disk_Label)[1:][0]
-
-                            # Format mount path
-                            ## Remove mount directory from current path
-                            system_mount_Dir = curr_partition_mount_Point.split(dir_Mount)[1:][0]
-
-                            ## Set default path if mount path not found (Root)
-                            if system_mount_Dir == "":
-                                system_mount_Dir = default_root_Path
-                            
-                            # Design filesystem entry for this row
-                            filesystem_Entry = "# {}\nUUID={}\t{}\t{}\trw,relatime\t".format(partition_Label, device_UUID, system_mount_Dir, filesystem_Type)
-
-                            if curr_partition_Name == "Root":
-                                filesystem_Entry += "0 1"
-                            else:
-                                filesystem_Entry += "0 2"
-
-                            # Append row into contents list
-                            fstab_Contents.append(filesystem_Entry)
-
-                            # Append newline
-                            fstab_Contents.append("\n")
-
-                    # Write fstab content into file
-                    write_fstab.writelines(fstab_Contents)
-
-                    # Close file after usage
-                    write_fstab.close()
+        return success_Flag
 
     """
     Chroot Actions
     """
-    def format_chroot_Subprocess(self, cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
+    def format_chroot_Subprocess(self, \
+            cmd_str, \
+            mount_Dir="/mnt", \
+            chroot_Command="arch-chroot", \
+            shell="/bin/bash" \
+        ):
         """
         Format and returns the command string into the subprocess command list
         """

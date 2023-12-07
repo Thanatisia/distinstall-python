@@ -95,3 +95,96 @@ def get_block_Information(disk_Label):
 
     return block_Information
 
+def design_filesystems_Table(disk_Label, \
+                            dir_Mount, \
+                            disk_block_Information, \
+                            partition_Scheme, \
+                            mount_Points\
+                            ):
+    """
+    Design Filesystem Table (fstab) and return the fstab contents
+
+    :: Params
+    - disk_Label : The target disk/device path; i.e. SATA|AHCI = /dev/sdX, nvme = /dev/nvmeX, loop = /dev/loopX
+        Type: String
+
+    - dir_Mount : The root mount directory
+        Type: String
+
+    - disk_block_Information : Dictionary (key-value) mapping) of the disk label information
+        Type: Dictionary
+        Structure:
+            {
+                disk_Label : [
+                    {
+                        "partition-label" : your-partition-label,
+                        "device-uuid" : UUID,
+                        "block-size" : BLOCK_SIZE,
+                        "filesystem-type" : FILESYSTEM_TYPE (i.e. ext4),
+                        "partuuid" : PARTUUID
+                    }
+                ]
+            }
+
+    - partition_Scheme : Dictionary containing the mappings of the partition number to the partition information
+        Type: Dictionary
+
+    - mount_Points : Dictionary containing the partition names mapped to the mount points
+    """
+    # Initialize Variables
+    default_root_Path = "/"
+    fstab_Contents = []
+
+    # Loop through all key values in block information
+    for i in range(len(disk_block_Information)):
+        # Get current partition's mount point
+        curr_partition_Mappings = disk_block_Information[i]
+
+        # Loop through current partition key value mappings
+        for part_Number,part_Details in curr_partition_Mappings.items():
+            # Convert partition number to integer
+            part_Number = int(part_Number)
+
+            # Get partition scheme corresponding to the current partition number
+            curr_partition = partition_Scheme[part_Number]
+
+            # Get current partition's number
+            curr_partition_Name = curr_partition[0]
+
+            # Get current partition's mount point
+            curr_partition_mount_Point = mount_Points[curr_partition_Name]
+
+            # Get block details and Sanitize block details
+            partition_Label = part_Details["partition-label"].strip('\"')
+            device_UUID = part_Details["device-uuid"].strip('\"')
+            block_Size = part_Details["block-size"].strip('\"')
+            filesystem_Type = part_Details["filesystem-type"].strip('\"')
+            partition_UUID = part_Details["partuuid"].strip('\"')
+
+            # Get partition number
+            partition_Number = partition_Label.split(disk_Label)[1:][0]
+
+            # Format mount path
+            ## Remove mount directory from current path
+            system_mount_Dir = curr_partition_mount_Point.split(dir_Mount)[1:][0]
+
+            ## Set default path if mount path not found (Root)
+            if system_mount_Dir == "":
+                system_mount_Dir = default_root_Path
+            
+            # Design filesystem entry for this row
+            filesystem_Entry = "# {}\nUUID={}\t{}\t{}\trw,relatime\t".format(partition_Label, device_UUID, system_mount_Dir, filesystem_Type)
+
+            if curr_partition_Name == "Root":
+                filesystem_Entry += "0 1"
+            else:
+                filesystem_Entry += "0 2"
+
+            # Append row into contents list
+            fstab_Contents.append(filesystem_Entry)
+
+            # Append newline
+            fstab_Contents.append("\n")
+
+    return fstab_Contents
+
