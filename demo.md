@@ -2,13 +2,13 @@
 
 ## Running from an ArchLinux-based Environment (Default)
 - Setup working environment
-    + [![Dev environment startup Demo Gif Here](/path/to/demo-dev-environment-startup.gif)]
+    + ![Dev environment startup Demo Gif Here](/path/to/demo-dev-environment-startup.gif)
 
 - Generate configuration file
-    + [![config file Demo Gif Here](/path/to/demo-config.gif)]
+    + ![config file Demo Gif Here](/path/to/demo-config.gif)
 
 - Run
-    + [![ArchLinux Demo Gif Here](/path/to/demo-archlinux.gif)]
+    + ![ArchLinux Demo Gif Here](/path/to/demo-archlinux.gif)
 
 ## Running from a non-ArchLinux-based Environment
 
@@ -21,17 +21,17 @@
 
 ### Setup
 - Setup working environment
-    + [![Debian dev environment startup Demo Gif Here](/path/to/demo-debian-dev-environment-startup.gif)]
+    + ![Debian dev environment startup Demo Gif Here](/path/to/demo-debian-dev-environment-startup.gif)
 
 - Generate configuration file
-    + [![Debian config file Demo Gif Here](/path/to/demo-debian-config.gif)]
+    + ![Debian config file Demo Gif Here](/path/to/demo-debian-config.gif)
 
 ### Debian
 - Startup Docker container
-    + [![Debian chroot environment startup Demo Gif Here](/path/to/demo-debian-docker-startup.gif)]
+    + ![Debian chroot environment startup Demo Gif Here](/path/to/demo-debian-docker-startup.gif)
 
 - Run
-    + [![Debian Demo Gif Here](/path/to/demo-debian.gif)]
+    + ![Debian Demo Gif Here](/path/to/demo-debian.gif)
 
 ## Resources
 
