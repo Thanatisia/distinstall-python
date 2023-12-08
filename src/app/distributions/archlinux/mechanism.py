@@ -11,6 +11,8 @@ class BaseInstallation():
     def __init__(self, setup):
         # Initialize Environment variable class 
         self.update_setup(setup)
+        self.package_manager_config_Path = "/etc/pacman.d"
+        self.mirrorlist_file_Name = "{}/mirrorlist".format(self.package_manager_config_Path)
         self.package_manager_Configurations = """
 #
 # /etc/pacman.conf
@@ -133,6 +135,15 @@ Include = /etc/pacman.d/mirrorlist
     def verify_network(self, ping_Count=5, ipv4_address="8.8.8.8"):
         """
         Step 1: Verify that the host network is working
+
+        :: Params
+        - ping_Count : The number of times (counts) the system will ping the target address
+            Type: Integer
+            Default Value: 5
+
+        - ipv4_address : The IPv4 network address you wish to ping
+            Type: String
+            Default Value: 8.8.8.8
         """
         # Initialize Variables
         cmd_str = "ping -c {} {}".format(ping_Count, ipv4_address)
@@ -154,21 +165,32 @@ Include = /etc/pacman.d/mirrorlist
         """
         Verify motherboard bootloader firmware
 
+        :: Information
+        [Boot Mode]
         - BIOS : Legacy
         - UEFI : Modern Universal EFI mode
+
+        :: Output
+        - boot_Mode : Returns the boot mode of the system
+            Default: bios
+            Checks for: uefi
+
+        - result : List of subprocess output elements
+            1 : stdout (Standard Output)
+                Type: String
+            2 : stderr (Standard Error)
+                Type: String
+            3 : Result/Return Status Code
+                Type: Integer
         """
         # Initialize Variables
         boot_Mode:str = "bios"
-        cmd_str:str = "ls /sys/firmware/efi/efivars"
+        target_dir:str = "/sys/firmware/efi/efivars"
 
-        if self.env.MODE == "DEBUG":
-            print(cmd_str)
-        else:
-            # Check if sytem has EFI
-            ret_Code:int = os.system(cmd_str)
-            if ret_Code == 0:
-                # UEFI
-                boot_Mode="uefi"
+        # Check if UEFI directory is located
+        if os.path.isdir(target_dir):
+            # Directory is found
+            boot_Mode = "uefi"
 
         return boot_Mode
 
@@ -193,8 +215,6 @@ Include = /etc/pacman.d/mirrorlist
             stdout, stderr, returncode = process.subprocess_Sync(cmd_set_NTP)
 
             if stderr == "":
-                print("Standard Output: {}".format(stdout))
-
                 # To check system clock
                 stdout, stderr, returncode = process.subprocess_Sync(cmd_check_NTP)
 
@@ -205,7 +225,7 @@ Include = /etc/pacman.d/mirrorlist
                     # Error setting system clock
                     success_flag = False
 
-        return success_flag
+        return stdout, stderr, returncode, success_flag
 
     def device_partition_Manager(self):
         """
@@ -651,8 +671,6 @@ Include = /etc/pacman.d/mirrorlist
         mount_dir_Root = mount_Paths["Root"]
         self.mount_partition_Root(disk_Label, mount_dir_Root, partition_Scheme, storage_controller, "Root", 1)
 
-        print("Configurations after mounting root: {}".format(self.cfg))
-
         print("")
 
         """
@@ -663,15 +681,21 @@ Include = /etc/pacman.d/mirrorlist
         
         print("")
 
-        print("Configurations after mounting boot: {}".format(self.cfg))
-
-        print("")
-
+        """
+        Mount remaining Partitions
+        """
         self.mount_partition_Remaining(disk_Label, mount_Paths, partition_Scheme, storage_controller)
 
-        print("Configurations after mounting remainder: {}".format(self.cfg))
-
-        print("")
+    def select_Mirrors(self, mirrorlist_Path):
+        """
+        Select Mirrors (WIP)
+        """
+        print("==============")
+        print("Select Mirrors")
+        print("==============")
+        print("(S) Selecting mirrors...")
+        print("{}".format(self.env.EDITOR))
+        print("(D) Mirror selected.")
 
     def check_package_manager_Configurations(self, mount_Dir):
         """
@@ -732,6 +756,13 @@ Include = /etc/pacman.d/mirrorlist
             # stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
             resultcode = os.system(cmd_str)
 
+        print("")
+
+        # Select Mirror List
+        self.select_Mirrors(self.mirrorlist_file_Name)
+
+        print("")
+
         # Check package manager configuration file
         self.check_package_manager_Configurations(mount_Point)
 
@@ -754,9 +785,6 @@ Include = /etc/pacman.d/mirrorlist
         dir_Mount = mount_Points["Root"] # Look for root/mount partition
         fstab_Contents = []
         success_Flag = False
-
-
-        print("CONFIGURATION AT THE START OF FSTAB_GENERATE: {}".format(partition_Scheme))
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
         # cmd_str = "genfstab -U {}".format(dir_Mount)
@@ -863,7 +891,7 @@ Include = /etc/pacman.d/mirrorlist
 
                 print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
                 if self.env.MODE != "DEBUG":
-                    stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                    stdout, stderr, resultcode = process.subprocess_Sync(chroot_cmd_fmt, stdin=process.PIPE)
                     if resultcode == 0:
                         # Success
                         print("Standard Output: {}".format(stdout))
@@ -942,7 +970,7 @@ Include = /etc/pacman.d/mirrorlist
         # Initialize Variables
         str_root_passwd_change = "passwd || passwd;"
         cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change, mount_Dir)
-        stderr = []
+        stdout = []
         stderr = []
         resultcode = 0
         result = {
@@ -967,6 +995,9 @@ Include = /etc/pacman.d/mirrorlist
                 if proc.stdout != None:
                     line = proc.stdout.readline()
 
+                    # Append line to standard output
+                    stdout.append(line.decode("utf-8"))
+
                 # Check if standard input stream is empty
                 if proc.stdin != None:
                     # Check if line is entered
@@ -983,15 +1014,15 @@ Include = /etc/pacman.d/mirrorlist
                 # Poll and check if is alive
                 # If poll == None: Alive, else not Alive
                 is_alive = proc.poll()
-                print("Status: {}".format(is_alive))
+                # print("Status: {}".format(is_alive))
 
             # Get output, error and status code
-            stdout = proc.stdout
+            # stdout = proc.stdout
             stderr = proc.stderr
             resultcode = proc.returncode
 
             # Map/Append result results
-            result["stdout"].append(stdout)
+            result["stdout"] = stdout
             result["stderr"].append(stderr)
             result["resultcode"].append(resultcode)
 
@@ -1292,15 +1323,19 @@ Include = /etc/pacman.d/mirrorlist
         stderr = res["stderr"]
         resultcode = res["resultcode"] 
         cmd_str = res["command-string"]
-        if resultcode == 0:
+        if len(stdout) > 0:
             # Success
             print("Standard Output: {}".format(stdout))
         else:
             # Error
             print("Error: {}".format(stderr))
+
+        print("")
         
         # Step 15: Install Bootloader
         combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+        
+        print("")
 
         # Archive the command string into a file
         self.archive_command_Str(cmd_str, dir_Mount)
@@ -1365,12 +1400,11 @@ Include = /etc/pacman.d/mirrorlist
         print("============================")
         
         print("(S) Updating System Clock...")
-        success_Flag = self.update_system_Clock()
+        stdout, stderr, resultcode, success_Flag = self.update_system_Clock()
         if success_Flag == False:
             print("(X) Error updating system clock via Network Time Protocol (NTP)")
-            exit(1)
-        
-        print("(D) System clock updated.")
+        else:
+            print("(D) System clock updated.")
 
         if self.env.MODE == "DEBUG":
             tmp = input("Press anything to continue...")
@@ -1385,7 +1419,6 @@ Include = /etc/pacman.d/mirrorlist
         success_Flag = self.device_partition_Manager()
         if success_Flag == False:
             print("(X) Error formatting disk and partitions")
-            exit(1)
         print("(D) Disk Management completed.")
 
         if self.env.MODE == "DEBUG":
@@ -1401,7 +1434,6 @@ Include = /etc/pacman.d/mirrorlist
         success_Flag = self.mount_Disks()
         if success_Flag == False:
             print("(X) Error mounting disks")
-            exit(1)
         print("(D) Disks mounted.")
 
         if self.env.MODE == "DEBUG":
@@ -1409,26 +1441,13 @@ Include = /etc/pacman.d/mirrorlist
 
         print("")
 
-        print("=======================")
-        print("Stage 6: Select Mirrors")
-        print("=======================")
-        print("(S) Selecting mirrors...")
-        print("{} /etc/pacman.d/mirrorlist".format(self.env.EDITOR))
-        print("(D) Mirror selected.")
-
-        if self.env.MODE == "DEBUG":
-            tmp = input("Press anything to continue...")
-
-        print("")
-
         print("===================================")
-        print("Stage 7: Install essential packages")
+        print("Stage 6: Install essential packages")
         print("===================================")
         print("(S) Strapping packages to mount point...")
         success_Flag = self.bootstrap_Install()
         if success_Flag == False:
             print("(X) Errors bootstrapping packages")
-            exit(1)
         print("(D) Packages strapped.")
 
         if self.env.MODE == "DEBUG":
@@ -1437,13 +1456,12 @@ Include = /etc/pacman.d/mirrorlist
         print("")
 
         print("===========================================")
-        print("Stage 8: Generate fstab (File System Table)")
+        print("Stage 7: Generate fstab (File System Table)")
         print("===========================================")
         print("(S) Generating Filesystems Table in /etc/fstab")
         success_Flag = self.fstab_Generate()
         if success_Flag == False:
             print("(X) Error generating filesystems table")
-            exit(1)
         print("(D) Filesystems Table generated.")
 
         if self.env.MODE == "DEBUG":
@@ -1452,14 +1470,13 @@ Include = /etc/pacman.d/mirrorlist
         print("")
 
         print("===========================")
-        print("Stage 9: Chroot and execute")
+        print("Stage 8: Chroot and execute")
         print("===========================")
 
         print("(S) Executing chroot commands")
         success_Flag = self.arch_chroot_Exec() # Execute commands in arch-chroot
         if success_Flag == False:
             print("(X) Error executing commands in chroot")
-            exit(1)
         print("(D) Commands executed")
 
         if self.env.MODE == "DEBUG":
@@ -1900,7 +1917,7 @@ class PostInstallation():
                             print("Standard Output: {}".format(stdout))
 
                             # password change for the new user
-                            print("\t(+) Password change for {}\"".format(u_Name))
+                            print("(+) Password change for {}".format(u_Name))
                             passwd_change = "passwd {}".format(u_Name)
                             cmd_user_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", passwd_change]
 
@@ -1919,6 +1936,9 @@ class PostInstallation():
                                     if proc.stdout != None:
                                         line = proc.stdout.readline()
 
+                                        # Append standard output to list
+                                        stdout.append(line.decode("utf-8"))
+
                                     # Check if standard input stream is empty
                                     if proc.stdin != None:
                                         # Check if line is entered
@@ -1935,10 +1955,10 @@ class PostInstallation():
                                     # Poll and check if is alive
                                     # If poll == None: Alive, else not Alive
                                     is_alive = proc.poll()
-                                    print("Status: {}".format(is_alive))
+                                    # print("Status: {}".format(is_alive))
 
                                 # Get output, error and status code
-                                stdout = proc.stdout
+                                # stdout = proc.stdout
                                 stderr = proc.stderr
                                 resultcode = proc.returncode
                                 # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
@@ -1999,7 +2019,6 @@ class PostInstallation():
         success_Flag = self.postinstallation()
         if success_Flag == False:
             print("(-) Error detected in post-installation process")
-            exit(1)
         print("(+) Post-Installation execution completed")
 
         if self.env.MODE == "DEBUG":
@@ -2014,7 +2033,7 @@ class PostInstallation():
         success_Flag = self.postinstall_sanitize()
         if success_Flag == False:
             print("(-) Error detected in post-installation sanitization and cleanup")
-            exit(1)
+
         print("(+) Sanitization completed")
 
         if self.env.MODE == "DEBUG":
