@@ -12,5 +12,5 @@ cd src && \
     --execute-stage 7 \
     --execute-stage 8 \
     --execute-stage 9 \
-    --execute-stage 10 \
-    start
+    --execute-stage 10
+
