@@ -31,22 +31,22 @@
     + However, the steps past this point are entirely repeatable/recreatable according to the demo provided below
 
 - In the case of installation of a target distribution from a system that is not running the same distribution as the target distribution
-    + Please remember to follow the [Setup](Setup) steps above before proceeding
+    + Please remember to follow the [Setup](#Setup) steps above before proceeding
 
 ### Running from an ArchLinux-based Environment
 - Generate configuration file
-    + ![Configuration file generation Demo](resources/demo/demo-archlinux-generate-config.gif)
+    + ![Configuration file generation Demo](resources/demo/demo-generate-config.gif)
 
 - Edit configuration file
-    + ![Configuration file editing Demo](resources/demo/demo-archlinux-edit-config.gif)
+    + ![Configuration file editing Demo](resources/demo/demo-edit-config.gif)
 
 - Run
     - Using run.sh
-        + ![run.sh Demo](resources/demo/demo-archlinux-using-run-script.gif)
+        + ![run.sh Demo](resources/demo/demo-using-run-script.gif)
     - Using 'start'
-        + !['python main.py start' Demo](resources/demo/demo-archlinux-start.gif)
+        + !['python main.py start' Demo](resources/demo/demo-start.gif)
     - Executing specific stages
-        + ![execute specific stage Demo](resources/demo/demo-archlinux-execute-specific-stage.gif)
+        + ![execute specific stage Demo](resources/demo/demo-execute-specific-stage.gif)
 
 
 ## Resources
