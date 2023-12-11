@@ -66,8 +66,6 @@ def subprocess_Realtime(cmd_str, **opts):
             # Process has terminated/killed
             break
 
-        print(curr_output)
-
         ## Operate data and store in list
         stdout.append(curr_output)
 
@@ -116,7 +114,7 @@ def subprocess_Line(cmd_str, **opts):
 
     proc.wait()
 
-    stdout = proc.stdout
+    # stdout = proc.stdout
     stderr = proc.stderr
     ret_Code = proc.returncode
 

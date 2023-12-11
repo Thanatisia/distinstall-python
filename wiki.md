@@ -293,6 +293,16 @@
         + setup : The Setup class object
         + cfg : Contains the setup configuration key-value mappings in the class
 
+## Troubleshooting
+### Post-Installation
+#### Package Manager
+- Running 'pacman -Syu' after a successful build results in 'archlinux-key' out of date
+    - Potential Issues: 
+        - Host system's pacman is not updated
+    - Solutions
+        - Update your host system to the latest version
+        - Re-Install again
+
 ## Wiki
 
 ## Resources

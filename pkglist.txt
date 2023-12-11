@@ -1,0 +1,6 @@
+arch-install-scripts
+dhcpcd
+parted
+python3
+vim
+

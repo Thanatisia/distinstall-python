@@ -11,13 +11,122 @@ class BaseInstallation():
     def __init__(self, setup):
         # Initialize Environment variable class 
         self.update_setup(setup)
+        self.package_manager_config_Path = "/etc/pacman.d"
+        self.mirrorlist_file_Name = "{}/mirrorlist".format(self.package_manager_config_Path)
+        self.package_manager_Configurations = """
+#
+# /etc/pacman.conf
+#
+# See the pacman.conf(5) manpage for option and repository directives
+
+#
+# GENERAL OPTIONS
+#
+[options]
+# The following paths are commented out with their default values listed.
+# If you wish to use different paths, uncomment and update the paths.
+#RootDir     = /
+#DBPath      = /var/lib/pacman/
+#CacheDir    = /var/cache/pacman/pkg/
+#LogFile     = /var/log/pacman.log
+#GPGDir      = /etc/pacman.d/gnupg/
+HoldPkg     = pacman glibc
+# If upgrades are available for these packages they will be asked for first
+SyncFirst   = pacman
+#XferCommand = /usr/bin/curl -C - -f %u > %o
+#XferCommand = /usr/bin/wget --passive-ftp -c -O %o %u
+#CleanMethod = KeepInstalled
+Architecture = auto
+
+# Pacman won't upgrade packages listed in IgnorePkg and members of IgnoreGroup
+#IgnorePkg   =
+#IgnoreGroup =
+
+#NoUpgrade   =
+#NoExtract   =
+
+# Misc options
+#UseSyslog
+#UseDelta
+#TotalDownload
+CheckSpace
+#VerbosePkgLists
+
+# By default, pacman accepts packages signed by keys that its local keyring
+# trusts (see pacman-key and its man page), as well as unsigned packages.
+#SigLevel = Optional TrustedOnly
+
+# NOTE: You must run `pacman-key --init` before first using pacman; the local
+# keyring can then be populated with the keys of all official Arch Linux
+# packagers with `pacman-key --populate archlinux`.
+
+#
+# REPOSITORIES
+#   - can be defined here or included from another file
+#   - pacman will search repositories in the order defined here
+#   - local/custom mirrors can be added here or in separate files
+#   - repositories listed first will take precedence when packages
+#     have identical names, regardless of version number
+#   - URLs will have $repo replaced by the name of the current repo
+#   - URLs will have $arch replaced by the name of the architecture
+#
+# Repository entries are of the format:
+#       [repo-name]
+#       Server = ServerName
+#       Include = IncludePath
+#
+# The header [repo-name] is crucial - it must be present and
+# uncommented to enable the repo.
+#
+
+# The testing repositories are disabled by default. To enable, uncomment the
+# repo name header and Include lines. You can add preferred servers immediately
+# after the header, and they will be used before the default mirrors.
+
+#[testing]
+#SigLevel = PackageRequired
+#Include = /etc/pacman.d/mirrorlist
+
+[core]
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+
+[extra]
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+
+#[community-testing]
+#SigLevel = PackageRequired
+#Include = /etc/pacman.d/mirrorlist
+
+[community]
+SigLevel = PackageRequired
+Include = /etc/pacman.d/mirrorlist
+
+# If you want to run 32 bit applications on your x86_64 system,
+# enable the multilib repositories as required here.
+
+#[multilib-testing]
+#SigLevel = PackageRequired
+#Include = /etc/pacman.d/mirrorlist
+
+#[multilib]
+#SigLevel = PackageRequired
+#Include = /etc/pacman.d/mirrorlist
+
+# An example of a custom package repository.  See the pacman manpage for
+# tips on creating your own repositories.
+#[custom]
+#SigLevel = Optional TrustAll
+#Server = file:///home/custompkgs
+        """
 
     # Callback/Event Utility functions
     def update_setup(self, setup):
         self.setup = setup
         self.env = setup.env
-        self.cfg = setup.cfg
-        self.default_Var = setup.default_Var
+        self.cfg = setup.cfg.copy()
+        self.default_Var = setup.default_Var.copy()
 
     def print_configurations(self):
         print(self.cfg)
@@ -26,6 +135,15 @@ class BaseInstallation():
     def verify_network(self, ping_Count=5, ipv4_address="8.8.8.8"):
         """
         Step 1: Verify that the host network is working
+
+        :: Params
+        - ping_Count : The number of times (counts) the system will ping the target address
+            Type: Integer
+            Default Value: 5
+
+        - ipv4_address : The IPv4 network address you wish to ping
+            Type: String
+            Default Value: 8.8.8.8
         """
         # Initialize Variables
         cmd_str = "ping -c {} {}".format(ping_Count, ipv4_address)
@@ -47,21 +165,32 @@ class BaseInstallation():
         """
         Verify motherboard bootloader firmware
 
+        :: Information
+        [Boot Mode]
         - BIOS : Legacy
         - UEFI : Modern Universal EFI mode
+
+        :: Output
+        - boot_Mode : Returns the boot mode of the system
+            Default: bios
+            Checks for: uefi
+
+        - result : List of subprocess output elements
+            1 : stdout (Standard Output)
+                Type: String
+            2 : stderr (Standard Error)
+                Type: String
+            3 : Result/Return Status Code
+                Type: Integer
         """
         # Initialize Variables
         boot_Mode:str = "bios"
-        cmd_str:str = "ls /sys/firmware/efi/efivars"
+        target_dir:str = "/sys/firmware/efi/efivars"
 
-        if self.env.MODE == "DEBUG":
-            print(cmd_str)
-        else:
-            # Check if sytem has EFI
-            ret_Code:int = os.system(cmd_str)
-            if ret_Code == 0:
-                # UEFI
-                boot_Mode="uefi"
+        # Check if UEFI directory is located
+        if os.path.isdir(target_dir):
+            # Directory is found
+            boot_Mode = "uefi"
 
         return boot_Mode
 
@@ -86,8 +215,6 @@ class BaseInstallation():
             stdout, stderr, returncode = process.subprocess_Sync(cmd_set_NTP)
 
             if stderr == "":
-                print("Standard Output: {}".format(stdout))
-
                 # To check system clock
                 stdout, stderr, returncode = process.subprocess_Sync(cmd_check_NTP)
 
@@ -98,7 +225,7 @@ class BaseInstallation():
                     # Error setting system clock
                     success_flag = False
 
-        return success_flag
+        return stdout, stderr, returncode, success_flag
 
     def device_partition_Manager(self):
         """
@@ -113,7 +240,7 @@ class BaseInstallation():
 
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"]
-        partition_Scheme = cfg["partition_Scheme"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
 
         # Check Device Type (i.e. sdX, nvme, loop)
         device_medium_Type = cfg["device_Type"]
@@ -233,30 +360,33 @@ class BaseInstallation():
 
         print("(D) Partition Completed. ")
 
-    def mount_Disks(self):
+    def mount_partition_Root(self, disk_Label, root_Dir, partition_Scheme, storage_controller, partition_Name="Root", partition_Number=1):
         """
-        Mount Disks and Partitions
-        """
-        
-        # --- Input
-        # Local Variables
-        cfg = self.cfg
-        disk_Label = cfg["disk_Label"]
-        partition_Table = cfg["disk_partition_Table"]
-        device_medium_Type = cfg["device_Type"]
-        storage_controller = cfg["storage-controller"]
+        Mount Root Partition
 
+        :: Params
+        - root_Dir : The root partition mount path
+            Type: String
+
+        - partition_Scheme : Key-Value Mapping of the partition scheme design
+            Type: Dictionary
+
+        - partition_Name : Name of the current partition
+            Type: String
+            Default: Root
+
+        - partition_Number : The partition number
+            Type: Integer
+            Default: 1
         """
-        Mount root partition
-        """
-        mount_dir_Root = cfg["mount_Paths"]["Root"]
+        # Initialize Variables
 
         ## Create directories if does not exists
-        if not (os.path.isdir(mount_dir_Root)):
+        if not (os.path.isdir(root_Dir)):
             ### Directory does not exist
-            cmd_str = "mkdir -p {}".format(mount_dir_Root)
+            cmd_str = "mkdir -p {}".format(root_Dir)
 
-            print("Directory {} does not exist, creating directory...".format(mount_dir_Root))
+            print("Directory {} does not exist, creating directory...".format(root_Dir))
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Mount root partition
@@ -264,14 +394,13 @@ class BaseInstallation():
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
-            print("Directory {} exists.".format(mount_dir_Root))
+            print("Directory {} exists.".format(root_Dir))
 
         ## --- Processing
         ### Mount the volume to the path
         #### Get information of current partition
-        partition_Scheme = cfg["partition_Scheme"]
-        target_Partition = "Root"
-        curr_part_Number = 1
+        target_Partition = partition_Name
+        curr_part_Number = partition_Number
 
         ##### Search for partition number of the Root partition
         for k,v in partition_Scheme.items():
@@ -296,7 +425,7 @@ class BaseInstallation():
         print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
         if (curr_filesystem == "fat32"):
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {} {}".format(target_disk_root_Part, mount_dir_Root)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_root_Part, root_Dir)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -316,7 +445,7 @@ class BaseInstallation():
             mount -t ext4 /dev/sdX1 /mnt/boot 
             mount -t ext4 /dev/sdX3 /mnt/home
             """
-            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_root_Part, mount_dir_Root)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_root_Part, root_Dir)
                 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -333,19 +462,33 @@ class BaseInstallation():
         ### Unset/Remove Root partition from mount list
         partition_Scheme.pop(curr_part_Number)
 
-        print("")
+    def mount_partition_Boot(self, disk_Label, boot_Dir, partition_Scheme, storage_controller, partition_Name="Boot", partition_Number=2):
+        """
+        Mount Boot Partition
 
+        :: Params
+        - root_Dir : The root partition mount path
+            Type: String
+
+        - partition_Scheme : Key-Value Mapping of the partition scheme design
+            Type: Dictionary
+
+        - partition_Name : Name of the current partition
+            Type: String
+            Default: Root
+
+        - partition_Number : The partition number
+            Type: Integer
+            Default: 1
         """
-        Mount boot partition
-        """
-        mount_dir_Boot = cfg["mount_Paths"]["Boot"]
+        # Initialize Variables
 
         ## Create directories if does not exists
-        if not (os.path.isdir(mount_dir_Boot)):
+        if not (os.path.isdir(boot_Dir)):
             ### Directory does not exist
-            cmd_str = "mkdir -p {}".format(mount_dir_Boot)
+            cmd_str = "mkdir -p {}".format(boot_Dir)
 
-            print("Directory {} does not exist, creating directory...".format(mount_dir_Boot))
+            print("Directory {} does not exist, creating directory...".format(boot_Dir))
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
                 ## Mount boot partition
@@ -353,14 +496,13 @@ class BaseInstallation():
                 stdout, stderr, returncode = process.subprocess_Line(cmd_str)
                 print("Standard Output: {}".format(stdout))
         else:
-            print("Directory {} exists.".format(mount_dir_Boot))
+            print("Directory {} exists.".format(boot_Dir))
 
         ## --- Processing
         ### Mount the volume to the path
         #### Get information of current partition
-        partition_Scheme = cfg["partition_Scheme"]
-        target_Partition = "Boot"
-        curr_part_Number = 1
+        target_Partition = partition_Name
+        curr_part_Number = partition_Number
 
         ##### Search for partition number of the Root partition
         for k,v in partition_Scheme.items():
@@ -387,7 +529,7 @@ class BaseInstallation():
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
         if curr_filesystem == "fat32":
             # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {} {}".format(target_disk_boot_Part, mount_dir_Boot)
+            cmd_str = "mount -t vfat {} {}".format(target_disk_boot_Part, boot_Dir)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -403,7 +545,7 @@ class BaseInstallation():
                     print("Error mounting Partition [Boot]")
         else:
             # Any other filesystems
-            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_boot_Part, mount_dir_Boot)
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_boot_Part, boot_Dir)
 
             print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
@@ -420,11 +562,24 @@ class BaseInstallation():
 
         ### Unset/Remove Boot partition from mount list
         partition_Scheme.pop(curr_part_Number)
-        
-        print("")
 
+    def mount_partition_Remaining(self, disk_Label, mount_Paths, partition_Scheme, storage_controller):
         """
         Mount all other partitions
+
+        :: Params
+        - disk_Label : The target disk you wish to write into
+            Type: String
+
+        - partition_Scheme : Key-Value Mapping of the partition scheme design
+            Type: Dictionary
+
+        - storage_controller : The type of storage controller your device/disk uses
+            Data Type: String
+            Controllers:
+                AHCI/SATA
+                NVME
+                Loop
         """
         print("Partition Scheme: {}".format(partition_Scheme))
         for k,v in partition_Scheme.items():
@@ -437,7 +592,7 @@ class BaseInstallation():
             part_filesystem = v[2]
 
             # Get mount directory/path
-            part_mount_dir = cfg["mount_Paths"][part_Name]
+            part_mount_dir = mount_Paths[part_Name]
 
             ## Create directories if does not exists
             if not (os.path.isdir(part_mount_dir)):
@@ -476,7 +631,7 @@ class BaseInstallation():
                         # Error
                         print("Error mounting Partition [{}]".format(part_Name))
             else:
-                cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_curr_Part, part_mount_dir)
+                cmd_str = "mount -t {} {} {}".format(part_filesystem, target_disk_curr_Part, part_mount_dir)
                     
                 print("Executing: {}".format(cmd_str))
                 if self.env.MODE != "DEBUG":
@@ -493,6 +648,85 @@ class BaseInstallation():
         
             print("")
 
+    def mount_Disks(self):
+        """
+        Mount Disks and Partitions
+        """
+        
+        # --- Input
+        # Local Variables
+        cfg = self.cfg
+        disk_Label = cfg["disk_Label"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
+        partition_Table = cfg["disk_partition_Table"]
+        device_medium_Type = cfg["device_Type"]
+        storage_controller = cfg["storage-controller"]
+        mount_Paths = cfg["mount_Paths"]
+        
+        print("")
+
+        """
+        Mount Root Partition
+        """
+        mount_dir_Root = mount_Paths["Root"]
+        self.mount_partition_Root(disk_Label, mount_dir_Root, partition_Scheme, storage_controller, "Root", 1)
+
+        print("")
+
+        """
+        Mount Boot Partition
+        """
+        mount_dir_Boot = mount_Paths["Boot"]
+        self.mount_partition_Boot(disk_Label, mount_dir_Boot, partition_Scheme, storage_controller, "Boot", 2)
+        
+        print("")
+
+        """
+        Mount remaining Partitions
+        """
+        self.mount_partition_Remaining(disk_Label, mount_Paths, partition_Scheme, storage_controller)
+
+    def select_Mirrors(self, mirrorlist_Path):
+        """
+        Select Mirrors (WIP)
+        """
+        print("==============")
+        print("Select Mirrors")
+        print("==============")
+        print("(S) Selecting mirrors...")
+        print("{}".format(self.env.EDITOR))
+        print("(D) Mirror selected.")
+
+    def check_package_manager_Configurations(self, mount_Dir):
+        """
+        Check Package Manager configuration support
+        """
+        # Initialize Variables
+        package_manager_conf_Name = "pacman.conf"
+        package_manager_conf_Path = "{}/{}".format(mount_Dir, "etc")
+        package_manager_conf_File = "{}/{}".format(package_manager_conf_Path, package_manager_conf_Name)
+
+        # Check if pacman.conf file exists
+        while not(os.path.isfile(package_manager_conf_File)):
+            # pacman.conf does not exists
+            print("Obtaining configuration file {}...".format(package_manager_conf_Name))
+            # Copy from host into system
+            if self.env.MODE != "DEBUG":
+                shutil.copy2("/etc/pacman.conf", package_manager_conf_File) # Copy script from host to the bootstrapped root filesystem
+
+            # Check if file exists now
+            if os.path.isfile(package_manager_conf_File):
+                # File exists now
+                break
+            else:
+                # Write configuration template to file
+                with open(package_manager_conf_File, "w") as generate_pkg_manager_Config:
+                    # Write file
+                    generate_pkg_manager_Config.write(self.package_manager_Configurations)
+
+                    # Close file after usage
+                    generate_pkg_manager_Config.close()
+
     def bootstrap_Install(self):
         """
         Bootstrap all essential and must have packaes to mount (/mnt) before the chroot process
@@ -508,6 +742,10 @@ class BaseInstallation():
         cfg = self.cfg
         base_packages = cfg["base_pkgs"]
         mount_Point = cfg["mount_Paths"]["Root"]
+        stdout = None
+        stderr = None
+        resultcode = -1
+        success_Flag = False
 
         # --- Processing
         cmd_str = "pacstrap {} {}".format(mount_Point, ' '.join(base_packages))
@@ -515,7 +753,24 @@ class BaseInstallation():
         print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
             ## Begin bootstrapping
-            stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
+            # stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
+            resultcode = os.system(cmd_str)
+
+        print("")
+
+        # Select Mirror List
+        self.select_Mirrors(self.mirrorlist_file_Name)
+
+        print("")
+
+        # Check package manager configuration file
+        self.check_package_manager_Configurations(mount_Point)
+
+        # Check result code
+        if resultcode == 0:
+            success_Flag = True
+
+        return stdout, stderr, resultcode
 
     def fstab_Generate(self):
         """
@@ -524,33 +779,57 @@ class BaseInstallation():
         # --- Input
         # Local Variables
         cfg = self.cfg
-        dir_Mount = cfg["mount_Paths"]["Root"] # Look for root/mount partition
+        disk_Label = cfg["disk_Label"]
+        mount_Points = cfg["mount_Paths"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
+        dir_Mount = mount_Points["Root"] # Look for root/mount partition
+        fstab_Contents = []
+        success_Flag = False
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
-        cmd_str = "genfstab -U {}".format(dir_Mount)
+        # cmd_str = "genfstab -U {}".format(dir_Mount)
 
         # Execute and get fstab content from command and write into /etc/fstab
-        print("Executing: {}".format(cmd_str))
         if self.env.MODE != "DEBUG":
-            ## Begin generating filesystems table
-            filesystems_table, stderr, returncode = process.subprocess_Sync(cmd_str)
-            if returncode == 0:
-                # Success
-                # Write into [mount-point]/etc/fstab
-                with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
-                    # Write fstab content into file
-                    write_fstab.writelines(filesystems_table)
+            try:
+                # Obtain disk block information
+                block_Info:dict = device_management.get_block_Information(disk_Label)
+                curr_disk_block_info = block_Info[disk_Label]
 
-                    # Close file after usage
-                    write_fstab.close()
-            else:
-                # Error
-                print("Error obtaining genfstab: {}".format(stderr))
+                ## Begin generating filesystems table
+                if len(curr_disk_block_info) > 0:
+                    # Success
+                    # Generate filesystems table
+                    fstab_Contents = device_management.design_filesystems_Table(disk_Label, \
+                            dir_Mount, \
+                            curr_disk_block_info, \
+                            partition_Scheme, \
+                            mount_Points \
+                    )
+
+                    # Write into [mount-point]/etc/fstab
+                    with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
+                        # Write fstab content into file
+                        write_fstab.writelines(fstab_Contents)
+
+                        # Close file after usage
+                        write_fstab.close()
+
+                success_Flag = True
+            except Exception as ex:
+                print("Exception : {}".format(ex))
+
+        return success_Flag
 
     """
     Chroot Actions
     """
-    def format_chroot_Subprocess(self, cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
+    def format_chroot_Subprocess(self, \
+            cmd_str, \
+            mount_Dir="/mnt", \
+            chroot_Command="arch-chroot", \
+            shell="/bin/bash" \
+        ):
         """
         Format and returns the command string into the subprocess command list
         """
@@ -612,7 +891,7 @@ class BaseInstallation():
 
                 print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
                 if self.env.MODE != "DEBUG":
-                    stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
+                    stdout, stderr, resultcode = process.subprocess_Sync(chroot_cmd_fmt, stdin=process.PIPE)
                     if resultcode == 0:
                         # Success
                         print("Standard Output: {}".format(stdout))
@@ -691,7 +970,7 @@ class BaseInstallation():
         # Initialize Variables
         str_root_passwd_change = "passwd || passwd;"
         cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change, mount_Dir)
-        stderr = []
+        stdout = []
         stderr = []
         resultcode = 0
         result = {
@@ -716,6 +995,9 @@ class BaseInstallation():
                 if proc.stdout != None:
                     line = proc.stdout.readline()
 
+                    # Append line to standard output
+                    stdout.append(line.decode("utf-8"))
+
                 # Check if standard input stream is empty
                 if proc.stdin != None:
                     # Check if line is entered
@@ -732,15 +1014,15 @@ class BaseInstallation():
                 # Poll and check if is alive
                 # If poll == None: Alive, else not Alive
                 is_alive = proc.poll()
-                print("Status: {}".format(is_alive))
+                # print("Status: {}".format(is_alive))
 
             # Get output, error and status code
-            stdout = proc.stdout
+            # stdout = proc.stdout
             stderr = proc.stderr
             resultcode = proc.returncode
 
             # Map/Append result results
-            result["stdout"].append(stdout)
+            result["stdout"] = stdout
             result["stderr"].append(stderr)
             result["resultcode"].append(resultcode)
 
@@ -1041,15 +1323,19 @@ class BaseInstallation():
         stderr = res["stderr"]
         resultcode = res["resultcode"] 
         cmd_str = res["command-string"]
-        if resultcode == 0:
+        if len(stdout) > 0:
             # Success
             print("Standard Output: {}".format(stdout))
         else:
             # Error
             print("Error: {}".format(stderr))
+
+        print("")
         
         # Step 15: Install Bootloader
         combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+        
+        print("")
 
         # Archive the command string into a file
         self.archive_command_Str(cmd_str, dir_Mount)
@@ -1114,12 +1400,11 @@ class BaseInstallation():
         print("============================")
         
         print("(S) Updating System Clock...")
-        success_Flag = self.update_system_Clock()
+        stdout, stderr, resultcode, success_Flag = self.update_system_Clock()
         if success_Flag == False:
             print("(X) Error updating system clock via Network Time Protocol (NTP)")
-            exit(1)
-        
-        print("(D) System clock updated.")
+        else:
+            print("(D) System clock updated.")
 
         if self.env.MODE == "DEBUG":
             tmp = input("Press anything to continue...")
@@ -1134,7 +1419,6 @@ class BaseInstallation():
         success_Flag = self.device_partition_Manager()
         if success_Flag == False:
             print("(X) Error formatting disk and partitions")
-            exit(1)
         print("(D) Disk Management completed.")
 
         if self.env.MODE == "DEBUG":
@@ -1150,7 +1434,6 @@ class BaseInstallation():
         success_Flag = self.mount_Disks()
         if success_Flag == False:
             print("(X) Error mounting disks")
-            exit(1)
         print("(D) Disks mounted.")
 
         if self.env.MODE == "DEBUG":
@@ -1158,27 +1441,13 @@ class BaseInstallation():
 
         print("")
 
-        print("=======================")
-        print("Stage 6: Select Mirrors")
-        print("=======================")
-        
-        print("(S) Selecting mirrors...")
-        print("{} /etc/pacman.d/mirrorlist".format(self.env.EDITOR))
-        print("(D) Mirror selected.")
-
-        if self.env.MODE == "DEBUG":
-            tmp = input("Press anything to continue...")
-
-        print("")
-
         print("===================================")
-        print("Stage 7: Install essential packages")
+        print("Stage 6: Install essential packages")
         print("===================================")
         print("(S) Strapping packages to mount point...")
         success_Flag = self.bootstrap_Install()
         if success_Flag == False:
             print("(X) Errors bootstrapping packages")
-            exit(1)
         print("(D) Packages strapped.")
 
         if self.env.MODE == "DEBUG":
@@ -1187,13 +1456,12 @@ class BaseInstallation():
         print("")
 
         print("===========================================")
-        print("Stage 8: Generate fstab (File System Table)")
+        print("Stage 7: Generate fstab (File System Table)")
         print("===========================================")
         print("(S) Generating Filesystems Table in /etc/fstab")
         success_Flag = self.fstab_Generate()
         if success_Flag == False:
             print("(X) Error generating filesystems table")
-            exit(1)
         print("(D) Filesystems Table generated.")
 
         if self.env.MODE == "DEBUG":
@@ -1202,14 +1470,13 @@ class BaseInstallation():
         print("")
 
         print("===========================")
-        print("Stage 9: Chroot and execute")
+        print("Stage 8: Chroot and execute")
         print("===========================")
 
         print("(S) Executing chroot commands")
         success_Flag = self.arch_chroot_Exec() # Execute commands in arch-chroot
         if success_Flag == False:
             print("(X) Error executing commands in chroot")
-            exit(1)
         print("(D) Commands executed")
 
         if self.env.MODE == "DEBUG":
@@ -1650,7 +1917,7 @@ class PostInstallation():
                             print("Standard Output: {}".format(stdout))
 
                             # password change for the new user
-                            print("\t(+) Password change for {}\"".format(u_Name))
+                            print("(+) Password change for {}".format(u_Name))
                             passwd_change = "passwd {}".format(u_Name)
                             cmd_user_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", passwd_change]
 
@@ -1669,6 +1936,9 @@ class PostInstallation():
                                     if proc.stdout != None:
                                         line = proc.stdout.readline()
 
+                                        # Append standard output to list
+                                        stdout.append(line.decode("utf-8"))
+
                                     # Check if standard input stream is empty
                                     if proc.stdin != None:
                                         # Check if line is entered
@@ -1685,10 +1955,10 @@ class PostInstallation():
                                     # Poll and check if is alive
                                     # If poll == None: Alive, else not Alive
                                     is_alive = proc.poll()
-                                    print("Status: {}".format(is_alive))
+                                    # print("Status: {}".format(is_alive))
 
                                 # Get output, error and status code
-                                stdout = proc.stdout
+                                # stdout = proc.stdout
                                 stderr = proc.stderr
                                 resultcode = proc.returncode
                                 # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
@@ -1749,7 +2019,6 @@ class PostInstallation():
         success_Flag = self.postinstallation()
         if success_Flag == False:
             print("(-) Error detected in post-installation process")
-            exit(1)
         print("(+) Post-Installation execution completed")
 
         if self.env.MODE == "DEBUG":
@@ -1764,7 +2033,7 @@ class PostInstallation():
         success_Flag = self.postinstall_sanitize()
         if success_Flag == False:
             print("(-) Error detected in post-installation sanitization and cleanup")
-            exit(1)
+
         print("(+) Sanitization completed")
 
         if self.env.MODE == "DEBUG":

@@ -7,16 +7,29 @@
     + v0.1.1  | 2023-09-26 2223H | Merged to main
     + v0.2.0  | 2023-09-27 2106H | Merged to main
     + v0.2.1  | 2023-09-30 1650H | Merged to main
-    + v0.2.2  | 2023-11-28 1708H | Development
-    + v0.2.3  | 2023-11-28 1945H | Development
-    + v0.2.4  | 2023-11-28 2018H | Development
-    + v0.2.5  | 2023-11-28 2112H | Development
-    + v0.2.6  | 2023-11-28 2200H | Development
-    + v0.2.10 | 2023-11-29 2012H | Development
-    + v0.2.11 | 2023-12-02 0905H | Development
-    + v0.2.12 | 2023-12-02 0949H | Development
-    + v0.2.13 | 2023-12-02 1020H | Development
-    + v0.3.0  | 2023-12-02 1024H | Development
+    + v0.2.2  | 2023-11-28 1708H | Merged to main
+    + v0.2.3  | 2023-11-28 1945H | Merged to main
+    + v0.2.4  | 2023-11-28 2018H | Merged to main
+    + v0.2.5  | 2023-11-28 2112H | Merged to main
+    + v0.2.6  | 2023-11-28 2200H | Merged to main
+    + v0.2.10 | 2023-11-29 2012H | Merged to main
+    + v0.2.11 | 2023-12-02 0905H | Merged to main
+    + v0.2.12 | 2023-12-02 0949H | Merged to main
+    + v0.2.13 | 2023-12-02 1020H | Merged to main
+    + v0.3.0  | 2023-12-02 1024H | Merged to main
+    + v0.3.1  | 2023-12-03 2251H | Development
+    + v0.3.2  | 2023-12-03 2344H | Development
+    + v0.3.3  | 2023-12-03 2354H | Development
+    + v0.3.4  | 2023-12-04 1246H | Development
+    + v0.3.5  | 2023-12-04 1253H | Development
+    + v0.3.6  | 2023-12-04 1331H | Development
+    + v0.3.7  | 2023-12-04 2141H | Development
+    + v0.3.8  | 2023-12-04 2200H | Development
+    + v0.3.9  | 2023-12-04 2243H | Development
+    + v0.3.10 | 2023-12-04 2333H | Development
+    + v0.3.11 | 2023-12-05 1946H | Development
+    + v0.3.12 | 2023-12-05 2006H | Development
+    + v0.4.0  | 2023-12-11 1227H | Development
 
 ## Entries
 
@@ -283,4 +296,204 @@
         - Updated Documentations to match the latest version and options
         - Added Usage examples
 
+### v0.3.1
+- Updates
+    - README.md
+         - Converted 'Information' from a block into sentences
+         - Added additional dependencies
+         - Added new pre-requisite: If you are using a non-ArchLinux distribution
+
+- Testing
+    - Installing using a non-ArchLinux system
+         - Debian
+
+### v0.3.2
+- Updates
+    - README.md
+        - Reorganized and placed pre-rquisite 'If you are using a non-ArchLinux distribution' above 'Install Dependencies'
+        - Added additional packages to the mkarchroot corresponding to the depedencies when bootstrapping the root filesystem
+
+### v0.3.3
+- Upates
+    - README.md
+        - Added 'git' and 'arch-install-scripts' into the bootstrap package list
+
+### v0.3.4
+- Upates
+    - README.md
+        - Added 'parted' into the bootstrap package list
+
+### v0.3.5
+- New
+    - Added new document 'pkglist.txt' containing all system-related dependencies/packages
+
+- Updates
+    - README.md
+        - Added instructions to install system dependencies from file 'pkglist.txt
+        - Added 'python' to the existing python-related dependency installation instructions
+
+### v0.3.6
+- Updates
+    - main.py
+        - Added calling and runner support for new parameter '-u | --unmount' for Unmounting the drive from the mount points specified in the config file
+    - cli.py
+        - Added CLI support for new parameter '-u | --unmount'
+    - README.md
+        - Added documentation for new parameter '-u | --unmount' 
+
+### v0.3.7
+- New
+    - Added folder 'docker' for storing docker-support files
+        - Added document 'archlinux.Dockerfile' in 'docker' for creating a pre-defined ArchLinux chroot environment for installation by creating a docker container for each distribution (In case is necessary) with useful and essential packages
+        - Added document 'debian.Dockerfile' in 'docker' for creating a pre-defined Debian chroot environment for installation by creating a docker container for each distribution (In case is necessary) with useful and essential packages
+- Updates
+    - Updated document 'README.md'
+        - Added instructions on how to create a root filesystem chroot environment using docker
+        - Indenting
+    - Updated document 'REFERENCES.md' in folder 'docs'
+        - Added links
+    - Updated document 'pkglist.txt'
+        - Added 'vim'
+
+### v0.3.8
+- Updates
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Added function 'check_package_manager_Configurations(self, mount_Dir)' to check for the package manager's configuration files (i.e. pacman.conf) because certain scenarios 
+            - may cause pacstrap to generate a rootfs without pacman.conf
+        - Added class variable 'package_manager_Configurations' to hold the package manager's configuration file default template
+
+### v0.3.9
+- Updates
+    - Updated document 'README.md'
+         - Added optional step for setting up the docker chroot environment if using the official images
+    - Updated document 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Added and tested package manager configuration file checking and validation for ArchLinux - in this case, /etc/pacman.conf - within the generated rootfs using pacstrap
+            - If the bootstrapped root filesystem contents do not contain '/etc/pacman.conf', it will copy from the host
+            - If the copy fails, it will generate from the package manager configuration file template string class variable in the Class
+                - Each distribution installer template will contain a different configuration file template
+
+### v0.3.10
+- New
+    - Added new document 'setup-debian.sh' and 'setup-archlinux.sh' in 'docker'
+        - Shellscript to automatically startup the docker image of the respective chroot environments you wish to startup, and install the dependencies to prepare for use
+        - Use this if you wish to use the official images and not the prebuilt Dockerfiles
+- Updates
+    - Updated document 'README.md'
+        - Added basic docker setup instructions
+    - Updated document 'debian.Dockerfile' in 'docker'
+        - Changed packages and dependencies
+
+### v0.3.11
+- Updates
+    - Updated document 'README.md'
+        - Added steps for after initial startup of docker chroot environment
+    - Updated document 'device_management.py' in 'src/lib'
+        - Added a simple implementation of a blkid UUID reference function
+    - Updated document 'process.py' in 'src/lib'
+        - Changed result 'stdout' in function 'subprocess_Line()' to not take in from the process pipe instead
+
+### v0.3.12
+- Updates
+    - Updated document 'device_management.py' in 'src/lib'
+        - Fixed import mistake
+
+### v0.4.0
++ Mass Update
+- Feature Release
+    + Standalone install stage execution : You can specify which stage you wanna execute using option '--execute-stage [stage-number]'
+    + Standalone unmount option : Unmount partitions using the inline unmount option '-u | --unmount [mount-point]'
+    + separation of certain functions so they can be executed on its own, also for modularity
+    + you can import the distribution framework on its own as though you are writing your own main function
+    - Separation of Duty 
+        - Ability to use the installation templates as a standalone framework
+            + You can treat the main.py and runner.py launcher files as a separate component of the stack, with the distribution installers being the main framework/template containing the (post)installation functionalities
+            - As such, you can also create your own main.py and runner.py components
+                - Important Setup Components
+                    + setup.py : This generates the Setup class required to be parsed into the installer framework so that the installers know what to do, more information in [USAGE](USAGE.md) and [wiki](wiki.md)
+                - Engines
+                    + main.py is the main launcher application that takes in the Setup class, as well as any other program features such as CLI
+                    - app/runner.py is the 'Load Balancer' of the application, the distribution switcher that processes the target distribution you specified in the configuration file and 
+                        + Imports the target distribution's installation classes appropriately
+                        + You can make your own with this in mind
+
+- New
+    - Added folder 'docker' for storing docker-support files
+        - Added document 'archlinux.Dockerfile' in 'docker' for creating a pre-defined ArchLinux chroot environment for installation by creating a docker container for each distribution (In case is necessary) with useful and essential packages
+        - Added document 'debian.Dockerfile' in 'docker' for creating a pre-defined Debian chroot environment for installation by creating a docker container for each distribution (In case is necessary) with useful and essential packages
+    - Added folder 'resources' to store all git documentation resources and files
+        - Added folder 'demo' for storage of the Demo GIFs
+    - Added new documents 
+        - 'pkglist.txt' containing all system-related dependencies/packages
+        - 'setup-debian.sh' and 'setup-archlinux.sh' in 'docker'
+            - Shellscript to automatically startup the docker image of the respective chroot environments you wish to startup, and install the dependencies to prepare for use
+            - Use this if you wish to use the official images and not the prebuilt Dockerfiles
+        - Added a simple run.sh script to automate the process
+        - Added document 'demo.md' showing Demo GIFs 
+
+- Updates
+    - Updated documents 
+        - 'README.md'
+            - Converted 'Information' from a block into sentences
+            - Added additional dependencies
+            - Added new pre-requisite: If you are using a non-ArchLinux distribution
+            - Reorganized and placed pre-rquisite 'If you are using a non-ArchLinux distribution' above 'Install Dependencies'
+            - Added additional packages to the mkarchroot corresponding to the depedencies when bootstrapping the root filesystem
+            - Added 'git', 'arch-install-scripts', 'parted' into the bootstrap package list
+            - Added instructions to install system dependencies from file 'pkglist.txt
+            - Added 'python' to the existing python-related dependency installation instructions
+            - Added documentation for new parameter '-u | --unmount' 
+            - Added instructions on how to create a root filesystem chroot environment using docker
+            - Added optional step for setting up the docker chroot environment if using the official images
+            - Added basic docker setup instructions
+            - Added steps for after initial startup of docker chroot environment
+        - wiki.md
+            - Added new section block 'Troubleshooting' in 'wiki.md' for all FAQ Errors and Troubleshooting issues
+        - 'REFERENCES.md' in folder 'docs'
+            - Added links
+        - 'debian.Dockerfile' in 'docker'
+            - Changed packages and dependencies
+        - 'main.py' in 'src'
+            - Added calling and runner support for new parameter '-u | --unmount' for Unmounting the drive from the mount points specified in the config file
+        - 'runner.py' in 'src/app'
+            - Removed select_Mirrors from the installation stages
+        - 'cli.py' in 'src/lib'
+            - Added CLI support for new parameter '-u | --unmount'
+        - 'device_management.py' in 'src/lib'
+            - Added a simple implementation of a blkid UUID reference function
+            - Fixed import mistake
+            - fixes to function 'get_block_Information()
+        - 'process.py' in 'src/lib'
+            - Changed result 'stdout' in function 'subprocess_Line()' to not take in from the process pipe instead
+        - 'mechanism.py' in 'src/app/distributions/archlinux'
+            - Added function 'check_package_manager_Configurations(self, mount_Dir)' to check for the package manager's configuration files (i.e. pacman.conf) because certain scenarios 
+                - may cause pacstrap to generate a rootfs without pacman.conf
+            - Added class variable 'package_manager_Configurations' to hold the package manager's configuration file default template
+            - Added and tested package manager configuration file checking and validation for ArchLinux - in this case, /etc/pacman.conf - within the generated rootfs using pacstrap
+                - If the bootstrapped root filesystem contents do not contain '/etc/pacman.conf', it will copy from the host
+                - If the copy fails, it will generate from the package manager configuration file template string class variable in the Class
+                    - Each distribution installer template will contain a different configuration file template
+            - Filesystems table (fstab) file generator: replaced the usage of 'genfstab' with a implemented block function
+            - Separated mounting functions into individual functions for better visibility
+            - Rewrote UEFI checker to use python logic instead of ls
+            - Created function for select_Mirrors
+            - Removed select_Mirrors as a standalone stage, and instead, merged it with the package manager validation step before the bootstrapping stage
+            - Converted genfstab subprocess operation from subprocess_Line => subprocess_Sync
+
+- Plans
+    - Removal of command string consolidation and return at the end of the system commands
+        - The purpose was
+            + After executing system shellscript commands, return the commands to the main presentation/business logic layer functions for archiving/writing to file
+        + Attempting to remove writing function
+        + to be redesigned and reimplemented later
+    - Add mirrorlist selection function
+
+- Testing
+    - Installing using a non-ArchLinux system
+         - Debian
+    + Tested the (currently only) ArchLinux installation on both a native archlinux virtual machine on a virtual disk image : it installs and runs properly
+    - Tested that on a debian virtual machine running an archlinux docker container as an ArchLinux chroot environment, that also has the disk to install on passthrough'd into the container. 
+        + This one also works and installs similarly to a native system, except afew differences
+    - Due to the nature of dependency on some bootstrappers 
+        - i.e. archlinux's pacstrap requiring pacman to exist 
+            + installing natively on a non-ArchLinux system is borderline impossible or unnecessarily hard
 

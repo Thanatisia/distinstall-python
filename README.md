@@ -1,16 +1,19 @@
 # Distribution installer - Python reimplementation/re-write
 
 ## Information
-```
-This is a planned full rewrite of the distribution install script from the (previously) Bash shellscript implementation to using a proper programming/scripting language such as Python, Golang and potentially C (or Rust)
-
-Currently, this rewrite is in python as it is a good language for prototyping and future planning. From here, I might be able to have an easier time rewriting from python to other programming languages like the aforementioned - golang and/or C
-```
+- This is a planned full rewrite of the distribution install script from the (previously) Bash shellscript implementation 
+    - to using a proper programming/scripting language such as Python, Golang and potentially C (or Rust)
+- Currently, this rewrite is in python as it is a good language for prototyping and future planning. 
+    - From here, I might be able to have an easier time rewriting from python to other programming languages like the aforementioned - golang and/or C
 
 ## Setup
 ### Dependencies
-+ arch-install-scripts
+- pacman
+- parted
+- arch-install-scripts
+    + pacstrap
 + dd
++ dhcpcd
 + python
 - python pypi packages
     + ruamel.yaml : For YAML configuration file handling
@@ -33,7 +36,152 @@ Currently, this rewrite is in python as it is a good language for prototyping an
             [virtual-environment]\Scripts\activate
             ```
 
-- Install dependencies
+- (Optional) Performing within a non-ArchLinux system
+    - Create a chroot environment with pacman/for ArchLinux
+        - Using 'archlinux/devtools'
+            - Dependencies
+                - [archlinux/devtools](https://gitlab.archlinux.org/archlinux/devtools) : Tools for Archlinux package maintainers
+                
+            - Make your chroot folder to store the chroot root environment
+                ```console
+                mkdir chroots
+                ```
+
+            - Create the actual chroot directory within it
+                - Using mkarchroot
+                    - Explanation
+                        - mkarchroot will 
+                            + create the actual chroot environment - named 'root' - within the folder 'chroots'
+                            - Afterwhich, the packages and package groups specified - in this case, 'base' - will be bootstrapped and installed into the chroot environment's filesystem
+                                + 'base' is the package group that contains the root filesystem, this is necessary to make a working environment
+                    ```console
+                    mkarchroot chroots/root base base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml
+                    ```
+
+            - Edit the mirrorlist within the chroot environment to facilitate the downgrade
+                - Explanation
+                    - Write the line 'Server = https://archive.archlinux.org/repos/[year]/[month]/[date]/$repo/os/$arch' into the mirrorlist of the chroot environment
+                        - where
+                            + year = the year of the repository; i.e. 2016
+                            + month = the month of the repository; i.e. 02 = February
+                            + date = the date of the repository; i.e. 19
+                ```console
+                echo 'Server = https://archive.archlinux.org/repos/[year]/[month]/[date]/$repo/os/$arch' > [chroot-environment-path]/root/etc/pacman.d/mirrorlist
+                ```
+
+            - Enter the chroot environment
+                - Explanation
+                    + This is just basically chroot (Change root)-ing into the newly create ArchLinux filesystem chroot environment as per normal
+                    - However, in this example
+                        - We will be using 'arch-chroot' which can be found in the ArchLinux package 'arch-install-scripts' which is effectively a wrapper that 
+                            + performs several mounts before chroot is ran
+                ```console
+                sudo arch-chroot [chroot-environment-path]/root [shell]
+                ```
+
+        - Using docker
+            - Setup
+                - Dependencies
+                    + docker
+                    + (Optional) docker-compose
+                - Add your user into the 'docker' group to be able to use docker-compose and docker functionalities
+                    ```console
+                    sudo usermod -aG docker [username]
+                    ```
+                - Restart your system to refresh the permission
+                    ```console
+                    sudo reboot now
+                    ```
+            - Pull latest archlinux image
+                ```console
+                docker pull archlinux:latest
+                ```
+            - (Optional) Use the Dockerfile created with the proper packages pre-defined
+                - Information
+                    + Located in the folder [docker](docker)
+                - Build the Dockerfile of your choice
+                    ```console
+                    docker build -t [tag] -f docker/[dockerfile-of-choice] [context-directory]
+                    ```
+            - Startup a container
+                - Using docker run
+                    - Explanation
+                        - Startup an ArchLinux docker container with the name 'arch-chroot'
+                            - Enable privileged mode so that 
+                                - the device can be passthrough from host into the container and
+                                - the passthrough devices can be modified, and used
+                            - Adding/Passthrough the disk/devices to container
+                                - Examples
+                                    - SATA/AHCI
+                                        ```console
+                                        --device=/dev/sdX
+                                        ```
+                                    - NVME
+                                        ```console
+                                        --device=/dev/nvme[device-number]
+                                        ```
+                                    - Loopback Device
+                                        ```console
+                                        --device=/dev/loop[device-number]
+                                        ```
+                                ```console
+                                --device=[disk-label]
+                                ```
+                            - Mount the following volumes from the host system to the container
+                                - [host-system-source-volume] => [container-destination-volume]
+                                    - Mounting disk/devices from host system into container
+                                        - Use-Case:
+                                            + Useful for using the container rootfs environment as a temporary chroot environment to install a distribution via command line using bootstrapping (ArchLinux style)
+                                        + Structure: `[host-target-disk-label] => [container-disk-label]`
+                                        - (Optional) Mount distinstall-python repository from the host system to the container (if it already exists and you want to use that)
+                                            ```console
+                                            -v "/path/to/distinstall-python:/tmp/distinstall-python"
+                                            ```
+                            - Set the network mode to "host"
+                                - So that the container is using the host's network address for consistency whilst formatting and bootstrapping
+                        - Parameters
+                    ```console
+                    docker run -itd --name=arch-chroot --privileged --device=[disk-label] "/path/to/distinstall-python:/tmp/distinstall-python" --network=host {other-options} archlinux:latest
+                    ```
+            - Chroot (Change root) into the container
+                ```console
+                docker exec -it [container-name] [shell]
+                ```
+            - (Optional) If you are using the default official image(s)
+                - ArchLinux
+                    ```console
+                    docker exec -it [container-name] /bin/bash -c "pacman -Syu && pacman -S base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml"
+                    ```
+                - Debian
+                    ```console
+                    docker exec -it [container-name] /bin/bash -c "apt update -y && apt upgrade -y && apt install -y base-devel git arch-install-scripts parted vim dhcpcd python3 python-pip python-ruamel-yaml"
+                    ```
+            - After initial startup 
+                - Explanation
+                    + If you did not remove the container, you can just start the container back up after every restart if you require the chroot environment
+                - Start up the container
+                    ```console
+                    docker start [container-name]
+                    ```
+
+        - In the chroot environment
+            - Update accordingly
+                ```console
+                pacman -Syu
+                ```
+
+- Install system dependencies
+    - From pkglist
+        - If using pacman
+            ```console
+            pacman -S - < pkglist.txt
+            ```
+        - If using apt
+            ```console
+            apt install < pkglist.txt
+            ```
+
+- Install python dependencies
     - From requirements.txt
         ```console
         python -m pip install -Ur requirements.txt
@@ -150,6 +298,7 @@ Currently, this rewrite is in python as it is a good language for prototyping an
         + `-d [target-disk-name] | --target-disk [target-disk-name]` : Set target disk name
         + `-e [default-editor]   | --editor      [default-editor]`   : Set default text editor
         + `-m [DEBUG|RELEASE]    | --mode        [DEBUG|RELEASE]`    : Set mode (DEBUG|RELEASE)
+        + `-u [mount-point]      | --unmount     [mount-point]`      : Unmount the drive from the mount points specified in the configuration file
         + `--execute-stage [stage-number]`                           : Specify an installation stage number to execute
     - Flags
         + --display-options         : Display all options
@@ -179,6 +328,11 @@ Currently, this rewrite is in python as it is a good language for prototyping an
 - Default (Test Install; Did not specify target disk name explicitly)
     ```console
     sudo python main.py start
+    ```
+
+- Unmount the drive from the mount points specified in the configuration file
+    ```console
+    sudo python main.py -u [root-mount-point]
     ```
 
 - Test Install; with target disk name specified as flag

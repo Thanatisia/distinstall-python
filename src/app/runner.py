@@ -26,11 +26,11 @@ class App():
             3 : "Update System Clock",
             4 : "Disk Partition Management",
             5 : "Disk Mounting",
-            7 : "Root filesystem Bootstrap Packaging",
-            8 : "Filesystems Table (/etc/fstab) generating",
-            9 : "System chroot execution",
-            10 : "Post-Installation",
-            11 : "Post-Installation Cleanup and Sanitization",
+            6 : "Root filesystem Bootstrap Packaging",
+            7 : "Filesystems Table (/etc/fstab) generating",
+            8 : "System chroot execution",
+            9 : "Post-Installation",
+            10 : "Post-Installation Cleanup and Sanitization",
         }
 
         # Obtain parameters
@@ -137,11 +137,11 @@ class App():
                 3 : self.installer_class.update_system_Clock,
                 4 : self.installer_class.device_partition_Manager,
                 5 : self.installer_class.mount_Disks,
-                7 : self.installer_class.bootstrap_Install,
-                8 : self.installer_class.fstab_Generate,
-                9 : self.installer_class.arch_chroot_Exec,
-                10 : self.installer_class_PostInstall.postinstallation,
-                11 : self.installer_class_PostInstall.postinstall_sanitize,
+                6 : self.installer_class.bootstrap_Install,
+                7 : self.installer_class.fstab_Generate,
+                8 : self.installer_class.arch_chroot_Exec,
+                9 : self.installer_class_PostInstall.postinstallation,
+                10 : self.installer_class_PostInstall.postinstall_sanitize,
             }
 
             # Try and convert stage to integer
@@ -154,7 +154,6 @@ class App():
 
                 # Execute stage
                 result = stage_to_Execute()
-                print(result)
             except Exception as ex:
                 # Not an integer
                 print("Exception detected: [{}]".format(ex))
