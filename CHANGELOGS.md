@@ -34,6 +34,7 @@
     + v0.4.2  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
     + v0.4.3  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
     + v0.4.4  | 2024-01-29 2227H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.5  | 2024-01-29 2247H | Testing for new feature: Project structure Packaging and Deployment
 
 ## Entries
 
@@ -552,3 +553,7 @@
     - README.md
         + Added instructions to install python using setuptools packaging and deployment (via pip)
 
+### v0.4.5
+- New
+    - Added new document 'CONTRIBUTING.md' for information relating to contribution rulesets
+    
