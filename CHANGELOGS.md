@@ -31,6 +31,7 @@
     + v0.3.12 | 2023-12-05 2006H | Merged to main
     + v0.4.0  | 2023-12-11 1227H | Merged to main
     + v0.4.1  | 2024-01-29 1026H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.2  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
 
 ## Entries
 
@@ -513,7 +514,6 @@
         - '__init__.py' will initialize the project folder as a importable package/module, like a constructor initializer
 
 - Updates
-    + Moved project structure from 'src/' to folder 'src/distinstall-python' as a package
     - 'mechanism.py' in 'src/app/distributions/archlinux'
         - Modified package/module importing in mechanism.py
             + Used '.' as a relative path backwards up the parent directory tree, with each '.' being 1 directory upwards
@@ -537,3 +537,6 @@
             + Used '.' as a relative path backwards up the parent directory tree, with each '.' being 1 directory upwards
             + TODO: Figure out how to add the module directories into the packaging so that '.' isnt needed
 
+### v0.4.2
+- Updates
+    + Moved project structure from 'src/' to folder 'src/distinstall-python' as a package
