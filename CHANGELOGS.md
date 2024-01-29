@@ -33,6 +33,7 @@
     + v0.4.1  | 2024-01-29 1026H | Testing for new feature: Project structure Packaging and Deployment
     + v0.4.2  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
     + v0.4.3  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.4  | 2024-01-29 2227H | Testing for new feature: Project structure Packaging and Deployment
 
 ## Entries
 
@@ -545,4 +546,9 @@
 ### v0.4.3
 - Updates
     + Deleted remnants after moving to package folder 'distinstall-python'
+
+### v0.4.4
+- Updates
+    - README.md
+        + Added instructions to install python using setuptools packaging and deployment (via pip)
 
