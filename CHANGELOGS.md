@@ -32,6 +32,7 @@
     + v0.4.0  | 2023-12-11 1227H | Merged to main
     + v0.4.1  | 2024-01-29 1026H | Testing for new feature: Project structure Packaging and Deployment
     + v0.4.2  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.3  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
 
 ## Entries
 
@@ -540,3 +541,8 @@
 ### v0.4.2
 - Updates
     + Moved project structure from 'src/' to folder 'src/distinstall-python' as a package
+
+### v0.4.3
+- Updates
+    + Deleted remnants after moving to package folder 'distinstall-python'
+

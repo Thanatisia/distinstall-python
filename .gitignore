@@ -5,6 +5,7 @@ env/
 
 ## python cache folders
 __pycache__/
+*.egg-info/
 
 ## YAML Configuration Files
 *.yaml
