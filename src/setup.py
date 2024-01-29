@@ -7,10 +7,10 @@ import sys
 from ruamel.yaml import YAML
 
 ## External Libraries
-from lib.cli import CLIParser
-from lib.format import Text
-from lib.env import Environment
-import app.distributions as dist
+from .lib.cli import CLIParser
+from .lib.format import Text
+from .lib.env import Environment
+from .app import distributions as dist
 
 class Setup():
     """

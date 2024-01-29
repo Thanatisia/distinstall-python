@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "distinstall-python"
+version = "0.4.0"
+description = "Portable, Customizable and Modular distribution installation library/framework"
+authors = ["Thanatisia <55834101+Thanatisia@users.noreply.github.com>"]
+readme = "README.md"
+packages = [
+    {include = "distinstall-python", from="src"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+build = "^1.0.3"
+
+
+[build-system]
+requires = ["poetry-core", "ruamel.yaml"]
+build-backend = "poetry.core.masonry.api"

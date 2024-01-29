@@ -4,7 +4,7 @@ User Management handler
 
 import os
 import sys
-from lib import process
+from . import process
 from subprocess import Popen, PIPE
 
 def get_all_users():

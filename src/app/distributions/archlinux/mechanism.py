@@ -4,8 +4,8 @@ Primary Installation Mechanism
 import os
 import sys
 import shutil
-from lib import utils, env, user_management, device_management, process
-from lib.env import Environment
+from ....lib import utils, env, user_management, device_management, process
+from ....lib.env import Environment
 
 class BaseInstallation():
     def __init__(self, setup):
@@ -203,6 +203,9 @@ Include = /etc/pacman.d/mirrorlist
         cmd_set_NTP = "timedatectl set-ntp true"
         cmd_check_NTP = "timedatectl status"
         success_flag = False
+        stdout = ""
+        stderr = ""
+        returncode = 0
 
         if self.env.MODE == "DEBUG":
             # Set NTP
@@ -989,7 +992,6 @@ Include = /etc/pacman.d/mirrorlist
             is_alive = proc.poll()
             while is_alive is None:
                 # Still working
-                print("Loading...")
 
                 # Check if standard output stream is empty
                 if proc.stdout != None:
@@ -1323,12 +1325,6 @@ Include = /etc/pacman.d/mirrorlist
         stderr = res["stderr"]
         resultcode = res["resultcode"] 
         cmd_str = res["command-string"]
-        if len(stdout) > 0:
-            # Success
-            print("Standard Output: {}".format(stdout))
-        else:
-            # Error
-            print("Error: {}".format(stderr))
 
         print("")
         
@@ -1930,7 +1926,6 @@ class PostInstallation():
                                 is_alive = proc.poll()
                                 while is_alive is None:
                                     # Still working
-                                    print("Loading...")
 
                                     # Check if standard output stream is empty
                                     if proc.stdout != None:
@@ -1962,12 +1957,7 @@ class PostInstallation():
                                 stderr = proc.stderr
                                 resultcode = proc.returncode
                                 # stdout, stderr, resultcode = process.chroot_exec(root_passwd_change)
-                                if resultcode == 0:
-                                    # Success
-                                    print("Standard Output: {}".format(stdout))
-                                else:
-                                    # Error
-                                    print("Error: {}".format(stderr))
+
                         else:
                             # Error
                             print("Error: {}".format(stderr))
