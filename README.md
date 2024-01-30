@@ -181,11 +181,27 @@
             apt install < pkglist.txt
             ```
 
-- Install python dependencies
-    - From requirements.txt
+- Running framework/package from source
+    - Install python dependencies
+        - From requirements.txt
+            ```console
+            python -m pip install -Ur requirements.txt
+            ```
+
+- Install framework using pip
+    - Locally as development mode
         ```console
-        python -m pip install -Ur requirements.txt
+        pip install .
         ```
+    - Remote installation
+        - Install from PyPI (WIP)
+            ```console
+            pip install distinstall-python
+            ```
+        - Install from GtiHub
+            ```console
+            pip install https://github.com/Thanatisia/distinstall-python{@[branch-tag-name]}
+            ```
 
 - (Optional) If you are installing into a Virtual Disk Image on Host
     - Mount Disk Image and Partitions as loopback devices

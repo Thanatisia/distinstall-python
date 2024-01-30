@@ -6,8 +6,8 @@ import os
 import sys
 
 ## External Libraries
-import app.runner as app_runner
-from setup import Setup
+from .app import runner as app_runner
+from .setup import Setup
 
 def init():
     """

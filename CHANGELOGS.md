@@ -17,19 +17,24 @@
     + v0.2.12 | 2023-12-02 0949H | Merged to main
     + v0.2.13 | 2023-12-02 1020H | Merged to main
     + v0.3.0  | 2023-12-02 1024H | Merged to main
-    + v0.3.1  | 2023-12-03 2251H | Development
-    + v0.3.2  | 2023-12-03 2344H | Development
-    + v0.3.3  | 2023-12-03 2354H | Development
-    + v0.3.4  | 2023-12-04 1246H | Development
-    + v0.3.5  | 2023-12-04 1253H | Development
-    + v0.3.6  | 2023-12-04 1331H | Development
-    + v0.3.7  | 2023-12-04 2141H | Development
-    + v0.3.8  | 2023-12-04 2200H | Development
-    + v0.3.9  | 2023-12-04 2243H | Development
-    + v0.3.10 | 2023-12-04 2333H | Development
-    + v0.3.11 | 2023-12-05 1946H | Development
-    + v0.3.12 | 2023-12-05 2006H | Development
-    + v0.4.0  | 2023-12-11 1227H | Development
+    + v0.3.1  | 2023-12-03 2251H | Merged to main
+    + v0.3.2  | 2023-12-03 2344H | Merged to main
+    + v0.3.3  | 2023-12-03 2354H | Merged to main
+    + v0.3.4  | 2023-12-04 1246H | Merged to main
+    + v0.3.5  | 2023-12-04 1253H | Merged to main
+    + v0.3.6  | 2023-12-04 1331H | Merged to main
+    + v0.3.7  | 2023-12-04 2141H | Merged to main
+    + v0.3.8  | 2023-12-04 2200H | Merged to main
+    + v0.3.9  | 2023-12-04 2243H | Merged to main
+    + v0.3.10 | 2023-12-04 2333H | Merged to main
+    + v0.3.11 | 2023-12-05 1946H | Merged to main
+    + v0.3.12 | 2023-12-05 2006H | Merged to main
+    + v0.4.0  | 2023-12-11 1227H | Merged to main
+    + v0.4.1  | 2024-01-29 1026H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.2  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.3  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.4  | 2024-01-29 2227H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.5  | 2024-01-30 1358H | Testing for new feature: Project structure Packaging and Deployment
 
 ## Entries
 
@@ -497,3 +502,62 @@
         - i.e. archlinux's pacstrap requiring pacman to exist 
             + installing natively on a non-ArchLinux system is borderline impossible or unnecessarily hard
 
+### v0.4.1
++ Preparation of project structure for packaging and deployment
+- New
+    + Created new package folder 'distinstall-python' in 'src/' for holding the program as a package
+    + Created setup.py for setuptools
+    + Added pyproject.toml for packaging
+    - Added '__init__.py' and '__main__.py' to 'src/'
+        - '__init__.py' will initialize the project folder as a importable package/module, like a constructor initializer
+        - '__main__.py' is a special macro function that will act as an alias to main.py in python
+            + Python will find '__main__.py' as the launcher/entry point, and if it is found, python will execute a special runtime instruction set for these magic functions
+            + TODO: Find out how to set main.py as the entry point instead
+    - Added '__init__.py' and '__main__.py' to 'src/app'
+        - '__init__.py' will initialize the project folder as a importable package/module, like a constructor initializer
+
+- Updates
+    - 'mechanism.py' in 'src/app/distributions/archlinux'
+        - Modified package/module importing in mechanism.py
+            + Used '.' as a relative path backwards up the parent directory tree, with each '.' being 1 directory upwards
+            + TODO: Figure out how to add the module directories into the packaging so that '.' isnt needed
+        - Added variables 'stdout, stderr and returncode' to timedatectl function
+        - Removed 'loading' message and the standard output print as these are too verbose
+    - 'runner.py' in 'src/app'
+        - Modified package/module importing
+            + Used '.' as a relative path backwards up the parent directory tree, with each '.' being 1 directory upwards
+            + TODO: Figure out how to add the module directories into the packaging so that '.' isnt needed
+    - 'device_management.py' in 'src/lib'
+        - Modified package/module importing
+            + Used '.' as a relative path backwards up the parent directory tree, with each '.' being 1 directory upwards
+            + TODO: Figure out how to add the module directories into the packaging so that '.' isnt needed
+    - 'user_management.py' in 'src/lib'
+        - Modified package/module importing
+            + Used '.' as a relative path backwards up the parent directory tree, with each '.' being 1 directory upwards
+            + TODO: Figure out how to add the module directories into the packaging so that '.' isnt needed
+    - 'setup.py' in 'src/'
+        - Modified package/module importing
+            + Used '.' as a relative path backwards up the parent directory tree, with each '.' being 1 directory upwards
+            + TODO: Figure out how to add the module directories into the packaging so that '.' isnt needed
+
+### v0.4.2
+- Updates
+    + Moved project structure from 'src/' to folder 'src/distinstall-python' as a package
+
+### v0.4.3
+- Updates
+    + Deleted remnants after moving to package folder 'distinstall-python'
+
+### v0.4.4
+- Updates
+    - README.md
+        + Added instructions to install python using setuptools packaging and deployment (via pip)
+
+### v0.4.5
+- New
+    - Added new document 'CONTRIBUTING.md' for information relating to contribution rulesets
+
+- Updates
+    - Updated 'setup.py' and 'pyproject.toml' with latest version and setup entry point
+    - Updated 'main.py' to be in sync with '__main__.py'
+        
