@@ -34,7 +34,7 @@
     + v0.4.2  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
     + v0.4.3  | 2024-01-29 1758H | Testing for new feature: Project structure Packaging and Deployment
     + v0.4.4  | 2024-01-29 2227H | Testing for new feature: Project structure Packaging and Deployment
-    + v0.4.5  | 2024-01-29 2247H | Testing for new feature: Project structure Packaging and Deployment
+    + v0.4.5  | 2024-01-30 1358H | Testing for new feature: Project structure Packaging and Deployment
 
 ## Entries
 
@@ -556,4 +556,8 @@
 ### v0.4.5
 - New
     - Added new document 'CONTRIBUTING.md' for information relating to contribution rulesets
-    
+
+- Updates
+    - Updated 'setup.py' and 'pyproject.toml' with latest version and setup entry point
+    - Updated 'main.py' to be in sync with '__main__.py'
+        

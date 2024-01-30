@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "distinstall-python"
-version = "0.4.0"
+version = "0.4.5"
 description = "Portable, Customizable and Modular distribution installation library/framework"
 authors = ["Thanatisia <55834101+Thanatisia@users.noreply.github.com>"]
 readme = "README.md"
