@@ -1,7 +1,7 @@
 # Distribution installer - Python reimplementation/re-write
 
 ## Information
-- This is a planned full rewrite of the distribution install script from the (previously) Bash shellscript implementation 
+- This is a rewrite of the distribution install script from the [Bash shellscript implementation - distro-installscript-arch](https://github.com/Thanatisia/distro-installscript-arch)
     - to using a proper programming/scripting language such as Python, Golang and potentially C (or Rust)
 - Currently, this rewrite is in python as it is a good language for prototyping and future planning. 
     - From here, I might be able to have an easier time rewriting from python to other programming languages like the aforementioned - golang and/or C
