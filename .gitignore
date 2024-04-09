@@ -1,11 +1,27 @@
-# Ignore these files/folders
+# Files/Folders to be ignored by git
 
-## Virtual environment folders
+## Python
+### Python Folders
+
+#### Cache
+__pycache__/
+
+### Virtual Environments
 env/
 
-## python cache folders
-__pycache__/
+#### Python Packaging (Setuptools)
 *.egg-info/
+dist/
+
+### Python Files
+
+## Makefiles
+*.Makefile
+
+## Build/Compilation and Packaging
+
+### Directories
+build/
 
 ## YAML Configuration Files
 *.yaml

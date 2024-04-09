@@ -42,7 +42,7 @@ dependencies = [
 
 [project.scripts]
 # Program Entry Point(s) and scripts
-py-distinstall = "ytscripts.yt_obtain_url.main:main"
+py-distinstall = "pydistinstall.main:main"
 
 [project.urls]
 Homepage = "https://github.com/Thanatisia/distinstall-python"
