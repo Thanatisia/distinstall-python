@@ -6,8 +6,8 @@ import os
 import sys
 
 ## External Libraries
-from .app import runner as app_runner
-from .setup import Setup
+from pydistinstall.app import runner as app_runner
+from pydistinstall.setup import Setup
 
 def init():
     """
@@ -347,8 +347,10 @@ def body():
                 print("")
 
 def main():
+    init()
     body()
 
 if __name__ == "__main__":
     init()
     main()
+
