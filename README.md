@@ -204,6 +204,22 @@
             ```
 
 - (Optional) If you are installing into a Virtual Disk Image on Host
+    - Create a Virtual Hard Disk image
+        - Explanation
+            - Parameters
+                - Positionals
+                    - path-to-virtual-hard-disk-img : This specifies the output file to create
+                - Options
+                    - bs : This contains the size (in bytes) of each block that dd will read each time
+                    - count : This specifies the number of counts to write each block in the Virtual Disk
+            - Therefore, to create a VHD of size 56gb
+                - Options
+                    - bs = 1G
+                    - count = 56
+                - 1G * 56 = 56Gb
+        ```console
+        dd if=/dev/zero of=[path-to-virtual-hard-disk-img] bs=[block-size (bytes-per-block)] count=[number-of-counts]
+        ```
     - Mount Disk Image and Partitions as loopback devices
         - Using losetup
             - Pre-Requisites
