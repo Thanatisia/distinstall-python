@@ -858,3 +858,8 @@
         + Complete rewrite of the CHANGELOGS entry system to be more robust for documentation changes + non-bug fixes, feature changes or breaking changes
         + Modifying/refactoring changelogs to follow a date-time system over a version update
 
+#### 1409H
+- Updates
+    - Updated document 'CONTRIBUTING.md'
+        + Reformatted and added more detailed information on how to test your changes as well as install
+
