@@ -128,7 +128,7 @@
             - Parameter Signature/Header
                 - setup : Specify and store the caller's initialized setup class object
                     + Type: pydistinstall.setup.Setup()
-        - `.PostInstallation(setup, base_mechanism_Obj)` : Initializes the class object for the Base Installation of the target distribution containing various Base installation-related functions and attribues/variables
+        - `.PostInstallation(setup, base_mechanism_Obj)` : Initializes the class object for the Post Installation of the target distribution containing various Post installation-related functions and attribues/variables
             - Parameter Signature/Header
                 - setup : Specify and store the caller's initialized setup class object
                     + Type: pydistinstall.setup.Setup()
@@ -301,7 +301,7 @@
                 + Type: Void
 
     - Installation stages
-        - `.verify_network(ping_Count=5, ipv4_address="8.8.8.8")`: Installation Stage 1: Verify that the host network is working
+        - `.verify_network(ping_Count=5, ipv4_address="8.8.8.8")`: Installation Stage 1 - Verify that the host network is working
             - Parameter Signature/Header
                 - ping_Count : The number of times (counts) the system will ping the target address
                     + Type: Integer
@@ -314,7 +314,7 @@
                 - res : Return the result of the verification (True = Network is available, False = Not available)
                     + Type: Boolean
 
-        - `.verify_boot_Mode()`: Verifies and returns the motherboard bootloader firmware
+        - `.verify_boot_Mode()`: Installation Stage 2 - Verifies and returns the motherboard bootloader firmware
             - Information
                 - Motherboard Bootloader Firmware
                     - BIOS : Legacy
@@ -327,7 +327,7 @@
                     - Values
                         + uefi : If the '/sys/firmware/efi/efivars' directory is found
 
-        - `.update_system_Clock(): Syncs the system clock using NTP (Network-Time Protocol) by syncing with a central server
+        - `.update_system_Clock(): Installation Stage 3 - Syncs the system clock using NTP (Network-Time Protocol) by syncing with a central server
             - Return 
                 + Type: Tuple
                 - Values
@@ -346,7 +346,7 @@
                             + True: Success
                             + False: Error
 
-        - `.device_partition_Manager()`: Device & Partition Management
+        - `.device_partition_Manager()`: Installation Stage 4 - Device & Partition Management
             - Operational Flow
                 1. Get filesystem information
                 2. Format disk label partition table
@@ -451,7 +451,7 @@
                         + nvme : NVME
                         + loop : Loopback
 
-        - `.mount_Disks()`: Mount Disks, the Root, Boot and other Partitions
+        - `.mount_Disks()`: Installation Stage 5 - Mount Disks, the Root, Boot and other Partitions
             - Return
                 + Type: Void
 
@@ -463,10 +463,13 @@
                 + Type: Void
 
         - `.check_package_manager_Configurations(mount_Dir)`: Check Package Manager configuration support
+            - Parameter Signature/Header
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
             - Return
                 + Type: Void
 
-        - `.bootstrap_Install()`: Bootstrap all essential and must have packages to the mounted root filesystem before the chroot process
+        - `.bootstrap_Install()`: Installation Stage 6 - Bootstrap all essential and must have packages to the mounted root filesystem before the chroot process
             - Return 
                 + Type: Tuple
                 - Values
@@ -480,7 +483,7 @@
                             + 0 = Success
                             + > 0 = Failed
 
-        - `.fstab_Generate()`: Generate the chroot root filesystem's File System Table (fstab)
+        - `.fstab_Generate()`: Installation Stage 7 - Generate the chroot root filesystem's File System Table (fstab)
             - Return
                 - success_flag : A boolean flag showing if the command was a success or failed
                     + Type: Boolean
@@ -489,640 +492,511 @@
                         + False: Error
 
     - Chroot Actions
-        - `.format_chroot_Subprocess(cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash")`: Format and returns the command string into the subprocess command list
+        - `.format_chroot_Subprocess(cmd_str, mount_Dir, chroot_Command, shell)`: Format and returns the command string into the subprocess command list
             - Parameter Signature/Header
+                - cmd_str : Specify the system command string you want to execute in a subprocess pipe
+                    + Type: String
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - chroot_Command : Specify the system command you wish to use to chroot into the root filesystem environment
+                    + Type: String
+                    + Default: "arch-chroot"
+                - shell : Specify the shell used to execute the chroot systems command
+                    + Type: String
+                    + Default: "/bin/bash"
             - Return
                 - subprocess_cmd_fmt : A list containing the commands to be executed in the chroot environment as well as the other flags and options
                     + Type List
 
-        - `.chroot_execute_command(cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash")`: Generalized chroot command execution
+        - `.chroot_execute_command(cmd_str, mount_Dir, chroot_Command, shell)`: Execute the system command string into the target mount point chroot root filesystem environment
+            - Parameter Signature/Header
+                - cmd_str : Specify the system command string you want to execute in a subprocess pipe
+                    + Type: String
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - chroot_Command : Specify the system command you wish to use to chroot into the root filesystem environment
+                    + Type: String
+                    + Default: "arch-chroot"
+                - shell : Specify the shell used to execute the chroot systems command
+                    + Type: String
+                    + Default: "/bin/bash"
             - Return
                 - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
-                    - stdout : The Standard Output stream from the command execution
-                        + Type: String
-                    - stderr :  The Standard Error stream from the command excution
-                        + Type: String
-                    - returncode : Result/Return Status Code from the command execution
-                        + Type: Integer
-                        - Values
-                            + 0 = Success
-                            + > 0 = Failed
-                    - command-string : The command string formed from the chroot command list
-                        + Type: String
-
-        def chroot_execute_command_List(self, cmd_List, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
-            """
-            Generalized chroot command list execution
-            """
-            # Initialize Variables
-            result = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : ""
-            }
-
-            if len(cmd_List) > 0:
-                for i in range(len(cmd_List)):
-                    # Get current cmd
-                    cmd_str = cmd_List[i]
-
-                    # Formulate chroot command
-                    chroot_cmd_fmt = [chroot_Command, mount_Dir, shell, "-c", cmd_str]
-
-                    print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-                    if self.env.MODE != "DEBUG":
-                        stdout, stderr, resultcode = process.subprocess_Sync(chroot_cmd_fmt, stdin=process.PIPE)
-                        if resultcode == 0:
-                            # Success
-                            print("Standard Output: {}".format(stdout))
-                        else:
-                            # Error
-                            print("Error: {}".format(stderr))
-
-                        # Map/Append result results
-                        result["stdout"].append(stdout)
-                        result["stderr"].append(stderr)
-                        result["resultcode"].append(resultcode)
-
-            return result
-
-        def sync_Timezone(self, mount_Dir, region, city):
-            """
-            Synchronize Hardware Clock in chroot
-            """
-            chroot_commands = [
-                # "echo ======= Time Zones ======"												            # Step 10: Time Zones
-                "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
-                "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
-            ]
-            self.chroot_execute_command_List(chroot_commands, mount_Dir)
-
-        def enable_Locale(self, mount_Dir, language):
-            """
-            Uncomment and Enable locale/region
-            """
-            chroot_commands = [
-                # "echo ======= Location ======"													        # Step 11: Localization;
-                "sed -i '/{}/s/^#//g' /etc/locale.gen".format(language), 									# Step 11: Localization; Uncomment locale using sed
-                "locale-gen",																	            # Step 11: Localization; Generate the locales by running
-                "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
-            ]
-            self.chroot_execute_command_List(chroot_commands, mount_Dir)
-
-        def network_Management(self, mount_Dir, hostname):
-            """
-            Append Network Host file
-            """
-            chroot_commands = [
-                # "echo ======= Network Configuration ======"										        # step 12: Network Configuration;
-                "echo \"{}\" | tee -a /etc/hostname".format(hostname),										# Step 12: Network Configuration; Set Network Hostname Configuration; Create hostname file
-                "echo \"127.0.0.1   localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
-                "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
-                "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
-            ]
-            self.chroot_execute_command_List(chroot_commands, mount_Dir)
-
-        def initialize_Ramdisk(self, mount_Dir, default_Kernel="linux"):
-            """
-            Format initial ramdisk
-            """
-            # Initialize Variables
-            chroot_commands = [
-                # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
-                "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
-            ]
-            result = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : ""
-            }
-
-            # Execute commands
-            self.chroot_execute_command_List(chroot_commands, mount_Dir)
-
-            return result
-
-        def set_root_Password(self, mount_Dir):
-            """
-            Set Root Password
-            """
-            # Initialize Variables
-            str_root_passwd_change = "passwd || passwd;"
-            cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change, mount_Dir)
-            stdout = []
-            stderr = []
-            resultcode = 0
-            result = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : ""
-            }
-
-            print("Executing: {}".format(' '.join(cmd_root_passwd_change)))
-            if self.env.MODE != "DEBUG":
-                proc = process.subprocess_Open(cmd_root_passwd_change, stdout=process.PIPE)
-
-                # While the process is still working
-                line = ""
-                is_alive = proc.poll()
-                while is_alive is None:
-                    # Still working
-
-                    # Check if standard output stream is empty
-                    if proc.stdout != None:
-                        line = proc.stdout.readline()
-
-                        # Append line to standard output
-                        stdout.append(line.decode("utf-8"))
-
-                    # Check if standard input stream is empty
-                    if proc.stdin != None:
-                        # Check if line is entered
-                        if line != "":
-                            # Enter your secret line into the tty
-                            proc.stdin.write('{}\n'.format(line))
-
-                            # Enter one more time
-                            proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
-
-                            # Flush the standard input stream
-                            proc.stdin.flush()
-
-                    # Poll and check if is alive
-                    # If poll == None: Alive, else not Alive
-                    is_alive = proc.poll()
-                    # print("Status: {}".format(is_alive))
-
-                # Get output, error and status code
-                # stdout = proc.stdout
-                stderr = proc.stderr
-                resultcode = proc.returncode
-
-                # Map/Append result results
-                result["stdout"] = stdout
-                result["stderr"].append(stderr)
-                result["resultcode"].append(resultcode)
-
-            return result
-
-        def install_bootloader_Packages(self, dir_Mount="/mnt", bootloader="grub", partition_Table="msdos"):
-            """
-            Install bootloader packages
-            """
-            # Initialize Variables
-            chroot_commands = []
-            result = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : ""
-            }
-
-            # Switch Case bootloader between grub and syslinux
-            chroot_commands.append("echo \"(+) Installing Bootloader : {}\"".format(bootloader))
-            if (bootloader == "grub"):
-                # Setup bootloader
-                chroot_commands.append("sudo pacman -S grub") # Install Grub Package
-
-                # Check if partition table is GPT
-                if partition_Table == "gpt":
-                    # Install GPT/(U)EFI dependencies
-                    chroot_commands.append("sudo pacman -S efibootmgr")
-            elif bootloader == "syslinux":
-                ### Syslinux bootloader support is currently still a WIP and Testing
-                chroot_commands.append("sudo pacman -S syslinux")
-
-            # --- Processing
-
-            # Combine into a string
-            cmd_str = ";\n".join(chroot_commands)
-
-            # Map/Append Command String
-            result["command-string"] = cmd_str
-
-            for i in range(len(chroot_commands)):
-                # Get current command
-                curr_cmd = chroot_commands[i]
-
-                # Begin
-                print("Executing: {}".format(curr_cmd))
-                if self.env.MODE != "DEBUG":
-                    stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
-
-                    # Map/Append result results
-                    result["stdout"].append(stdout)
-                    result["stderr"].append(stderr)
-                    result["resultcode"].append(resultcode)
-
-            return result
-
-        def prepare_Bootloader(self, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub"):
-            """
-            Prepare Bootloader directories and Pre-Requisites
-            """
-            # Initialize Variables
-            chroot_commands = []
-            result = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : ""
-            }
-            # Switch Case bootloader between grub and syslinux
-            if (bootloader == "grub"):
-                chroot_commands.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
-            elif bootloader == "syslinux":
-                ### Syslinux bootloader support is currently still a WIP and Testing
-                chroot_commands.append("mkdir -p /boot/syslinux")
-                chroot_commands.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
-
-            # --- Processing
-
-            # Combine into a string
-            cmd_str = ";\n".join(chroot_commands)
-
-            # Map/Append Command String
-            result["command-string"] = cmd_str
-
-            for i in range(len(chroot_commands)):
-                # Get current command
-                curr_cmd = chroot_commands[i]
-
-                # Begin
-                print("Executing: {}".format(curr_cmd))
-                if self.env.MODE != "DEBUG":
-                    stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
-
-                    # Map/Append result results
-                    result["stdout"].append(stdout)
-                    result["stderr"].append(stderr)
-                    result["resultcode"].append(resultcode)
-
-            return result
-
-        def install_Bootloader(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
-            """
-            Install Bootloader to the Partition Table
-            """
-            # Initialize Variables
-            chroot_commands = []
-            result = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : ""
-            }
-            # Switch Case bootloader between grub and syslinux
-            if (bootloader == "grub"):
-                # Install Bootloader
-                chroot_commands.append("grub-install --target={} {} {}".format(bootloader_target_Architecture, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
-            elif bootloader == "syslinux":
-                ### Syslinux bootloader support is currently still a WIP and Testing
-                chroot_commands.append("extlinux --install /boot/syslinux")
-
-            # --- Processing
-
-            # Combine into a string
-            cmd_str = ";\n".join(chroot_commands)
-
-            # Map/Append Command String
-            result["command-string"] = cmd_str
-
-            for i in range(len(chroot_commands)):
-                # Get current command
-                curr_cmd = chroot_commands[i]
-
-                # Begin
-                print("Executing: {}".format(curr_cmd))
-                if self.env.MODE != "DEBUG":
-                    stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
-
-                    # Map/Append result results
-                    result["stdout"].append(stdout)
-                    result["stderr"].append(stderr)
-                    result["resultcode"].append(resultcode)
-
-            return result
-
-        def generate_bootloader_Configs(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
-            # Initialize Variables
-            chroot_commands = []
-            result = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : ""
-            }
-
-            # Switch Case bootloader between grub and syslinux
-            if (bootloader == "grub"):
-                # Generate bootloader configuration file
-                chroot_commands.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
-            elif bootloader == "syslinux":
-                ### Syslinux bootloader support is currently still a WIP and Testing
-                # Check partition table
-                if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                    chroot_commands.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
-                elif (partition_Table == "gpt"):
-                    chroot_commands.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
-                    chroot_commands.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
-
-            # --- Processing
-
-            # Combine into a string
-            cmd_str = ";\n".join(chroot_commands)
-
-            # Map/Append Command String
-            result["command-string"] = cmd_str
-
-            for i in range(len(chroot_commands)):
-                # Get current command
-                curr_cmd = chroot_commands[i]
-
-                # Begin
-                print("Executing: {}".format(curr_cmd))
-                if self.env.MODE != "DEBUG":
-                    stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
-
-                    # Map/Append result results
-                    result["stdout"].append(stdout)
-                    result["stderr"].append(stderr)
-                    result["resultcode"].append(resultcode)
-
-            return result
-
-        def bootloader_Management(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
-            """
-            NOTE:
-            1. Please Edit [osdef] on top with the bootloader information before proceeding
-            """
-            # Initialize Variables
-            combined_res = []
-
-            # Install bootloader packages
-            res = self.install_bootloader_Packages(dir_Mount, bootloader, partition_Table)
-            combined_res.append(res)
-
-            # Prepare Bootloader dependencies
-            res = self.prepare_Bootloader(dir_Mount, bootloader, bootloader_directory)
-            combined_res.append(res)
-
-            # Install Bootloader to partition table
-            res = self.install_Bootloader(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)
-            combined_res.append(res)
-
-            # Generate Bootloader configurations
-            res = self.generate_bootloader_Configs(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)
-            combined_res.append(res)
-
-            # Return output
-            return combined_res
-
-        def archive_command_Str(self, cmd_str, dir_Mount="/mnt"):
-            """
-            Output command string into a file for archiving
-            """
-            # Initialize Variables
-            mount_Root="{}/root".format(dir_Mount)
-            script_to_exe="chroot-comms.sh"
-            target_directory = "{}/{}".format(mount_Root, script_to_exe)
-
-            # Write commands into file for reusing
-            print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
-            if self.env.MODE != "DEBUG":
-                with open(target_directory, "a+") as write_chroot_Commands:
-                    # Write to file
-                    write_chroot_Commands.write(cmd_str)
-
-                    # Close file after usage
-                    write_chroot_Commands.close()
-
-            # Execute in arch-chroot
-            # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
-            # for debugging
-            self.default_Var["external_scripts"].append(
-                ### Append all external scripts used ###
-                "{}/{}".format(mount_Root, script_to_exe)
-            )
-
-        def arch_chroot_Exec(self):
-            """
-            Execute commands using arch-chroot due to limitations with shellscripting
-            """
-
-            # --- Input
-            # Local Variables
-            cfg = self.cfg
-            disk_Label = cfg["disk_Label"]
-            partition_Table = cfg["disk_partition_Table"] # MBR|MSDOS / GPT
-            bootloader_firmware = cfg["bootloader_firmware"] # BIOS / UEFI
-            dir_Mount = cfg["mount_Paths"]["Root"]
-            region = cfg["location"]["Region"]
-            city = cfg["location"]["City"]
-            language = cfg["location"]["Language"]
-            keyboard_mapping = cfg["location"]["KeyboardMapping"]
-            hostname = cfg["networkConfig_hostname"]
-            default_Kernel = cfg["default_kernel"]
-            bootloader = cfg["bootloader"]
-            bootloader_directory = cfg["bootloader_directory"]
-            bootloader_optional_Params = cfg["bootloader_Params"]
-            bootloader_target_device_Type = cfg["platform_Arch"]
-
-            # Chroot Execute
-            ## Synchronize Hardware Clock
-            print("(+) Time Zones : Synchronize Hardware Clock")
-            self.sync_Timezone(dir_Mount, region, city)
-
-            print("")
-
-            ## Enable locale/region
-            print("(+) Enable Location/Region")
-            self.enable_Locale(dir_Mount, language)
-
-            print("")
-
-            ## Append Network Host file
-            print("(+) Network Configuration")
-            self.network_Management(dir_Mount, hostname)
-
-            print("")
-
-            ## Format initial ramdisk
-            print("(+) Making Initial Ramdisk")
-            self.initialize_Ramdisk(dir_Mount, default_Kernel)
-
-            print("")
-
-            # Step 14: User Information - Set Root password
-            print("======= Change Root Password =======")
-            res = self.set_root_Password(dir_Mount)
-            stdout = res["stdout"]
-            stderr = res["stderr"]
-            resultcode = res["resultcode"] 
-            cmd_str = res["command-string"]
-
-            print("")
-            
-            # Step 15: Install Bootloader
-            combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
-            
-            print("")
-
-            # Archive the command string into a file
-            self.archive_command_Str(cmd_str, dir_Mount)
-
-            print("")
-
-        def installer(self):
-            """
-            Main setup installer
-            """
-            print("(S) Starting Base Installation...")
-
-            print("========================")
-            print("Stage 1: Prepare Network")
-            print("========================")
-
-            print("(S) 1. Testing Network...")
-            network_Enabled = self.verify_network()
-            if network_Enabled == False:
-                cmd_str = "dhcpcd"
-                print("")
-                print("Executing: {}".format(cmd_str))
-                if self.env.MODE != "DEBUG":
-                    ## Begin executing commands
-                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                    print("Standard Output: {}".format(stdout))
-                    print("Standard Error: {}".format(stderr))
-
-                    if returncode == 0:
-                        # Success
-                        print("(+) Network is activated")
-                    else:
-                        # Error
-                        print("(-) Error starting Network")
-            else:
-                print("(+) Network is active")
-
-            print("(D) Network testing completed.")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("==========================================")
-            print("Stage 2: Verify Boot Mode (i.e. UEFI/BIOS)")
-            print("==========================================")
-            
-            print("(S) Verifying Boot Mode...")
-            boot_Mode = self.verify_boot_Mode()
-            print("(+) Motherboard bootloader firmware boot mode (bios/uefi): {}".format(boot_Mode))
-
-            print("(D) Boot Mode verification completed.")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("============================")
-            print("Stage 3: Update System Clock")
-            print("============================")
-            
-            print("(S) Updating System Clock...")
-            stdout, stderr, resultcode, success_Flag = self.update_system_Clock()
-            if success_Flag == False:
-                print("(X) Error updating system clock via Network Time Protocol (NTP)")
-            else:
-                print("(D) System clock updated.")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("============================")
-            print("Stage 4: Partition the Disks")
-            print("============================")
-            
-            print("(S) Starting Disk Management...")
-            success_Flag = self.device_partition_Manager()
-            if success_Flag == False:
-                print("(X) Error formatting disk and partitions")
-            print("(D) Disk Management completed.")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("====================")
-            print("Stage 5: Mount Disks")
-            print("====================")
-            
-            print("(S) Mounting disks...")
-            success_Flag = self.mount_Disks()
-            if success_Flag == False:
-                print("(X) Error mounting disks")
-            print("(D) Disks mounted.")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("===================================")
-            print("Stage 6: Install essential packages")
-            print("===================================")
-            print("(S) Strapping packages to mount point...")
-            success_Flag = self.bootstrap_Install()
-            if success_Flag == False:
-                print("(X) Errors bootstrapping packages")
-            print("(D) Packages strapped.")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("===========================================")
-            print("Stage 7: Generate fstab (File System Table)")
-            print("===========================================")
-            print("(S) Generating Filesystems Table in /etc/fstab")
-            success_Flag = self.fstab_Generate()
-            if success_Flag == False:
-                print("(X) Error generating filesystems table")
-            print("(D) Filesystems Table generated.")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("===========================")
-            print("Stage 8: Chroot and execute")
-            print("===========================")
-
-            print("(S) Executing chroot commands")
-            success_Flag = self.arch_chroot_Exec() # Execute commands in arch-chroot
-            if success_Flag == False:
-                print("(X) Error executing commands in chroot")
-            print("(D) Commands executed")
-
-            if self.env.MODE == "DEBUG":
-                tmp = input("Press anything to continue...")
-
-            print("")
-
-            print("=======================")
-            print("Installation Completed.")
-            print("=======================")
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.chroot_execute_command_List(cmd_List, mount_Dir, chroot_Command, shell)`: Execute a system command in list form into the target mount point chroot root filesystem environment
+            - Parameter Signature/Header
+                - cmd_List : Specify the system command list you want to execute in a subprocess pipe
+                    + Type: List
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - chroot_Command : Specify the system command you wish to use to chroot into the root filesystem environment
+                    + Type: String
+                    + Default: "arch-chroot"
+                - shell : Specify the shell used to execute the chroot systems command
+                    + Type: String
+                    + Default: "/bin/bash"
+            - Return
+                - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.sync_Timezone(mount_Dir, region, city)`: Synchronize Hardware Clock in the chroot root filesystem
+            - Parameter Signature/Header
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                - region : Specify your system region (You can find it using 'ls /usr/share/zoneinfo' and choosing your region)
+                    + Type: String
+                - city : Specify your system city/country (You can find it using 'ls /usr/share/zoneinfo/<your-region>' and choosing your city)
+                    + Type: String
+            - Return
+                + Type: Void
+
+        - `.enable_Locale(mount_Dir, language)`: Uncomment and Enable locale/region
+            - Parameter Signature/Header
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                - language : Specify the locale/language ISO code to set for your system (i.e. en_SG, en_US)
+                    + Type: String
+                    - NOTE: 
+                        + You can find your language by searching in '/etc/locale.gen'
+            - Return
+                + Type: Void
+
+        - `.network_Management(mount_Dir, hostname)`: Append Network Host file
+            - Parameter Signature/Header
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                - hostname : Specify the chroot environment's network hostname to write into '/etc/hostname' and the '/etc/hosts' file; The hostname is used as an identifier for your system on the network
+                    + Type: String
+            - Return
+                + Type: Void
+
+        - `.initialize_Ramdisk(mount_Dir, default_Kernel="linux")`: Format initial ramdisk
+            - Parameter Signature/Header
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                - default_Kernel : Specify the default linux kernel you wish to install with
+                    + Type: String
+                    + Default: linux
+                    - Tested kernels
+                        + linux : Linux base
+            - Return
+                - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.set_root_Password(mount_Dir)`: Set the Root Password in the chroot root filesystem
+            - Parameter Signature/Header
+                - mount_Dir : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+            - Return
+                - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.install_bootloader_Packages(dir_Mount, bootloader, partition_Table)`: Install bootloader packages in the chroot root filesystem
+            - Parameter Signature/Header
+                - dir_Mount : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - bootloader: Specify the target bootloader to install to your chroot environment
+                    + Type: String
+                    - Accepted Values
+                        + grub : GRUB2
+                - partition_Table: Specify the storage device/disk's partition table
+                    + Type: String
+                    + Default: msdos
+                    - Accepted Values
+                        + msdos : aka MBR (Master Boot Record); Used by BIOS Legacy Motherboard Bootloader Firmware
+                        + gpt : aka GUID partition Table; Used by modern (U)EFI Motherboard Bootloader Firmware
+            - Return
+                - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.prepare_Bootloader(dir_Mount, bootloader, bootloader_directory)`: Prepare Bootloader directories and Pre-Requisites
+            - Parameter Signature/Header
+                - dir_Mount : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - bootloader: Specify the target bootloader to install to your chroot environment
+                    + Type: String
+                    - Accepted Values
+                        + grub : GRUB2
+                - bootloader_directory : Specify the boot directory containing your bootloader configuration files
+                    + Type: String
+                    + Default: "/boot/grub"
+                    - Notes
+                        + Certain bootloaders (i.e. Grub) have different boot directories based on partition table (i.e. MBR/GPT); 
+                    + Value Format String: "/boot/<your-bootloader>"
+                    - Recommended Bootloader directories
+                        + grub: /boot/grub
+            - Return
+                - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.install_Bootloader(disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc")`: Install Bootloader to the chroot root filesyste's Partition Table
+            - Parameter Signature/Header
+                - disk_Label : Specify the target disk/device label you wish to install the bootloader into
+                    + Type: String
+                    - Disk Label Formats
+                        - sata : For SATA/AHCI devices
+                            + Format: /dev/sdX
+                        - nvme : For NVME devices
+                            + Format: /dev/nvme[device-number]
+                        - loop : For Loopback devices
+                            + Format: /dev/loop[device-number]
+                - dir_Mount : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - bootloader: Specify the target bootloader to install to your chroot environment
+                    + Type: String
+                    - Accepted Values
+                        + grub : GRUB2
+                - bootloader_directory : Specify the boot directory containing your bootloader configuration files
+                    + Type: String
+                    + Default: "/boot/grub"
+                    - Notes
+                        + Certain bootloaders (i.e. Grub) have different boot directories based on partition table (i.e. MBR/GPT); 
+                    + Value Format String: "/boot/<your-bootloader>"
+                    - Recommended Bootloader directories
+                        + grub: /boot/grub
+                - partition_Table: Specify the storage device/disk's partition table
+                    + Type: String
+                    + Default: msdos
+                    - Accepted Values
+                        + msdos : aka MBR (Master Boot Record); Used by BIOS Legacy Motherboard Bootloader Firmware
+                        + gpt : aka GUID partition Table; Used by modern (U)EFI Motherboard Bootloader Firmware
+                - bootloader_optional_Params : Specify the optional parameters you wish to pass into your bootloader's installation command; Leave empty to pass nothing
+                    + Type: String
+                    + Default: ""
+                - bootloader_target_Architecture : Specify your bootloader's target platform/architecture to install for
+                    + Type: String
+                    + Default: "i386-pc"
+                    - Supported/Tested Values
+                        + i386-pc : Generic x86-64 CPU architectures
+            - Return
+                - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.generate_bootloader_Configs(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)`: Generate bootloader's configuration files in the chroot root filesystem
+            - Parameter Signature/Header
+                - disk_Label : Specify the target disk/device label containing the target root filesystem chroot environment you wish to generate the bootloader's configuration files into
+                    + Type: String
+                    - Disk Label Formats
+                        - sata : For SATA/AHCI devices
+                            + Format: /dev/sdX
+                        - nvme : For NVME devices
+                            + Format: /dev/nvme[device-number]
+                        - loop : For Loopback devices
+                            + Format: /dev/loop[device-number]
+                - dir_Mount : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - bootloader: Specify the target bootloader to install to your chroot environment
+                    + Type: String
+                    + Default: "grub"
+                    - Accepted Values
+                        + grub : GRUB2
+                - bootloader_directory : Specify the boot directory containing your bootloader configuration files
+                    + Type: String
+                    + Default: "/boot/grub"
+                    - Notes
+                        + Certain bootloaders (i.e. Grub) have different boot directories based on partition table (i.e. MBR/GPT); 
+                    + Value Format String: "/boot/<your-bootloader>"
+                    - Recommended Bootloader directories
+                        + grub: /boot/grub
+                - partition_Table: Specify the storage device/disk's partition table
+                    + Type: String
+                    + Default: "msdos"
+                    - Accepted Values
+                        + msdos : aka MBR (Master Boot Record); Used by BIOS Legacy Motherboard Bootloader Firmware
+                        + gpt : aka GUID partition Table; Used by modern (U)EFI Motherboard Bootloader Firmware
+                - bootloader_optional_Params : Specify the optional parameters you wish to pass into your bootloader's installation command; Leave empty to pass nothing
+                    + Type: String
+                    + Default: ""
+                - bootloader_target_Architecture : Specify your bootloader's target platform/architecture to install for
+                    + Type: String
+                    + Default: "i386-pc"
+                    - Supported/Tested Values
+                        + i386-pc : Generic x86-64 CPU architectures
+            - Return
+                - result : A Dictionary (key-value) mapping containing the standard output (stdout), standard error (stderr), the return status code (resultcode) and the command string (command-string)
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        - stdout : The Standard Output stream from the command execution
+                            + Type: String
+                        - stderr :  The Standard Error stream from the command excution
+                            + Type: String
+                        - returncode : Result/Return Status Code from the command execution
+                            + Type: Integer
+                            - Values
+                                + 0 = Success
+                                + > 0 = Failed
+                        - command-string : The command string formed from the chroot command list
+                            + Type: String
+
+        - `.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)`: Consolidation function
+            - Parameter Signature/Header
+                - disk_Label : Specify the target disk/device label containing the target root filesystem chroot environment you wish to generate the bootloader's configuration files into
+                    + Type: String
+                    - Disk Label Formats
+                        - sata : For SATA/AHCI devices
+                            + Format: /dev/sdX
+                        - nvme : For NVME devices
+                            + Format: /dev/nvme[device-number]
+                        - loop : For Loopback devices
+                            + Format: /dev/loop[device-number]
+                - dir_Mount : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+                - bootloader: Specify the target bootloader to install to your chroot environment
+                    + Type: String
+                    + Default: "grub"
+                    - Accepted Values
+                        + grub : GRUB2
+                - bootloader_directory : Specify the boot directory containing your bootloader configuration files
+                    + Type: String
+                    + Default: "/boot/grub"
+                    - Notes
+                        + Certain bootloaders (i.e. Grub) have different boot directories based on partition table (i.e. MBR/GPT); 
+                    + Value Format String: "/boot/<your-bootloader>"
+                    - Recommended Bootloader directories
+                        + grub: /boot/grub
+                - partition_Table: Specify the storage device/disk's partition table
+                    + Type: String
+                    + Default: "msdos"
+                    - Accepted Values
+                        + msdos : aka MBR (Master Boot Record); Used by BIOS Legacy Motherboard Bootloader Firmware
+                        + gpt : aka GUID partition Table; Used by modern (U)EFI Motherboard Bootloader Firmware
+                - bootloader_optional_Params : Specify the optional parameters you wish to pass into your bootloader's installation command; Leave empty to pass nothing
+                    + Type: String
+                    + Default: ""
+                - bootloader_target_Architecture : Specify your bootloader's target platform/architecture to install for
+                    + Type: String
+                    + Default: "i386-pc"
+                    - Supported/Tested Values
+                        + i386-pc : Generic x86-64 CPU architectures
+            - Operational flow
+                1. Install the bootloader packages in the chroot root filesystem
+                2. Prepare the bootloader dependencies in the chroot root filesystem
+                3. Install the bootloader to the target disk/device's partition table
+                4. Generate the bootloader configuration files in the chroot root filesystem
+            - Return
+                - combined_res : A list of all the results from all the bootloader-related commands
+                    + Type: List
+                    - Elements
+                        + [0] : res from install_bootloader_Packages()
+                        + [1] : res from prepare_Bootloader()
+                        + [2] : res from install_Bootloader()
+                        + [3] : res from generate_bootloader_Configs()
+
+        - `.archive_command_Str(cmd_str, dir_Mount="/mnt")`: Output command string into a file for archiving
+            - Parameter Signature/Header
+                - cmd_str : Specify the string of commands to output to the chroot mount directory
+                    + Type: String
+                - dir_Mount : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+            - Return
+                + Type: Void
+
+        - `.arch_chroot_Exec()` : Installation Stage 8 - Execute commands using arch-chroot due to limitations with shellscripting
+            - Operational flow
+                1. Retrieve all required key-value mappings from the imported configuration settings
+                2. Synchronize Hard Clock in chroot root filesystem
+                3. Enable locale/region in chroot root filesystem
+                4. Append Network Host File (/etc/hosts) in chroot root filesystem
+                5. Format initial ramdisk in chroot root filesystem
+                6. Set root password to chroot root filesystem
+                7. Install bootloader in chroot root filesystem
+                8. Archive the command strings into a file
+            - Return
+                + Type: Void
+
+        - `.installer()`: Main base installation installer function
+            - Operational flow
+                1. Verify that network exists and works
+                2. Obtain the motherboard firmware (boot mode)
+                3. Update the system clock
+                4. Format/Partition the disks
+                5. Mount the disks
+                6. Bootstrap install the essential packages into the mount point (root/base filesystem)
+                7. Generate the filesystems table file in the root filesystem
+                8. Chroot and execute the commands in `.arch_chroot_Exec()` in the chroot root filesystem
+            - Return
+                + Type: Void
 
 - pydistinstall.app.distributions.archlinux.mechanism.PostInstallation
+    - General
+        + `.init_Config()`: Initialize defaults from configuration file if base installation is not used
+
+    - Callback/Event Utility functions
+        - `.update_setup(setup)`: Update the setup variables according to that of the target platform's installer mechanism class
+            - Parameter Signature/Header
+                - setup : Store the caller's initialized setup class object
+                    + Type: pydistinstall.setup.Setup()
+            - Return
+                + Type: Void
+
+        - `.print_configurations()`: Print the currently stored configuration settings to standard output
+            - Return
+                + Type: Void
+
+        - `.postinstall_todo()`: Prints out to standard output a list of tasks todo after base installation (Unused)
+            - Return
+                + Type: Void
+
+        - `.postinstall_sanitize()`: Post-Installation Sanitization and cleanup the user accounts from any unnecessary files, as well as to save the commands
+            - Return
+                + Type: Void
+
+    - User Management
+        - `.get_users_Home(user_name)`: Get the home directory of a user
+            - Parameter Signature/Header
+                - user_name : The name of the target user
+                    + Type: String
+            - Return
+                - home_dir : Return the home directory mapped to the user
+
+        - `.check_user_Exists(user_name)`: Check if user exists
+            - Parameter Signature/Header
+                - user_name : Specify the target user to check if exists
+                    + Type: String
+            - Return 
+                - exist_Token : Return a token indicating if the user exists (True = Exists, False = Does not exists)
+                    + Type: Boolean
+
+        - `.useradd_get_default_Params()`: Get default parameters for 'useradd'
+            - Return
+                - user_params : A dictionary (key-value) mapping of the default user parameters used by 'useradd'
+                    + Type: Dictionary
+                    - Key-Value Mappings
+                        + GROUP : Obtain the groups
+                        + HOME  : Obtain the home directory
+                        + INACTIVE : Inactivity rule
+                        + EXPIRE : User expiry period
+                        + SHELL  : User's default shell
+                        + SKEL   : User's skeleton directory
+                        + CREATE_MAIL_SPOOL : Mail spool
+
+    - Post-Installation Stages
+        - `.enable_sudo(dir_Mount="/mnt")`: Enabling sudo in /etc/sudoers via command line
+            - Parameter Signature/Header
+                - dir_Mount : Specify the root/base filesystem mount path/directory containing the chroot environment
+                    + Type: String
+                    + Default: "/mnt"
+            - Return
+                - return_val : List containing the list [stdout, stderr, resultcode] for each command output
+                    + Type: List of Lists
+                    - Elements
+                        - [0] [stdout, stderr, resultcode]
+                            + Type: List
+                            - Sub-elements
+                                - [0] stdout : The Standard Output Stream returned from the command
+                                    + Type: String
+                                - [1] stderr : The Standard Errr Stream returned from the command
+                                    + Type: String
+                                - [2] ret_Code : The return code/result status from the execution of the command (0 = Success, > 0 = Failed)
+                                    + Type: Integer
+
+        - `.postinstallation()`: Main Post-Installation Recommendations and TODOs command execution
+            - Operational Flow
+                1. Obtain the root partition mount point
+                2. Enable sudo in the chroot root filesystem
+                3. Create users specified in the configuration file in the chroot root filesystem
+                4. Write command string to external script for usage
+            - Return
+                + Type: Void
+
+    - Main Post-Installer
+        - `.postinstaller()`: Start the post-installer in its entirety
+            - Return
+                + Type: Void
 
 - pydistinstall.lib.cli.CLIParser
     - `.get_cli_arguments()` : Iterates and processes through all the elements in the argument list and stores them according to the user's application requirements, then stores the final configurations back into the `self.configurations` class variable
@@ -1981,8 +1855,12 @@ Include = /etc/pacman.d/mirrorlist
 #Server = file:///home/custompkgs
             ```
 
-
 - pydistinstall.app.distributions.archlinux.mechanism.PostInstallation
+    - `.setup` : Store the caller's initialized setup class object
+        + Type: pydistinstall.setup.Setup()
+    - `.base_mechanism_Obj` : Store the caller's initialized BaseInstallation() class object
+        + Type: pydistinstall.app.distributions.archlinux.mechanism.BaseInstallation(setup)
+        + Default Value: None
 
 - pydistinstall.lib.cli.CLIParser
     - `.configurations = { "optionals" : {}, "positionals" : [] }` : Dictionary (Key-Value) container containing the CLI configuration arguments parsed

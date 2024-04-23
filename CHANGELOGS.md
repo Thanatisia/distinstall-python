@@ -908,3 +908,8 @@
     - Updated document 'USAGE.md'
         + Ongoing: adding documentations for module 'mechanism.py' in directory 'src/distinstall/app/distributions/[distribution-name]'
 
+#### 2151H
+- Updates
+    - Updated document 'USAGE.md'
+        + Completed adding documentations for module 'mechanism.py' in directory 'src/distinstall/app/distributions/[distribution-name]'
+
