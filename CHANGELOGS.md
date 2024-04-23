@@ -924,3 +924,10 @@
     - Updated document 'USAGE.md'
         + Fixing formatting issue with '/etc/pacman.conf'
 
+#### 2241H
+- Updates
+    - Updated document 'USAGE.md'
+        + Migrated library/framework function documentations to 'wiki.md'
+    - Updated document 'wiki.md'
+        + Migrated and updated library/framework function documentations from 'USAGE.md' to 'wiki.md'
+
