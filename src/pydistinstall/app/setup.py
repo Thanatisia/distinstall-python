@@ -7,10 +7,10 @@ import sys
 from ruamel.yaml import YAML
 
 ## External Libraries
-from pydistinstall.lib.cli import CLIParser
-from pydistinstall.lib.format import Text
-from pydistinstall.lib.env import Environment
-from pydistinstall.app import distributions as dist
+from pydistinstall.app.lib.cli import CLIParser
+from pydistinstall.app.lib.env import Environment
+from pydistinstall.utils.format import Text
+from pydistinstall.core import distributions as dist
 
 class Setup():
     """

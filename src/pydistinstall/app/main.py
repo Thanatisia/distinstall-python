@@ -7,7 +7,7 @@ import sys
 
 ## External Libraries
 from pydistinstall.app import runner as app_runner
-from pydistinstall.setup import Setup
+from pydistinstall.app.setup import Setup
 
 def init():
     """

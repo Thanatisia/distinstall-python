@@ -6,8 +6,8 @@ import os
 import sys
 
 ## External Libraries
-from .distributions.archlinux import mechanism
-from ..lib import process
+from pydistinstall.core.distributions.archlinux import mechanism
+from pydistinstall.utils import process
 
 class App():
     def __init__(self, distribution_Name, setup, env):

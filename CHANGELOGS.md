@@ -66,6 +66,7 @@
     + 2241H
     + 2258H
     + 2316H
+    + 2335H
 
 ## Entries
 
@@ -979,4 +980,23 @@
     - Updated document 'CHANGELOGS.md'
         + Fixed duplicated dates issue
         + Added missing dates
+
+#### 2335H
+- New
+    - Added new directory 'core/' in 'src/pydistinstall/' to hold the core library/framework modules (i.e. base/post installation module/libraries)
+
+- Updates
+    - Migration
+        - Notes
+            - The new project structure will operate with a separated use case layout
+                + Where each module will be separated into various components for various tasks
+        - Migrated 'src/pydistinstall/main.py' => 'src/pydistinstall/app'
+        - Migrated 'src/pydistinstall/runner.py' => 'src/pydistinstall/app'
+        - Migrated 'src/pydistinstall/setup.py' => 'src/pydistinstall/app'
+        - Migrated 'src/pydistinstall/lib' => 'src/pydistinstall/app'
+        - Migrated 'src/pydistinstall/lib/format.py' => 'src/pydistinstall/utils/'
+        - Migrated 'src/pydistinstall/lib/process.py' => 'src/pydistinstall/utils/'
+        - Migrated 'src/pydistinstall/lib/utils.py' => 'src/pydistinstall/utils/general.py'
+        - Migrated 'src/pydistinstall/app/distributions' => 'src/pydistinstall/core'
+        - Migrated 'src/pydistinstall/practice-ground.py' => 'tests/'
 
