@@ -1,0 +1,94 @@
+# Platform Management
+distribution-name: arch
+
+# Storage Disk/Device Firmware and Controller Settings
+device_Type: vhd 
+storage-controller: sata
+device_Size: 51200MiB
+disk_Label: /dev/sdX
+disk_partition_Table: msdos
+bootloader_firmware: mbr
+bootloader: grub
+
+# Partition Scheme/Layout
+partition_Scheme:
+  # Format:
+  # Partition-number:
+  #     - Partition-Label | Partition-Name
+  #     - Partition-Type
+  #     - Partition-Filesystem
+  #     - Partition-Starting position/size of partition (Integer|Percentage)
+  #     - Partition-Ending position/size of partition (Integer|Percentage)
+  1:
+    - Boot
+    - primary
+    - ext4
+    - 0%
+    - 1024MiB
+    - true
+    - NIL
+  2:
+    - Root
+    - primary
+    - ext4
+    - 1024MiB
+    - 32768MiB
+    - false
+    - NIL
+  3:
+    - Home
+    - primary
+    - ext4
+    - 32768MiB
+    - 100%
+    - false
+    - NIL
+
+# Filesystem Mounting
+mount_Paths:
+  # Key = Partition Name/ID
+  # Value = Mount Path/directory
+  Boot: /mnt/boot
+  Root: /mnt
+  Home: /mnt/home
+
+# System Management
+
+## Package Management
+base_pkgs:
+  # - Package Name
+  - base
+  - linux
+  - linux-firmware
+  - linux-lts
+  - linux-lts-headers
+  - base-devel
+  - nano
+  - vim
+  - networkmanager
+  - os-prober
+
+## System Location (Locale)
+location:
+  Region: <your-region>
+  City: <your-city>
+  Language: <language>_<region>.UTF-8
+  KeyboardMapping: en_UTF-8
+
+## User Profile
+user_ProfileInfo:
+  username:
+    - wheel
+    - users
+    - /home/profiles/username
+    - NIL
+
+## Network Management
+networkConfig_hostname: your-hostname
+
+## System Management
+bootloader_directory: /boot/grub
+bootloader_Params: ''
+default_kernel: linux
+platform_Arch: i386-pc
+

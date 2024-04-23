@@ -1,18 +1,53 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "distinstall-python"
 version = "0.4.5"
 description = "Portable, Customizable and Modular distribution installation library/framework"
-authors = ["Thanatisia <55834101+Thanatisia@users.noreply.github.com>"]
+authors = [
+    { name="Thanatisia", email="55834101+Thanatisia@users.noreply.github.com" },
+]
 readme = "README.md"
-packages = [
-    {include = "distinstall-python", from="src"}
+requires-python = ">=3.8"
+classifiers = [
+    # How mature is this project? Common values are
+    #   3 - Alpha
+    #   4 - Beta
+    #   5 - Production/Stable
+    'Development Status :: 3 - Alpha',
+
+    # Indicate who your project is intended for
+    'Intended Audience :: Developers',
+    'Operating System :: OS Independent',
+
+    # Pick your license as you wish
+    'License :: OSI Approved :: MIT License',
+
+    # Specify the Python versions you support here.
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
+dependencies = [
+    # List your dependencies here
+    "ruamel.yaml"
 ]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-build = "^1.0.3"
+[project.scripts]
+# Program Entry Point(s) and scripts
+py-distinstall = "pydistinstall.main:main"
 
+[project.urls]
+Homepage = "https://github.com/Thanatisia/distinstall-python"
+Repository = "https://github.com/Thanatisia/distinstall-python.git"
 
-[build-system]
-requires = ["poetry-core", "ruamel.yaml"]
-build-backend = "poetry.core.masonry.api"
+[tools.setuptools.packages.find]
+where = ["src"]
+
