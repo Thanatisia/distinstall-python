@@ -41,11 +41,17 @@
 - [2024-01-29](#2024-01-29)
     + 1026H : v0.4.1
     + 1758H : v0.4.2
-- [2024-01-29](#2024-01-29)
     + 1758H : v0.4.3
     + 2227H : v0.4.4
 - [2024-01-30](#2024-01-30)
     + 1358H : v0.4.5
+- [2024-04-09](#2024-04-09)
+    + 2212H
+    + 2246H
+    + 2259H
+    + 2317H
+    + 2318H
+    + 2323H
 - [2024-04-19](#2024-04-19)
     + 1137H
 - [2024-04-21](#2024-04-21)
@@ -56,6 +62,10 @@
     + 1038H
     + 1537H
     + 2151H
+    + 2236H
+    + 2241H
+    + 2258H
+    + 2316H
 
 ## Entries
 
@@ -816,7 +826,6 @@
 - Updates
     + Moved project structure from 'src/' to folder 'src/distinstall-python' as a package
 
-### 2024-01-29
 #### 1758H
 + Version: v0.4.3
 
@@ -856,6 +865,35 @@
 - Updates
     - Updated 'setup.py' and 'pyproject.toml' with latest version and setup entry point
     - Updated 'main.py' to be in sync with '__main__.py'
+
+### 2024-04-09
+#### 2212H
+- Updates
+    - Updated python packaging configuration file 'pyproject.toml'
+        + Refactored
+
+#### 2246H
+- Updates
+    + Deleted setup.py and replaced with the python packaging configuration file 'pyproject.toml'
+
+#### 2259H
+- Updates
+    - Updated python packaging configuration file 'pyproject.toml'
+        + Renamed template to 'pydistinstall'
+
+#### 2317H
+- New
+    - Added new directory 'tests/'
+        + Added test configuration file 'config.yaml.bak'
+
+#### 2318H
+- Updates
+    + Migrated python package 'distinstall-python' => 'pydistinstall' to fix hyphen-filestructure naming convention issue
+
+#### 2323H
+- Updates
+    - Updated Makefile
+        + Added new rules and formatting
 
 ### 2024-04-19
 #### 1137H
@@ -935,4 +973,10 @@
 - Updates
     - Updated document 'USAGE.md'
         + Cleaned up project structure header
+
+#### 2316H
+- Updates
+    - Updated document 'CHANGELOGS.md'
+        + Fixed duplicated dates issue
+        + Added missing dates
 
