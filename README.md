@@ -1,10 +1,25 @@
-# Distribution installer - Python reimplementation/re-write
+# py-unidist
 
 ## Information
-- This is a rewrite of the distribution install script from the [Bash shellscript implementation - distro-installscript-arch](https://github.com/Thanatisia/distro-installscript-arch)
-    - to using a proper programming/scripting language such as Python, Golang and potentially C (or Rust)
-- Currently, this rewrite is in python as it is a good language for prototyping and future planning. 
-    - From here, I might be able to have an easier time rewriting from python to other programming languages like the aforementioned - golang and/or C
+### Description
++ A Universal Distribution Install library/framework written in Python
+- This package contains
+    - working pre-made script for installing distributions
+        - Currently supported systems
+            + ArchLinux
+    + modules for installing/setting up the base/root filesystem of various distributions/systems using bootstrap installation
+
++ ![py-distinstall full demo](resources/demo/demo-archlinux-full.gif)
+
+### Project
++ Package Name: py-unidist
++ Current Version: v0.4.5
+
+### Timeline
++ The project has went through various major checkpoints and changes including rewriting from the original [Bash shellscript implementation - distro-installscript-arch](https://github.com/Thanatisia/distro-installscript-arch) as a standalone ArchLinux base filesystem installer via bootstrap installation
++ In the midst of improving the project, I realised that the installation flow at times can be quite similar, it might work as a library/framework.
+- Additionally, at about that period, I felt that this deserves to be written in a proper programming language (such as Python, Golang, Rust etc) if it helps with scalability
+    + Because I was using Python more often during that period, I went with Python
 
 ## Setup
 ### Dependencies
@@ -181,28 +196,6 @@
             apt install < pkglist.txt
             ```
 
-- Running framework/package from source
-    - Install python dependencies
-        - From requirements.txt
-            ```console
-            python -m pip install -Ur requirements.txt
-            ```
-
-- Install framework using pip
-    - Locally as development mode
-        ```console
-        pip install .
-        ```
-    - Remote installation
-        - Install from PyPI (WIP)
-            ```console
-            pip install distinstall-python
-            ```
-        - Install from GtiHub
-            ```console
-            pip install https://github.com/Thanatisia/distinstall-python{@[branch-tag-name]}
-            ```
-
 - (Optional) If you are installing into a Virtual Disk Image on Host
     - Create a Virtual Hard Disk image
         - Explanation
@@ -232,6 +225,45 @@
             sudo losetup -Pf [path-to-virtual-hard-disk-img]
             ```
 
+### Installation
+- Using python pip
+    - Install git package
+        - From GitHub
+            ```bash
+            python3 -m pip install git+https://github.com/Thanatisia/py-unidist{@[branch-tag-name]}
+            ```
+        - From requirements.txt
+            - Prepare requirements.txt file
+                ```
+                distinstall-python @ git+https://github.com/Thanatisia/py-unidist{@[branch-tag-name]}
+                ```
+            - (Optional) Install requirements.txt
+                ```bash
+                python3 -m pip install -Ur requirements.txt
+                ```
+
+    - Manually via cloning
+        - Clone git repository
+            ```bash
+            git clone https://github.com/Thanatisia/py-unidist
+            ```
+        - Change directory into project root
+            ```bash
+            cd py-unidist
+            ```
+        - (Optional) Install python dependencies
+            ```bash
+            python3 -m pip install -Ur requirements.txt
+            ```
+        - Install package as development mode
+            ```bash
+            pip install .
+            ```
+        - (Optional) Uninstall package
+            ```bash
+            pip uninstall py-unidist
+            ```
+
 ### Compiling into an executable
 > Still undergoing tests
 - Using PyInstaller
@@ -259,67 +291,73 @@
 1. Perform setup
     - Create Virtual Environment
         ```console
-        python3 -m venv env
+        python3 -m venv [virtual-environment-name]
         ```
     - Source and chroot into Virtual Environment
         - Linux
-            ```console
-            . env/bin/activate
+            ```bash
+            . [virtual-environment-name]/bin/activate
             ```
         - Windows
-            ```console
-            .\env\Scripts\activate
+            ```bash
+            .\[virtual-environment-name]\Scripts\activate
             ```
     - Install dependencies
         ```console
         pip install -Ur requirements.txt
         ```
-2. Change directory into application folder
+1. Installing package
+    + Follow the steps in [Installation](#installation) to install the package
+
+2. Generate configuration file
     ```console
-    cd src
+    py-distinstall --generate-config
     ```
-3. Generate configuration file
-    ```console
-    python3 main.py --generate-config
-    ```
-4. Edit configuration file
+3. Edit configuration file
     + Please refer to [USAGE.md](USAGE.md) for more information on customization
     + Under the 'customization' section
-5. Perform a test run
+4. Perform a test run
     - Explanation
         + The Default mode is 'Debug', this will print the commands only
     - Perform full start
         ```console
-        sudo python3 main.py start
+        sudo py-distinstall start
         ```
     - Execute specific stages
         ```console
-        sudo python3 main.py --execute-stage [stage-number]
+        sudo py-distinstall --execute-stage [stage-number]
         ```
-6. Once you have confirmed
+5. Once you have confirmed
     - Explanation
         + To run the changes proper, you need to set the mode to RELEASE
     - Perform full start
         ```console
-        sudo python3 main.py --mode RELEASE start
+        sudo py-distinstall --mode RELEASE start
         ```
     - Execute specific stages
         ```console
-        sudo python3 main.py --mode RELEASE --execute-stage [stage-number]
+        sudo py-distinstall --mode RELEASE --execute-stage [stage-number]
         ```
 
 #### Developers
 - To implement a new distribution installation step
-    - Copy the template 'mechanism.py' from any of the 'src/app/distributions/[base-distribution-name]' to a test draft location
+    - Make directory for the new base distribution
+        ```bash
+        mkdir -pv src/pydistinstall/app/distributions/[new-base-distribution-name]
+        ```
+    - Copy the template 'mechanism.py' from any of the 'src/pydistinstall/app/distributions/[base-distribution-name]' to a test draft location
+        ```bash
+        cp -r src/pydistinstall/app/distributions/[base-distribution-name] src/pydistinstall/app/distributions/[new-base-distribution-name]
+        ```
     - Edit accordingly
-        - Please ensure that to maintain consistency, function names is adviced to be the same if the function already exists.
-        - If the function didnt exist, then you may create a new function to be called as necessary
+        + Please ensure that to maintain consistency, function names is adviced to be the same if the function already exists.
+        + If the function didnt exist, then you may create a new function to be called as necessary
 
 ## Documentation
 ### Synopsis/Syntax
 - Basic Run
     ```console
-    {sudo} python main.py {options} <arguments> [positionals]
+    {sudo} py-distinstall {options} <arguments> [positionals]
     ```
 
 ### Parameters
@@ -354,77 +392,77 @@
 ### Usage
 - Generate configuration file
     ```console
-    python main.py --generate-config
+    py-distinstall --generate-config
     ```
 
 - Default (Test Install; Did not specify target disk name explicitly)
     ```console
-    sudo python main.py start
+    sudo py-distinstall start
     ```
 
 - Unmount the drive from the mount points specified in the configuration file
     ```console
-    sudo python main.py -u [root-mount-point]
+    sudo py-distinstall -u [root-mount-point]
     ```
 
 - Test Install; with target disk name specified as flag
     ```console
-    sudo python main.py -d "/dev/sdX" start
+    sudo py-distinstall -d "/dev/sdX" start
     ```
 
 - Test Install; with target disk name specified with environment variable TARGET_DISK_NAME
     ```console
-    sudo TARGET_DISK_NAME="/dev/sdX" python main.py start
+    sudo TARGET_DISK_NAME="/dev/sdX" py-distinstall start
     ```
 
 - Test Install; with custom configuration file
     ```console
-    sudo python main.py -c "new config file" -d "/dev/sdX" start
+    sudo py-distinstall -c "new config file" -d "/dev/sdX" start
     ```
 
 - Start installation (Did not specify target disk name explicitly)
     ```console
-    sudo python main.py -m RELEASE start
+    sudo py-distinstall -m RELEASE start
     ```
 
 - Start installation with the start mode specified with environment variable 'MODE'
     ```console
-    sudo MODE=RELEASE python main.py start
+    sudo MODE=RELEASE py-distinstall start
     ```
 
 - Start installation (with target disk name specified as flag)
     ```console
-    sudo python main.py -d "/dev/sdX" -m RELEASE start
+    sudo py-distinstall -d "/dev/sdX" -m RELEASE start
     ```
 
 - Start installation (with target disk name specified with environment variable TARGET_DISK_NAME)
     ```console
-    sudo TARGET_DISK_NAME="/dev/sdX" python main.py -m RELEASE start
+    sudo TARGET_DISK_NAME="/dev/sdX" py-distinstall -m RELEASE start
     ```
 
 - Start installation (with custom configuration file)
     ```console
-    sudo python main.py -c "new config file" -d "/dev/sdX" -m RELEASE start
+    sudo py-distinstall -c "new config file" -d "/dev/sdX" -m RELEASE start
     ```
 
 - List all installation stages
     ```console
-    sudo python main.py --list-stages
+    sudo py-distinstall --list-stages
     ```
 
 - Execute specific stages
     ```console
-    sudo python main.py --execute-stage 1 --execute-stage 2 .... -m RELEASE
+    sudo py-distinstall --execute-stage 1 --execute-stage 2 .... -m RELEASE
     ```
 
 - Open up fdisk for manual partition configuration
     ```console
-    sudo python main.py --fdisk
+    sudo py-distinstall --fdisk
     ```
 
 - Open up fdisk for manual partition configuration
     ```console
-    sudo python main.py --cfdisk
+    sudo py-distinstall --cfdisk
     ```
 
 ### Notes
@@ -438,28 +476,30 @@ project-root/
     |
     |-- src/ : For all project-related files
         |
-        |-- main.py  : The main runner/launcher project code
-        |-- setup.py : Root setup file for the main runner/launcher
-        |-- unittest.py : WIP Unit Testing source file
-        |-- app/ : For all application-specific functionalities; Such as source files related to the installation mechanism of the various Distributions
+        |-- pydistinstall/ : Main package
             |
-            |-- runner.py : This is the Distribution Switcher ("Load Balancer") that will process your target distribution name and separate to the appropriate distributions
-            |-- distributions/ : For all distribution classes
+            |-- main.py  : The main runner/launcher project code
+            |-- setup.py : Root setup file for the main runner/launcher
+            |-- unittest.py : WIP Unit Testing source file
+            |-- app/ : For all application-specific functionalities; Such as source files related to the installation mechanism of the various Distributions
                 |
-                |-- archlinux/ : Contains ArchLinux installation functionality and archlinux-specific libraries
+                |-- runner.py : This is the Distribution Switcher ("Load Balancer") that will process your target distribution name and separate to the appropriate distributions
+                |-- distributions/ : For all distribution classes
                     |
-                    |-- mechanism.py : The primary library containing the Base Installation and Post-Installation mechanism classes for the distribution
-        |-- lib/ : For all external/general libraries that are not application-specific
-            |
-            |-- cli.py : This contains functionality to Command Line Interface (CLI) Argument handling
-            |-- config_handler.py : This contains functionality to handling Configuration Files
-            |-- const.py : This contains constant variables and values
-            |-- device_management.py : This contains Device and Disk Handling functions
-            |-- env.py : This contains Environment Variables
-            |-- format.py : This contains string formatting support
-            |-- process.py : This contains Subprocess and systems command execution functions
-            |-- user_management.py : This contains User management functionalities
-            |-- utils.py : This contains general utilities
+                    |-- archlinux/ : Contains ArchLinux installation functionality and archlinux-specific libraries
+                        |
+                        |-- mechanism.py : The primary library containing the Base Installation and Post-Installation mechanism classes for the distribution
+            |-- lib/ : For all external/general libraries that are not application-specific
+                |
+                |-- cli.py : This contains functionality to Command Line Interface (CLI) Argument handling
+                |-- config_handler.py : This contains functionality to handling Configuration Files
+                |-- const.py : This contains constant variables and values
+                |-- device_management.py : This contains Device and Disk Handling functions
+                |-- env.py : This contains Environment Variables
+                |-- format.py : This contains string formatting support
+                |-- process.py : This contains Subprocess and systems command execution functions
+                |-- user_management.py : This contains User management functionalities
+                |-- utils.py : This contains general utilities
 ```
 
 ## TODO
@@ -486,4 +526,6 @@ project-root/
         + [ ] Easier distribution methods - i.e. Compilation into binary using compilers for python like pyinstaller
 - [ ] Bug Fixes
     + [ ] Fixed technical terminologies and makes it easier to understand
+- [ ] Refactoring
+    + Remake the main CLI utility entry point to be less messy
 

@@ -48,6 +48,8 @@
     + 1358H : v0.4.5
 - [2024-04-19](#2024-04-19)
     + 1137H
+- [2024-04-21](#2024-04-21)
+    + 1724H
 
 ## Entries
 
@@ -862,4 +864,47 @@
 - Updates
     - Updated document 'CONTRIBUTING.md'
         + Reformatted and added more detailed information on how to test your changes as well as install
+
+### 2024-04-20
+#### 2245H
+- New
+    + Added new document 'generating-demo.md' in 'docs/': Specify steps to recreate the demo animation GIF
+    + Added new demo gif file 'demo-archlinux-full.gif' in 'resources/demo/' : Contains the complete installation process of installing a base archlinux installation
+
+- Updates
+    - Updated document 'README.md'
+        + Added information header block with project/package information, description and timelines
+        + Updated installation methods
+        + Rearranging compilation steps
+        + Updated Quickstart Guide
+        + Updated project directory structure/layout
+        + Added the full demo gif under the description header block
+        + Added new TODO
+    - Updated document 'USAGE.md'
+        + Replaced 'python main.py' with 'py-distinstall'
+        + Added header blocks for the project layout modules
+
+### 2024-04-21
+#### 1724H
+- Updates
+    - Updated document 'USAGE.md'
+        + Completed adding documentations for all modules, classes, functions, data types/classes, attributes/variables for the directory 'src/distinstall/lib'
+        + Completed adding documentations for module 'main.py' in directory 'src/distinstall/'
+
+### 2024-04-22
+#### 1311H
+- Updates
+    - Updated document 'USAGE.md'
+        + Completed adding documentations for module 'setup.py' in directory 'src/distinstall/'
+
+### 2024-04-23
+#### 1038H
+- Updates
+    - Updated document 'USAGE.md'
+        + Completed adding documentations for module 'runner.py' in directory 'src/distinstall/app'
+
+#### 1537H
+- Updates
+    - Updated document 'USAGE.md'
+        + Ongoing: adding documentations for module 'mechanism.py' in directory 'src/distinstall/app/distributions/[distribution-name]'
 
