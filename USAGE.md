@@ -1747,7 +1747,7 @@
     - `.package_manager_Configurations` : Specify the contents of the package manager's configuration file
         + Type: String
         - Default:
-            ```python
+```
 #
 # /etc/pacman.conf
 #
@@ -1853,7 +1853,7 @@ Include = /etc/pacman.d/mirrorlist
 #[custom]
 #SigLevel = Optional TrustAll
 #Server = file:///home/custompkgs
-            ```
+```
 
 - pydistinstall.app.distributions.archlinux.mechanism.PostInstallation
     - `.setup` : Store the caller's initialized setup class object
