@@ -931,3 +931,8 @@
     - Updated document 'wiki.md'
         + Migrated and updated library/framework function documentations from 'USAGE.md' to 'wiki.md'
 
+#### 2258H
+- Updates
+    - Updated document 'USAGE.md'
+        + Cleaned up project structure header
+

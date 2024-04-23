@@ -138,53 +138,55 @@
 ```
 project-root/
     |
-    |-- src/ 
+    |-- src/ : For all project-related files
         |
-        |-- main.py  
-        |-- setup.py 
-        |-- unittest.py 
-        |-- app/ 
+        |-- pydistinstall/ : Main package
             |
-            |-- runner.py 
-            |-- distributions/ 
+            |-- main.py  : The main runner/launcher project code
+            |-- setup.py : Root setup file for the main runner/launcher
+            |-- unittest.py : WIP Unit Testing source file
+            |-- app/ : For all application-specific functionalities; Such as source files related to the installation mechanism of the various Distributions
                 |
-                |-- archlinux/ 
+                |-- runner.py : This is the Distribution Switcher ("Load Balancer") that will process your target distribution name and separate to the appropriate distributions
+                |-- distributions/ : For all distribution classes
                     |
-                    |-- mechanism.py 
-        |-- lib/ 
-            |
-            |-- cli.py 
-            |-- config_handler.py 
-            |-- const.py 
-            |-- device_management.py 
-            |-- env.py 
-            |-- format.py 
-            |-- process.py 
-            |-- user_management.py 
-            |-- utils.py 
+                    |-- archlinux/ : Contains ArchLinux installation functionality and archlinux-specific libraries
+                        |
+                        |-- mechanism.py : The primary library containing the Base Installation and Post-Installation mechanism classes for the distribution
+            |-- lib/ : For all external/general libraries that are not application-specific
+                |
+                |-- cli.py : This contains functionality to Command Line Interface (CLI) Argument handling
+                |-- config_handler.py : This contains functionality to handling Configuration Files
+                |-- const.py : This contains constant variables and values
+                |-- device_management.py : This contains Device and Disk Handling functions
+                |-- env.py : This contains Environment Variables
+                |-- format.py : This contains string formatting support
+                |-- process.py : This contains Subprocess and systems command execution functions
+                |-- user_management.py : This contains User management functionalities
+                |-- utils.py : This contains general utilities
 ```
 
 ### Project Components
 - project-root/
     - src/ : For all project-related files
-        - main.py  : The main runner/launcher project code
-        - setup.py : Root setup file for the main runner/launcher
-        - unittest.py : WIP Unit Testing source file
-        - app/ : For all application-specific functionalities; Such as source files related to the installation mechanism of the various Distributions
-            - runner.py : This is the Distribution Switcher ("Load Balancer") that will process your target distribution name and separate to the appropriate distributions
-            - distributions/ : For all distribution classes
-                - archlinux/ : Contains ArchLinux installation functionality and archlinux-specific libraries
-                    - mechanism.py : The primary library containing the Base Installation and Post-Installation mechanism classes for the distribution
-        - lib/ : For all external/general libraries that are not application-specific
-            - cli.py : This contains functionality to Command Line Interface (CLI) Argument handling
-            - config_handler.py : This contains functionality to handling Configuration Files
-            - const.py : This contains constant variables and values
-            - device_management.py : This contains Device and Disk Handling functions
-            - env.py : This contains Environment Variables
-            - format.py : This contains string formatting support
-            - process.py : This contains Subprocess and systems command execution functions
-            - user_management.py : This contains User management functionalities
-            - utils.py : This contains general utilities
+        - pydistinstall
+            + main.py : The main entry point source file for the 'py-distinstall' CLI utility executable; This is the current main project. This may be reworked and refactored
+            + setup.py : The setup library for the 'py-distinstall' CLI utility executable
+            - app/ : Submodule containing all the application logic and the core base/post-installation library/framework modules
+                + runner.py : The main runner for the distribution installation functionality; This is called by 'main.py' which will then be used as a load balancer for pulling the functions from the respective distribution's core module
+                - distributions/ : Contains all submodules relating to each distributions (i.e archlinux : for ArchLinux)
+                    - archlinux/ : Contains all modules relating to ArchLinux
+                        + mechanism.py : The core installation module/library containing functions and classes relating to installing and configuring a working, chrootable ArchLinux root filesystem
+            - lib/ : Submodule containing all general helper libraries/modules used by the distribution installer CLI utility
+                + cli.py               : Contains functions relating to this application's CLI argument parsing
+                + config_handler.py    : Contains configuration file handling and processing functions
+                + const.py             : Contains all constant variables
+                + device_management.py : Device Management module containing device/disk handling functions
+                + env.py               : Contains Environment Variables used by the CLI application
+                + format.py            : Contains functions about formatting objects
+                + process.py           : Contains functions about system processes/subprocess handling
+                + user_management.py   : User Management module containing User authentication and authorization functions
+                + utils.py             : General utilities module containing various non-categorised helper functions
 
 ## Configuration
 ### Configuration Components
