@@ -3,8 +3,7 @@ Configurations file handler
 """
 import os
 import sys
-from ruamel.yaml import YAML as yaml
-from ruamel.yaml.main import round_trip_load as yaml_load, round_trip_dump as yaml_dump
+from ruamel.yaml import YAML as yaml, load as yaml_load, dump as yaml_dump
 
 class YAMLConfig():
     """

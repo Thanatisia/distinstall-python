@@ -69,6 +69,7 @@
     + 2335H
 - [2024-04-24](#2024-04-24)
     + 2211H
+    + 2222H
 
 ## Entries
 
@@ -1009,4 +1010,11 @@
         - Migrated 'src/pydistinstall/lib/device_management.py' => 'src/pydistinstall/utils/'
     - Updated module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux'
         + Removed all unnecessary dependencies
+
+#### 2222H
+- Updates
+    - Updated module 'config_handler.py' in 'src/pydistinstall/app/lib/'
+        + Removed deprecated functions from 'ruamel.yaml.main'
+    - Updated module 'user_management.py' in 'src/pydistinstall/app/lib/'
+        + Replaced relative imports to package imports
 

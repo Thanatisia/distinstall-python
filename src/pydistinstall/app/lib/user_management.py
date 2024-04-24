@@ -4,8 +4,8 @@ User Management handler
 
 import os
 import sys
-from . import process
 from subprocess import Popen, PIPE
+from pydistinstall.utils import process
 
 def get_all_users():
     """
