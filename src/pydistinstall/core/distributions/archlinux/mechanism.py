@@ -4,8 +4,7 @@ Primary Installation Mechanism
 import os
 import sys
 import shutil
-from ....lib import utils, env, user_management, device_management, process
-from ....lib.env import Environment
+from pydistinstall.utils import process, device_management
 
 class BaseInstallation():
     def __init__(self, setup):

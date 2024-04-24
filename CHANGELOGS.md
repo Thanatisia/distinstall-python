@@ -67,6 +67,8 @@
     + 2258H
     + 2316H
     + 2335H
+- [2024-04-24](#2024-04-24)
+    + 2211H
 
 ## Entries
 
@@ -999,4 +1001,12 @@
         - Migrated 'src/pydistinstall/lib/utils.py' => 'src/pydistinstall/utils/general.py'
         - Migrated 'src/pydistinstall/app/distributions' => 'src/pydistinstall/core'
         - Migrated 'src/pydistinstall/practice-ground.py' => 'tests/'
+
+### 2024-04-24
+#### 2211H
+- Updates
+    - Migration
+        - Migrated 'src/pydistinstall/lib/device_management.py' => 'src/pydistinstall/utils/'
+    - Updated module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux'
+        + Removed all unnecessary dependencies
 

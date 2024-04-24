@@ -3,7 +3,7 @@ Device and Disk Management
 """
 import os
 import sys
-from . import process
+from pydistinstall.utils import process
 
 def format_partition_str(disk_Label, partition_Number=0, storage_Controller="sata"):
     """
