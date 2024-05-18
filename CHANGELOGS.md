@@ -70,6 +70,7 @@
 - [2024-04-24](#2024-04-24)
     + 2211H
     + 2222H
+- [2024-05-19](#2024-05-19)
 
 ## Entries
 
@@ -1017,4 +1018,14 @@
         + Removed deprecated functions from 'ruamel.yaml.main'
     - Updated module 'user_management.py' in 'src/pydistinstall/app/lib/'
         + Replaced relative imports to package imports
+
+### 2024-05-19
+#### 0828H
+- New
+    - Added new directory 'docs/makefiles' for storing all Makefiles
+        + Added document 'README.md'
+        + Added document 'documentation.Makefile' containing recipes/targets and variables for generating a demo animation GIF using asciinema and asciinema-agg
+
+- Updates
+    + Migrated 'Makefile' to 'docs/makefiles/manual-running.Makefile'
 
