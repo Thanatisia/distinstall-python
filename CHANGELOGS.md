@@ -1040,3 +1040,9 @@
             + For enhanced customizability
             + Currently still in testing phase
 
+#### 2255H
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        - Bug Fix:
+            + Syntax error
+

@@ -840,7 +840,7 @@ Include = /etc/pacman.d/mirrorlist
             target_disk_curr_Part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
 
             ### Mount the volume to the path
-            print("Current Filesystem [{{}] => [{}]".format(part_Name, part_filesystem))
+            print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if self.env.MODE != "DEBUG":
                 cmd_str, stdout, stderr, returncode = self.mount_partition(part_filesystem, part_mount_dir, target_disk_curr_Part)
                 # Process status/return code
