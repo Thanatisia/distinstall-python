@@ -74,6 +74,8 @@
     + 0828H
 - [2024-06-03](#2024-06-03)
     + 2247H
+    + 2255H
+    + 2312H
 
 ## Entries
 
@@ -1045,4 +1047,12 @@
     - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
         - Bug Fix:
             + Syntax error
+
+#### 2312H
+- New
+    - Added new submodule directory 'io' in 'src/pydistinstall/utils/' for I/O Processing Handling-related helper/wrapper functions
+        + Added new module 'disks.py' for Disk I/O-related helper/wrapper functions
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        + Migrated functions to 'src/pydistinstall/utils/io/disks.py'
 
