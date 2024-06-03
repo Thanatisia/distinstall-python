@@ -76,6 +76,7 @@
     + 2247H
     + 2255H
     + 2312H
+    + 2325H
 
 ## Entries
 
@@ -1055,4 +1056,12 @@
 - Updates
     - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
         + Migrated functions to 'src/pydistinstall/utils/io/disks.py'
+
+#### 2325H
+- New
+    - Added new submodule directory 'chroot' in 'src/pydistinstall/utils/' for Changing of shell (Chroot-related) helper/wrapper functions
+        + Added new module 'mount.py' for handling mounting of rootfs partitions
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        + Migrated functions to 'src/pydistinstall/utils/chroot/mount.py'
 

@@ -5,6 +5,7 @@ import os
 import sys
 import shutil
 from pydistinstall.utils import process, device_management
+from pydistinstall.utils.chroot.mount import make_mount_dir, mount_partition
 from pydistinstall.utils.io.disk import disk_partition_table_Format, partition_make, partition_filesystem_format, partition_set_Bootable, partition_swap_Enable
 
 class BaseInstallation():
@@ -410,76 +411,6 @@ Include = /etc/pacman.d/mirrorlist
 
         print("(D) Partition Completed. ")
 
-    def mount_dir_Make(self, dir_path):
-        """
-        Create directories if does not exists
-        """
-        # Initialize Variables
-        cmd_str = ""
-        stdout = ""
-        stderr = ""
-        returncode = -1
-
-        ### Check if directory exists
-        if not (os.path.isdir(dir_path)):
-            """
-            ### Directory does not exist
-            cmd_str = "mkdir -p {}".format(dir_path)
-
-            ### Make the directories
-            stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-            """
-
-            try:
-                # Make the directory using built-in
-                os.mkdir(dir_path)
-
-                # Check if directory exists now
-                if os.path.isdir(dir_path):
-                    # Set return code as 0
-                    returncode = 0
-
-                    # Set standard output
-                    stdout = "Directory {} created successfully".format(dir_path)
-            except Exception as ex:
-                stderr = str(ex)
-        else:
-            stderr = "Directory {} exists.".format(dir_path)
-
-        # Output
-        return [cmd_str, stdout, stderr, returncode]
-
-    def mount_partition(self, curr_filesystem, root_Dir, root_partition_Label):
-        """
-        Mount a partition to a mount directory
-        """
-        # Initialize Variables
-        cmd_str = ""
-        stdout = ""
-        stderr = ""
-        returncode = -1
-
-        ## Check filesystem of current partition
-        if (curr_filesystem == "fat32"):
-            ## Check filesystem for FAT32
-            ## FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {} {}".format(root_partition_Label, root_Dir)
-        else:
-            ## Check filesystem for any other filesystems
-            """
-            mount -t ext4 /dev/sdX2 /mnt
-            mount -t ext4 /dev/sdX1 /mnt/boot 
-            mount -t ext4 /dev/sdX3 /mnt/home
-            """
-            cmd_str = "mount -t {} {} {}".format(curr_filesystem, root_partition_Label, root_Dir)
-
-        # Execute command
-        # stdout, stderr = process.subprocess_Sync(cmd_str)
-        stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-
-        # Output
-        return [cmd_str, stdout, stderr, returncode]
-
     def make_partition_mount_dir_Root(self, root_Dir):
         """
         Make the root partition's mount directory
@@ -497,7 +428,7 @@ Include = /etc/pacman.d/mirrorlist
 
             if self.env.MODE != "DEBUG":
                 # Make root mount directory
-                cmd_str, stdout, stderr, returncode = self.mount_dir_Make(root_Dir)
+                cmd_str, stdout, stderr, returncode = make_mount_dir(root_Dir)
         else:
             stderr = "Directory {} exists.".format(root_Dir)
 
@@ -521,7 +452,7 @@ Include = /etc/pacman.d/mirrorlist
 
             if self.env.MODE != "DEBUG":
                 # Make root mount directory
-                cmd_str, stdout, stderr, returncode = self.mount_dir_Make(boot_Dir)
+                cmd_str, stdout, stderr, returncode = make_mount_dir(boot_Dir)
         else:
             stderr = "Directory {} exists.".format(boot_Dir)
 
@@ -545,7 +476,7 @@ Include = /etc/pacman.d/mirrorlist
 
             if self.env.MODE != "DEBUG":
                 # Make root mount directory
-                cmd_str, stdout, stderr, returncode = self.mount_dir_Make(mount_Dir)
+                cmd_str, stdout, stderr, returncode = make_mount_dir(mount_Dir)
         else:
             stderr = "Directory {} exists.".format(mount_Dir)
 
@@ -612,7 +543,7 @@ Include = /etc/pacman.d/mirrorlist
 
         if self.env.MODE != "DEBUG":
             print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
-            cmd_str, stdout, stderr, returncode = self.mount_partition(curr_filesystem, root_Dir, target_disk_root_Part)
+            cmd_str, stdout, stderr, returncode = mount_partition(curr_filesystem, root_Dir, target_disk_root_Part)
             # Process status/return code
             if returncode == 0:
                 # Success
@@ -685,7 +616,7 @@ Include = /etc/pacman.d/mirrorlist
 
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
         if self.env.MODE != "DEBUG":
-            cmd_str, stdout, stderr, returncode = self.mount_partition(curr_filesystem, boot_Dir, target_disk_boot_Part)
+            cmd_str, stdout, stderr, returncode = mount_partition(curr_filesystem, boot_Dir, target_disk_boot_Part)
             # Process status/return code
             if returncode == 0:
                 # Success
@@ -745,7 +676,7 @@ Include = /etc/pacman.d/mirrorlist
             ### Mount the volume to the path
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
             if self.env.MODE != "DEBUG":
-                cmd_str, stdout, stderr, returncode = self.mount_partition(part_filesystem, part_mount_dir, target_disk_curr_Part)
+                cmd_str, stdout, stderr, returncode = mount_partition(part_filesystem, part_mount_dir, target_disk_curr_Part)
                 # Process status/return code
                 if returncode == 0:
                     # Success
