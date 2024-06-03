@@ -77,6 +77,7 @@
     + 2255H
     + 2312H
     + 2325H
+    + 2337H
 
 ## Entries
 
@@ -1064,4 +1065,9 @@
 - Updates
     - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
         + Migrated functions to 'src/pydistinstall/utils/chroot/mount.py'
+
+#### 2337H
+- Updates
+    - Updated module 'general.py' in 'src/pydistinstall/utils/'
+        + Removed redundant configuration generator function
 
