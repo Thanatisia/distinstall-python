@@ -229,6 +229,191 @@ Include = /etc/pacman.d/mirrorlist
 
         return stdout, stderr, returncode, success_flag
 
+    def disk_get_information(self, cfg):
+        """
+        Get the user's input - Device Information
+        """
+        # Obtain Configuration Key-Values
+        disk_Label = cfg["disk_Label"]
+        partition_Table = cfg["disk_partition_Table"]
+        partition_Scheme = cfg["partition_Scheme"].copy()
+
+        # Check Device Type (i.e. sdX, nvme, loop)
+        device_medium_Type = cfg["device_Type"]
+        storage_controller = cfg["storage-controller"]
+
+        return [disk_Label, partition_Table, partition_Scheme, device_medium_Type, storage_controller]
+
+    def disk_partition_table_Format(self, disk_Label, partition_Table):
+        """ 
+        Format the disk, Create a new partition table label and return the results
+        """
+        # Initialize Variables
+        cmd_str = "parted {} mklabel {}".format(disk_Label, partition_Table)
+        stdout = ""
+        stderr = ""
+        returncode = 0
+
+        # Execute the command line string and return the standard output, error, and status code
+        stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def partition_make(self, disk_Label, partition_type_label, partition_Filesystem, partition_start_Size, partition_end_Size):
+        """
+        Making Partitions
+        """
+        # Initialize Variables
+        cmd_str = ""
+
+        # Set command string
+        cmd_str = "parted {} mkpart {} {} {} {}".format(disk_Label, partition_type_label, partition_Filesystem, partition_start_Size, partition_end_Size)
+
+        # Create Partition
+        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def partition_filesystem_format(self, disk_Label, storage_controller, part_ID, part_filesystem):
+        """
+        Format the partition filesystem
+        """
+        # Initialize Variables
+        cmd_str = ""
+        stdout = ""
+        stderr = ""
+        returncode = -1
+
+        ## Prepare and Format Partition according to Device Storage Controller Type
+        curr_part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
+
+        if part_filesystem == "fat32":
+            cmd_str = "mkfs.fat -F32 {}".format(curr_part)
+        elif part_filesystem == "ext4":
+            cmd_str = "mkfs.ext4 {}".format(curr_part)
+        elif part_filesystem == "swap":
+            cmd_str = "mkswap {}{}".format(curr_part)
+        else:
+            stderr = "Unknown File System: [{}]".format(part_filesystem)
+
+        # Check if command is empty
+        if cmd_str != "":
+            # Perform partitioning
+            stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def partition_set_Bootable(self, partition_Table, disk_Label, part_ID):
+        """ 
+        Set the specified partition as 'bootable'
+        """
+        # Initialize VVariables
+        cmd_str = ""
+        stdout = ""
+        stderr = ""
+        returncode = 0
+
+        ### Check if disk label is MBR or GPT
+        if (partition_Table == "msdos") or (partition_Table == "mbr"):
+            cmd_str = "parted {} set {} boot on".format(disk_Label, part_ID)
+        elif (partition_Table == "gpt"):
+            cmd_str = "parted {} set {} esp on".format(disk_Label, part_ID)
+
+        # Perform Boot set
+        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def partition_swap_Enable(self, disk_Label, part_ID):
+        """
+        Enable Swap Partition (if created)
+        """
+        # Initialize Variables
+        cmd_str = "swapon {}{}".format(disk_Label, part_ID)
+
+        # Begin Execution
+        ## Perform Swap partition formatting
+        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def disk_partitions_create(self, partition_Table, disk_Label, storage_controller, partition_Scheme):
+        """
+        Create the partitions in the disk's partition scheme and store the partition information in the results list of dictinary
+        """
+        # Initialize Variables
+        cmd_str = ""
+        res = []
+
+        # Iterate through all partition rows and properties
+        for k,v in partition_Scheme.items():
+            part_ID = k
+            part_Name = v[0] # General name if MBR/MSDOS, Partition Label for UUID if GPT/UEFI
+            part_Type = v[1] # Primary, Logical, Extended etc etc
+            part_filesystem = v[2] # ext4, btrfs etc etc
+            part_start_Size = v[3]
+            part_end_Size = v[4]
+            part_Bootable = v[5]
+            part_Others = v[6]
+
+            # Initialize Current Dictionary/Mapping
+            curr_partition_res = {
+                "partition" : {
+                    "id" : part_ID, 
+                    "name" : part_Name, 
+                    "type" : part_Type, 
+                    "filesystem" : part_filesystem, 
+                    "start-size" : part_start_Size,
+                    "end-size" : part_end_Size,
+                    "bootable" : part_Bootable,
+                    "others" : part_Others
+                }
+            }
+
+            """
+            Making Partitions
+            """
+            cmd_str = ""
+            stdout = ""
+            stderr = ""
+            returncode = 0
+            ## Check if disk label/partition table is MBR or GPT
+            if (partition_Table == "msdos") or (partition_Table == "mbr"):
+                # Create Partition
+                cmd_str, stdout, stderr, returncode = self.partition_make(disk_Label, part_Type, part_filesystem, part_start_Size, part_end_Size)
+            elif (partition_Table == "gpt"):
+                # Create Partition using partition label instead of primary,extended or logical
+                cmd_str, stdout, stderr, returncode = self.partition_make(disk_Label, part_Name, part_filesystem, part_start_Size, part_end_Size)
+
+            # Map partition creation
+            curr_partition_res["partition-create"] = {"command":cmd_str, "stdout" : stdout, "stderr" : stderr, "rc" : returncode}
+
+            """
+            Format partition file system
+            """
+            cmd_str = ""
+            stdout = ""
+            stderr = ""
+            returncode = 0
+            # Format the current partition filesystem
+            cmd_str, stdout, stderr, returncode = self.partition_filesystem_format(disk_Label, storage_controller, part_ID, part_filesystem)
+
+            # Map file system formatting
+            curr_partition_res["partition-filesystem-format"] = {"command":cmd_str, "stdout" : stdout, "stderr" : stderr, "rc" : returncode}
+
+            """
+            Append dictionary into results list
+            """
+            res.append(curr_partition_res)
+
+        # Output/Return
+        return res
+
     def device_partition_Manager(self):
         """
         Device & Partition Manager
@@ -238,129 +423,231 @@ Include = /etc/pacman.d/mirrorlist
         cmd_str = ""
 
         # Begin Filesystem Management
-        print("(+) Get User Input - Device Information")
+        print("[+] Get User Input - Device Information")
+        disk_Label, partition_Table, partition_Scheme, device_medium_Type, storage_controller = self.disk_get_information(cfg)
 
-        disk_Label = cfg["disk_Label"]
-        partition_Table = cfg["disk_partition_Table"]
-        partition_Scheme = cfg["partition_Scheme"].copy()
-
-        # Check Device Type (i.e. sdX, nvme, loop)
-        device_medium_Type = cfg["device_Type"]
-        storage_controller = cfg["storage-controller"]
-
-        print("")
-
-        print("(+) Get User Input - Partition Information")
+        print("[+] Get User Input - Partition Information")
 
         """
         Formatting Partition Table
         """
-        # Format & Create Label partition table
-        format_conf = input("Would you like to format the disk's partition table? [Y|N]: ")
+        format_conf = input("> Would you like to format the disk's partition table? [Y|N]: ")
+        # Process confirmation
         if (format_conf == "Y") or (format_conf == ""):
             ## Format
             print("(+) Formatting [{}] to [{}]...".format(disk_Label, partition_Table))
-
-            cmd_str = "parted {} mklabel {}".format(disk_Label, partition_Table)
-
-            print("Executing: {}".format(cmd_str))
             if self.env.MODE != "DEBUG":
-                # print("parted {} mklabel {}".format(device_Name, device_Label))
-                # Open Subprocess Pipe
-                # proc = Popen(["parted", device_Name, "mklabel", device_Label])
-                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+                cmd_str, stdout, stderr, returncode = self.disk_partition_table_Format(disk_Label, partition_Table)
+
+                # Process status/return code
                 if returncode == 0:
                     # Success
-                    print("Standard Output: {}".format(stdout))
+                    print("[*] Standard Output: {}".format(stdout))
                 else:
                     # Error
-                    print("Error executing [{}]: {}".format(cmd_str, stderr))
+                    print("[X] Error executing [{}]: {}".format(cmd_str, stderr))
+        else:
+            print("[INFO] Skipping disk partition table label formatting")
 
         print("")
 
-        format_conf = input("Would you like to format the disk's partition scheme/layout? [Y|N]: ")
+        format_conf = input("> Would you like to format the disk's partition scheme/layout? [Y|N]: ")
         if (format_conf == "Y") or (format_conf == ""):
             ## Format
-            # Iterate through all partition rows and properties
-            for k,v in partition_Scheme.items():
-                part_ID = k
-                part_Name = v[0] # General name if MBR/MSDOS, Partition Label for UUID if GPT/UEFI
-                part_Type = v[1] # Primary, Logical, Extended etc etc
-                part_filesystem = v[2] # ext4, btrfs etc etc
-                part_start_Size = v[3]
-                part_end_Size = v[4]
-                part_Bootable = v[5]
-                part_Others = v[6]
+            res = self.disk_partitions_create(partition_Table, disk_Label, storage_controller, partition_Scheme)
 
-                """
-                Formatting Partitions
-                """
-                print("(+) Creating Partition [{}]".format(part_ID))
+            ## Iterate through the partitions
+            for i in range(len(res)):
+                # Get current partition specification
+                curr_partition = res[i]
+                curr_part_spec = curr_partition["partition"]
 
-                # Create Partition
-                ## Check if disk label/partition table is MBR or GPT
-                if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                    # Set command string
-                    cmd_str = "parted {} mkpart {} {} {} {}".format(disk_Label, part_Type, part_filesystem, part_start_Size, part_end_Size)
-                elif (partition_Table == "gpt"):
-                    # Using partition label instead of primary,extended or logical
-                    cmd_str = "parted {} mkpart {} {} {} {}".format(disk_Label, part_Name, part_filesystem, part_start_Size, part_end_Size)
+                # Get the results of the partition creation and formatting flow
+                curr_part_create_res = curr_partition["partition-create"]
+                curr_part_format_fs_res = curr_partition["partition-filesystem-format"]
 
-                print("Executing: {}".format(cmd_str))
-                if self.env.MODE != "DEBUG":
-                    # check if string is empty
-                    # Perform Partition Table formatting
-                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                    print("Standard Output: {}".format(stdout))
+                ## Get current parttion specification as variables
+                curr_part_id = curr_part_spec["id"]
+                curr_part_name = curr_part_spec["name"]
+                curr_part_type = curr_part_spec["type"]
+                curr_part_fs = curr_part_spec["filesystem"]
+                curr_part_start_size = curr_part_spec["start-size"]
+                curr_part_end_size = curr_part_spec["end-size"]
+                curr_part_bootable = curr_part_spec["bootable"]
+                curr_part_others = curr_part_spec["others"]
 
-                ## Prepare and Format Partition according to Device Storage Controller Type
-                curr_part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
+                # Set partition as bootable
+                if curr_part_bootable == True:
+                    # Begin execution
+                    cmd_str, stdout, stderr, returncode  = self.partition_set_Bootable(partition_Table, disk_Label, curr_part_id)
 
-                ## Format file system
-                if part_filesystem == "fat32":
-                    cmd_str = "mkfs.fat -F32 {}".format(curr_part)
-                elif part_filesystem == "ext4":
-                    cmd_str = "mkfs.ext4 {}".format(curr_part)
-                elif part_filesystem == "swap":
-                    cmd_str = "mkswap {}{}".format(curr_part)
-                else:
-                    print("(-) Unknown File System: [{}]".format(part_filesystem))
-
-                print("Executing: {}".format(cmd_str))
-                if self.env.MODE != "DEBUG":
-                    # Perform partitioning
-                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                    print("Standard Output: {}".format(stdout))
-
-                ## Check bootable
-                if part_Bootable == True:
-                    ### Check if disk label is MBR or GPT
-                    if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                        cmd_str = "parted {} set {} boot on".format(disk_Label, part_ID)
-                    elif (partition_Table == "gpt"):
-                        cmd_str = "parted {} set {} esp on".format(disk_Label, part_ID)
-
-                    # Begin Execution
-                    print("Executing: {}".format(cmd_str))
-                    if self.env.MODE != "DEBUG":
-                        # Perform Boot set
-                        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                        print("Standard Output: {}".format(stdout))
+                    # Process status/return code
+                    if returncode == 0:
+                        # Success
+                        print("[*] Standard Output: {}".format(stdout))
+                    else:
+                        # Error
+                        print("[X] Error executing [{}]: {}".format(cmd_str, stderr))
 
                 ## Check Swap partition
-                if part_filesystem == "swap":
-                    cmd_str = "swapon {}{}".format(disk_Label, part_ID)
+                if curr_part_fs == "swap":
+                    # Begin execution
+                    ## Perform Swap partition formatting
+                    cmd_str, stdout, stderr, returncode  = self.partition_swap_Enable(disk_Label, curr_part_id)
 
-                    # Begin Execution
-                    print("Executing: {}".format(cmd_str))
-                    if self.env.MODE != "DEBUG":
-                        ## Perform Swap partition formatting
-                        stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                        print("Standard Output: {}".format(stdout))
+                    # Process status/return code
+                    if returncode == 0:
+                        # Success
+                        print("[*] Standard Output: {}".format(stdout))
+                    else:
+                        # Error
+                        print("[X] Error executing [{}]: {}".format(cmd_str, stderr))
 
         print("")
 
         print("(D) Partition Completed. ")
+
+    def mount_dir_Make(self, dir_path):
+        """
+        Create directories if does not exists
+        """
+        # Initialize Variables
+        cmd_str = ""
+        stdout = ""
+        stderr = ""
+        returncode = -1
+
+        ### Check if directory exists
+        if not (os.path.isdir(dir_path)):
+            """
+            ### Directory does not exist
+            cmd_str = "mkdir -p {}".format(dir_path)
+
+            ### Make the directories
+            stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+            """
+
+            try:
+                # Make the directory using built-in
+                os.mkdir(dir_path)
+
+                # Check if directory exists now
+                if os.path.isdir(dir_path):
+                    # Set return code as 0
+                    returncode = 0
+
+                    # Set standard output
+                    stdout = "Directory {} created successfully".format(dir_path)
+            except Exception as ex:
+                stderr = str(ex)
+        else:
+            stderr = "Directory {} exists.".format(dir_path)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def mount_partition(self, curr_filesystem, root_Dir, root_partition_Label):
+        """
+        Mount a partition to a mount directory
+        """
+        # Initialize Variables
+        cmd_str = ""
+        stdout = ""
+        stderr = ""
+        returncode = -1
+
+        ## Check filesystem of current partition
+        if (curr_filesystem == "fat32"):
+            ## Check filesystem for FAT32
+            ## FAT32 formatting is in vfat
+            cmd_str = "mount -t vfat {} {}".format(root_partition_Label, root_Dir)
+        else:
+            ## Check filesystem for any other filesystems
+            """
+            mount -t ext4 /dev/sdX2 /mnt
+            mount -t ext4 /dev/sdX1 /mnt/boot 
+            mount -t ext4 /dev/sdX3 /mnt/home
+            """
+            cmd_str = "mount -t {} {} {}".format(curr_filesystem, root_partition_Label, root_Dir)
+
+        # Execute command
+        # stdout, stderr = process.subprocess_Sync(cmd_str)
+        stdout, stderr, returncode = process.subprocess_Line(cmd_str)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def make_partition_mount_dir_Root(self, root_Dir):
+        """
+        Make the root partition's mount directory
+        """
+        # Initialize Variables
+        cmd_str = ""
+        stdout = ""
+        stderr = ""
+        returncode = -1
+
+        ## Create directories if does not exists
+        if not (os.path.isdir(root_Dir)):
+            ### Directory does not exist
+            stdout = "Directory {} does not exist, creating directory...".format(root_Dir)
+
+            if self.env.MODE != "DEBUG":
+                # Make root mount directory
+                cmd_str, stdout, stderr, returncode = self.mount_dir_Make(root_Dir)
+        else:
+            stderr = "Directory {} exists.".format(root_Dir)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def make_partition_mount_dir_Boot(self, boot_Dir):
+        """
+        Make the boot partition's mount directory
+        """
+        # Initialize Variables
+        cmd_str = ""
+        stdout = ""
+        stderr = ""
+        returncode = -1
+
+        ## Create directories if does not exists
+        if not (os.path.isdir(boot_Dir)):
+            ### Directory does not exist
+            stdout = "Directory {} does not exist, creating directory...".format(boot_Dir)
+
+            if self.env.MODE != "DEBUG":
+                # Make root mount directory
+                cmd_str, stdout, stderr, returncode = self.mount_dir_Make(boot_Dir)
+        else:
+            stderr = "Directory {} exists.".format(boot_Dir)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
+
+    def make_partition_mount_dir_Others(self,mount_Dir):
+        """
+        Make the target partition's mount directory
+        """
+        # Initialize Variables
+        cmd_str = ""
+        stdout = ""
+        stderr = ""
+        returncode = -1
+
+        ## Create directories if does not exists
+        if not (os.path.isdir(mount_Dir)):
+            ### Directory does not exist
+            stdout = "Directory {} does not exist, creating directory...".format(mount_Dir)
+
+            if self.env.MODE != "DEBUG":
+                # Make root mount directory
+                cmd_str, stdout, stderr, returncode = self.mount_dir_Make(mount_Dir)
+        else:
+            stderr = "Directory {} exists.".format(mount_Dir)
+
+        # Output
+        return [cmd_str, stdout, stderr, returncode]
 
     def mount_partition_Root(self, disk_Label, root_Dir, partition_Scheme, storage_controller, partition_Name="Root", partition_Number=1):
         """
@@ -383,20 +670,15 @@ Include = /etc/pacman.d/mirrorlist
         """
         # Initialize Variables
 
-        ## Create directories if does not exists
-        if not (os.path.isdir(root_Dir)):
-            ### Directory does not exist
-            cmd_str = "mkdir -p {}".format(root_Dir)
-
-            print("Directory {} does not exist, creating directory...".format(root_Dir))
-            print("Executing: {}".format(cmd_str))
-            if self.env.MODE != "DEBUG":
-                ## Mount root partition
-                # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Standard Output: {}".format(stdout))
+        # Make root mount directory if it doesnt exist
+        cmd_str, stdout, stderr, returncode = self.make_partition_mount_dir_Root(root_Dir)
+        # Process status/return code
+        if returncode == 0:
+            # Success
+            print("[*] Standard Output: {}".format(stdout))
         else:
-            print("Directory {} exists.".format(root_Dir))
+            # Error
+            print("[X] Error executing [{}]: {}".format(cmd_str, stderr))
 
         ## --- Processing
         ### Mount the volume to the path
@@ -417,49 +699,24 @@ Include = /etc/pacman.d/mirrorlist
             if part_Name == target_Partition:
                 # Found
                 curr_part_Number = part_ID
+                break
 
+        ### Obtain current partition's filesystem
         curr_filesystem = partition_Scheme[curr_part_Number][2]
 
-        #### Prepare and Format Partition according to Device Storage Controller Type for Root partition
+        ### Prepare and Format Partition according to Device Storage Controller Type for Root partition
         target_disk_root_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
 
-        #### Check filesystem of current partition
-        print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
-        if (curr_filesystem == "fat32"):
-            # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {} {}".format(target_disk_root_Part, root_Dir)
-                
-            print("Executing: {}".format(cmd_str))
-            if self.env.MODE != "DEBUG":
-                ## Check filesystem for FAT32
-                # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                if returncode == 0:
-                    # Success
-                    print("Partition [Root] Mounted.")
-                else:
-                    # Error
-                    print("Error mounting Partition [Root]")
-        else:
-            # Any other filesystems
-            """
-            mount -t ext4 /dev/sdX2 /mnt
-            mount -t ext4 /dev/sdX1 /mnt/boot 
-            mount -t ext4 /dev/sdX3 /mnt/home
-            """
-            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_root_Part, root_Dir)
-                
-            print("Executing: {}".format(cmd_str))
-            if self.env.MODE != "DEBUG":
-                ## Check other filesystems
-                # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                if returncode == 0:
-                    # Success
-                    print("Partition [Root] Mounted.")
-                else:
-                    # Error
-                    print("Error mounting Partition [Root]")
+        if self.env.MODE != "DEBUG":
+            print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
+            cmd_str, stdout, stderr, returncode = self.mount_partition(curr_filesystem, root_Dir, target_disk_root_Part)
+            # Process status/return code
+            if returncode == 0:
+                # Success
+                print("Partition [Root] Mounted.")
+            else:
+                # Error
+                print("Error mounting Partition [Root]: [{}]".format(stderr))
 
         ### Unset/Remove Root partition from mount list
         partition_Scheme.pop(curr_part_Number)
@@ -485,20 +742,15 @@ Include = /etc/pacman.d/mirrorlist
         """
         # Initialize Variables
 
-        ## Create directories if does not exists
-        if not (os.path.isdir(boot_Dir)):
-            ### Directory does not exist
-            cmd_str = "mkdir -p {}".format(boot_Dir)
-
-            print("Directory {} does not exist, creating directory...".format(boot_Dir))
-            print("Executing: {}".format(cmd_str))
-            if self.env.MODE != "DEBUG":
-                ## Mount boot partition
-                # stdout, stderr = process.subprocess_Sync(cmd_str)
-                stdout, stderr, returncode = process.subprocess_Line(cmd_str)
-                print("Standard Output: {}".format(stdout))
+        # Make boot mount directory if it doesnt exist
+        cmd_str, stdout, stderr, returncode = self.make_partition_mount_dir_Boot(boot_Dir)
+        # Process status/return code
+        if returncode == 0:
+            # Success
+            print("[*] Standard Output: {}".format(stdout))
         else:
-            print("Directory {} exists.".format(boot_Dir))
+            # Error
+            print("[X] Error making directory [{}]: [{}]".format(boot_Dir, stderr))
 
         ## --- Processing
         ### Mount the volume to the path
@@ -519,6 +771,7 @@ Include = /etc/pacman.d/mirrorlist
             if part_Name == target_Partition:
                 # Found
                 curr_part_Number = part_ID
+                break
 
         curr_filesystem = partition_Scheme[curr_part_Number][2]
 
@@ -527,40 +780,16 @@ Include = /etc/pacman.d/mirrorlist
         #### Prepare and Format Partition according to Device Storage Controller Type for Boot partition
         target_disk_boot_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
 
-        #### Check filesystem
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
-        if curr_filesystem == "fat32":
-            # FAT32 formatting is in vfat
-            cmd_str = "mount -t vfat {} {}".format(target_disk_boot_Part, boot_Dir)
-
-            print("Executing: {}".format(cmd_str))
-            if self.env.MODE != "DEBUG":
-                ## Check FAT32 partition scheme for Boot partition
-                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                print("Standard Output: {}".format(stdout))
-
-                if returncode == 0:
-                    # Success
-                    print("Partition [Boot] Mounted.")
-                else:
-                    # Error
-                    print("Error mounting Partition [Boot]")
-        else:
-            # Any other filesystems
-            cmd_str = "mount -t {} {} {}".format(curr_filesystem, target_disk_boot_Part, boot_Dir)
-
-            print("Executing: {}".format(cmd_str))
-            if self.env.MODE != "DEBUG":
-                ## Check Other partition scheme for Boot partition
-                stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                print("Standard Output: {}".format(stdout))
-
-                if returncode == 0:
-                    # Success
-                    print("Partition [Boot] Mounted.")
-                else:
-                    # Error
-                    print("Error mounting Partition [Boot]")
+        if self.env.MODE != "DEBUG":
+            cmd_str, stdout, stderr, returncode = self.mount_partition(curr_filesystem, boot_Dir, target_disk_boot_Part)
+            # Process status/return code
+            if returncode == 0:
+                # Success
+                print("Partition [Boot] Mounted.")
+            else:
+                # Error
+                print("Error mounting Partition [Boot]: [{}]".format(stderr))
 
         ### Unset/Remove Boot partition from mount list
         partition_Scheme.pop(curr_part_Number)
@@ -596,58 +825,32 @@ Include = /etc/pacman.d/mirrorlist
             # Get mount directory/path
             part_mount_dir = mount_Paths[part_Name]
 
-            ## Create directories if does not exists
-            if not (os.path.isdir(part_mount_dir)):
-                ### Directory does not exist
-                cmd_str = "mkdir -p {}".format(part_mount_dir)
-                
-                print("Directory {} does not exist, creating directory...".format(part_mount_dir))
-                print("Executing: {}".format(cmd_str))
-                if self.env.MODE != "DEBUG":
-                    ## Create the other partition mount points
-                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                    print("Standard Output: {}".format(stdout))
+            # Make mount directories if it doesnt exist
+            cmd_str, stdout, stderr, returncode = self.make_partition_mount_dir_Others(part_mount_dir)
+            # Process status/return code
+            if returncode == 0:
+                # Success
+                print("[*] Standard Output: {}".format(stdout))
             else:
-                print("Directory {} exists.".format(part_mount_dir))
+                # Error
+                print("[X] Error making directory [{}]: [{}]".format(part_mount_dir, stderr))
 
             ## --- Processing
-            ### Mount the volume to the path
-            #### Prepare and Format Partition according to Device Storage Controller Type for the current partition
+            ### Prepare and Format Partition according to Device Storage Controller Type for the current partition
             target_disk_curr_Part = device_management.format_partition_str(disk_Label, part_ID, storage_controller)
 
-            #### Check filesystem
-            print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
-            if part_filesystem == "fat32":
-                cmd_str = "mount -t vfat {} {}".format(target_disk_curr_Part, part_mount_dir)
+            ### Mount the volume to the path
+            print("Current Filesystem [{{}] => [{}]".format(part_Name, part_filesystem))
+            if self.env.MODE != "DEBUG":
+                cmd_str, stdout, stderr, returncode = self.mount_partition(part_filesystem, part_mount_dir, target_disk_curr_Part)
+                # Process status/return code
+                if returncode == 0:
+                    # Success
+                    print("Partition [{}] Mounted.".format(part_Name))
+                else:
+                    # Error
+                    print("Error mounting Partition [{}]: [{}]".format(part_Name, stderr))
 
-                print("Executing: {}".format(cmd_str))
-                if self.env.MODE != "DEBUG":
-                    ## Mount the other partition mount points using FAT32
-                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                    print("Standard Output: {}".format(stdout))
-
-                    if returncode == 0:
-                        # Success
-                        print("Partition [{}] Mounted.".format(part_Name))
-                    else:
-                        # Error
-                        print("Error mounting Partition [{}]".format(part_Name))
-            else:
-                cmd_str = "mount -t {} {} {}".format(part_filesystem, target_disk_curr_Part, part_mount_dir)
-                    
-                print("Executing: {}".format(cmd_str))
-                if self.env.MODE != "DEBUG":
-                    ## Mount the other partition mount points using other filesystem types
-                    stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
-                    print("Standard Output: {}".format(stdout))
-
-                    if returncode == 0:
-                        # Success
-                        print("Partition [{}] Mounted.".format(part_Name))
-                    else:
-                        # Error
-                        print("Error mounting Partition [{}]".format(part_Name))
-        
             print("")
 
     def mount_Disks(self):

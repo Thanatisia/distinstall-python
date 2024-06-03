@@ -71,6 +71,9 @@
     + 2211H
     + 2222H
 - [2024-05-19](#2024-05-19)
+    + 0828H
+- [2024-06-03](#2024-06-03)
+    + 2247H
 
 ## Entries
 
@@ -1028,4 +1031,12 @@
 
 - Updates
     + Migrated 'Makefile' to 'docs/makefiles/manual-running.Makefile'
+
+### 2024-06-03
+#### 2247H
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        - (WIP) Separation of functions such that each function does only 1 job
+            + For enhanced customizability
+            + Currently still in testing phase
 
