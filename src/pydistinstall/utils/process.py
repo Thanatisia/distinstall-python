@@ -3,7 +3,7 @@ Process/Subprocess handling
 """
 import os
 import sys
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, DEVNULL
 
 """
 Process/Subprocess object functions

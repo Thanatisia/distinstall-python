@@ -6,6 +6,7 @@ import sys
 import shutil
 from pydistinstall.utils import process, device_management
 from pydistinstall.utils.chroot.mount import make_mount_dir, mount_partition
+from pydistinstall.utils.chroot.execution import format_chroot_Subprocess, chroot_execute_command, chroot_execute_command_List
 from pydistinstall.utils.io.disk import disk_partition_table_Format, partition_make, partition_filesystem_format, partition_set_Bootable, partition_swap_Enable
 
 class BaseInstallation():
@@ -980,88 +981,6 @@ Include = /etc/pacman.d/mirrorlist
     """
     Chroot Actions
     """
-    def format_chroot_Subprocess(self, \
-            cmd_str, \
-            mount_Dir="/mnt", \
-            chroot_Command="arch-chroot", \
-            shell="/bin/bash" \
-        ):
-        """
-        Format and returns the command string into the subprocess command list
-        """
-        return [chroot_Command, mount_Dir, shell, "-c", cmd_str]
-
-    def chroot_execute_command(self, cmd_str, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
-        """
-        Generalized chroot command execution
-        """
-        # Initialize Variables
-        chroot_cmd_fmt = [chroot_Command, mount_Dir, shell, "-c", cmd_str]
-        stdout = []
-        stderr = []
-        resultcode = 0
-        result = {
-            "stdout" : [],
-            "stderr" : [],
-            "resultcode" : [],
-            "command-string" : ""
-        }
-
-        # Process
-        if self.env.MODE != "DEBUG":
-            stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
-            if resultcode == 0:
-                # Success
-                print("Standard Output: {}".format(stdout))
-            else:
-                # Error
-                print("Error: {}".format(stderr))
-
-            # Map/Append result results
-            result["stdout"] = stdout
-            result["stderr"] = stderr
-            result["resultcode"] = resultcode
-
-        # Output
-        return result
-
-    def chroot_execute_command_List(self, cmd_List, mount_Dir="/mnt", chroot_Command="arch-chroot", shell="/bin/bash"):
-        """
-        Generalized chroot command list execution
-        """
-        # Initialize Variables
-        result = {
-            "stdout" : [],
-            "stderr" : [],
-            "resultcode" : [],
-            "command-string" : ""
-        }
-
-        if len(cmd_List) > 0:
-            for i in range(len(cmd_List)):
-                # Get current cmd
-                cmd_str = cmd_List[i]
-
-                # Formulate chroot command
-                chroot_cmd_fmt = [chroot_Command, mount_Dir, shell, "-c", cmd_str]
-
-                print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-                if self.env.MODE != "DEBUG":
-                    stdout, stderr, resultcode = process.subprocess_Sync(chroot_cmd_fmt, stdin=process.PIPE)
-                    if resultcode == 0:
-                        # Success
-                        print("Standard Output: {}".format(stdout))
-                    else:
-                        # Error
-                        print("Error: {}".format(stderr))
-
-                    # Map/Append result results
-                    result["stdout"].append(stdout)
-                    result["stderr"].append(stderr)
-                    result["resultcode"].append(resultcode)
-
-        return result
-
     def sync_Timezone(self, mount_Dir, region, city):
         """
         Synchronize Hardware Clock in chroot
@@ -1071,7 +990,7 @@ Include = /etc/pacman.d/mirrorlist
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
             "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
         ]
-        self.chroot_execute_command_List(chroot_commands, mount_Dir)
+        chroot_execute_command_List(chroot_commands, mount_Dir)
 
     def enable_Locale(self, mount_Dir, language):
         """
@@ -1083,7 +1002,7 @@ Include = /etc/pacman.d/mirrorlist
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
             "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
         ]
-        self.chroot_execute_command_List(chroot_commands, mount_Dir)
+        chroot_execute_command_List(chroot_commands, mount_Dir)
 
     def network_Management(self, mount_Dir, hostname):
         """
@@ -1096,7 +1015,7 @@ Include = /etc/pacman.d/mirrorlist
             "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
         ]
-        self.chroot_execute_command_List(chroot_commands, mount_Dir)
+        chroot_execute_command_List(chroot_commands, mount_Dir)
 
     def initialize_Ramdisk(self, mount_Dir, default_Kernel="linux"):
         """
@@ -1115,7 +1034,7 @@ Include = /etc/pacman.d/mirrorlist
         }
 
         # Execute commands
-        self.chroot_execute_command_List(chroot_commands, mount_Dir)
+        chroot_execute_command_List(chroot_commands, mount_Dir)
 
         return result
 
@@ -1125,7 +1044,7 @@ Include = /etc/pacman.d/mirrorlist
         """
         # Initialize Variables
         str_root_passwd_change = "passwd || passwd;"
-        cmd_root_passwd_change = self.format_chroot_Subprocess(str_root_passwd_change, mount_Dir)
+        cmd_root_passwd_change = format_chroot_Subprocess(str_root_passwd_change, mount_Dir)
         stdout = []
         stderr = []
         resultcode = 0
@@ -1490,6 +1409,10 @@ Include = /etc/pacman.d/mirrorlist
         self.archive_command_Str(cmd_str, dir_Mount)
 
         print("")
+
+    """
+    Stage Installation Logic
+    """
 
     def installer(self):
         """

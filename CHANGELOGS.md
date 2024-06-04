@@ -80,6 +80,7 @@
     + 2337H
 - [2024-06-04](#2024-06-04)
     + 1211H
+    + 1539H
 
 ## Entries
 
@@ -1080,4 +1081,13 @@
         + Added new function 'update_configs()' to effectively be a standalone platform settings updater function that can be used without any Setup() class requirements
             + This is part of the long-term plan to deprecate the reliance on the 'Setup()' class as this project is aiming to be a framework unreliant on any Application-layer/Physical-layer logic
         + removed 'AHCI' from 'AHCI/SATA' to make things clearer
+
+#### 1539H
+- New
+    + Added new module 'execution.py' in 'src/pydistinstall/utils/chroot' for functions relating to chroot command exections
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        + Migrated functions to 'src/pydistinstall/utils/chroot/execution.py'
+    - Updated module 'process.py' in 'src/pydistinstall/utils'
+        + Added DEVNULL to subprocess import
 
