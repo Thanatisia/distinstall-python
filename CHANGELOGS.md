@@ -78,6 +78,8 @@
     + 2312H
     + 2325H
     + 2337H
+- [2024-06-04](#2024-06-04)
+    + 1211H
 
 ## Entries
 
@@ -1070,4 +1072,12 @@
 - Updates
     - Updated module 'general.py' in 'src/pydistinstall/utils/'
         + Removed redundant configuration generator function
+
+### 2024-06-04
+#### 1212H
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        + Added new function 'update_configs()' to effectively be a standalone platform settings updater function that can be used without any Setup() class requirements
+            + This is part of the long-term plan to deprecate the reliance on the 'Setup()' class as this project is aiming to be a framework unreliant on any Application-layer/Physical-layer logic
+        + removed 'AHCI' from 'AHCI/SATA' to make things clearer
 
