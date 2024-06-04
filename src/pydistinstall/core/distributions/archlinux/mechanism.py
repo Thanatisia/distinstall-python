@@ -7,6 +7,7 @@ import shutil
 from pydistinstall.utils import process, device_management
 from pydistinstall.utils.chroot.mount import make_mount_dir, mount_partition
 from pydistinstall.utils.chroot.execution import format_chroot_Subprocess, chroot_execute_command, chroot_execute_command_List
+from pydistinstall.utils.chroot.io import files as chroot_files
 from pydistinstall.utils.io.disk import disk_partition_table_Format, partition_make, partition_filesystem_format, partition_set_Bootable, partition_swap_Enable
 
 class BaseInstallation():
@@ -985,12 +986,18 @@ Include = /etc/pacman.d/mirrorlist
         """
         Synchronize Hardware Clock in chroot
         """
+        # Initialize Variables
         chroot_commands = [
             # "echo ======= Time Zones ======"												            # Step 10: Time Zones
             "ln -sf /usr/share/zoneinfo/{}/{} /etc/localtime".format(region, city),						# Step 10: Time Zones; Set time zone
             "hwclock --systohc",																        # Step 10: Time Zones; Generate /etc/adjtime via hwclock
         ]
-        chroot_execute_command_List(chroot_commands, mount_Dir)
+
+        # Execute list of commands and return the results in a list
+        results = chroot_execute_command_List(chroot_commands, mount_Dir)
+
+        # Output
+        return results
 
     def enable_Locale(self, mount_Dir, language):
         """
@@ -1002,7 +1009,12 @@ Include = /etc/pacman.d/mirrorlist
             "locale-gen",																	            # Step 11: Localization; Generate the locales by running
             "echo \"LANG={}\" | tee -a /etc/locale.conf".format(language),								# Step 11: Localization; Set LANG variable according to your locale
         ]
-        chroot_execute_command_List(chroot_commands, mount_Dir)
+
+        # Execute list of commands and return the results in a list
+        results = chroot_execute_command_List(chroot_commands, mount_Dir)
+
+        # Output
+        return results
 
     def network_Management(self, mount_Dir, hostname):
         """
@@ -1015,7 +1027,12 @@ Include = /etc/pacman.d/mirrorlist
             "echo \"::1         localhost\" | tee -a /etc/hosts",							            # Step 12: Network Configuration; Add matching entries to hosts file
             "echo \"127.0.1.1   {}.localdomain	{}\" | tee -a /etc/hosts".format(hostname, hostname),	# Step 12: Network Configuration; Add matching entries to hosts file
         ]
-        chroot_execute_command_List(chroot_commands, mount_Dir)
+
+        # Execute list of commands and return the results in a list
+        results = chroot_execute_command_List(chroot_commands, mount_Dir)
+
+        # Output
+        return results
 
     def initialize_Ramdisk(self, mount_Dir, default_Kernel="linux"):
         """
@@ -1026,17 +1043,12 @@ Include = /etc/pacman.d/mirrorlist
             # "echo ======= Make Initial Ramdisk ======="										        # Step 13: Initialize RAM file system;
             "mkinitcpio -P {}".format(default_Kernel),												    # Step 13: Initialize RAM file system; Create initramfs image (linux-lts kernel)
         ]
-        result = {
-            "stdout" : [],
-            "stderr" : [],
-            "resultcode" : [],
-            "command-string" : ""
-        }
 
-        # Execute commands
-        chroot_execute_command_List(chroot_commands, mount_Dir)
+        # Execute list of commands and return the results in a list
+        results = chroot_execute_command_List(chroot_commands, mount_Dir)
 
-        return result
+        # Output
+        return results
 
     def set_root_Password(self, mount_Dir):
         """
@@ -1055,236 +1067,297 @@ Include = /etc/pacman.d/mirrorlist
             "command-string" : ""
         }
 
-        print("Executing: {}".format(' '.join(cmd_root_passwd_change)))
-        if self.env.MODE != "DEBUG":
-            proc = process.subprocess_Open(cmd_root_passwd_change, stdout=process.PIPE)
+        # Open the subprocess and return the process pipe
+        proc = process.subprocess_Open(cmd_root_passwd_change, stdout=process.PIPE)
 
-            # While the process is still working
-            line = ""
+        # While the process is still working
+        line = ""
+        is_alive = proc.poll()
+        while is_alive is None:
+            # Still working
+
+            # Check if standard output stream is empty
+            if proc.stdout != None:
+                line = proc.stdout.readline()
+
+                # Append line to standard output
+                stdout.append(line.decode("utf-8"))
+
+            # Check if standard input stream is empty
+            if proc.stdin != None:
+                # Check if line is entered
+                if line != "":
+                    # Enter your secret line into the tty
+                    proc.stdin.write('{}\n'.format(line))
+
+                    # Enter one more time
+                    proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
+
+                    # Flush the standard input stream
+                    proc.stdin.flush()
+
+            # Poll and check if is alive
+            # If poll == None: Alive, else not Alive
             is_alive = proc.poll()
-            while is_alive is None:
-                # Still working
+            # print("Status: {}".format(is_alive))
 
-                # Check if standard output stream is empty
-                if proc.stdout != None:
-                    line = proc.stdout.readline()
+        # Get output, error and status code
+        # stdout = proc.stdout
+        stderr = proc.stderr
+        resultcode = proc.returncode
 
-                    # Append line to standard output
-                    stdout.append(line.decode("utf-8"))
-
-                # Check if standard input stream is empty
-                if proc.stdin != None:
-                    # Check if line is entered
-                    if line != "":
-                        # Enter your secret line into the tty
-                        proc.stdin.write('{}\n'.format(line))
-
-                        # Enter one more time
-                        proc.stdin.write('{}\n'.format(line)) # Write this buffer string into the process' stdin
-
-                        # Flush the standard input stream
-                        proc.stdin.flush()
-
-                # Poll and check if is alive
-                # If poll == None: Alive, else not Alive
-                is_alive = proc.poll()
-                # print("Status: {}".format(is_alive))
-
-            # Get output, error and status code
-            # stdout = proc.stdout
-            stderr = proc.stderr
-            resultcode = proc.returncode
-
-            # Map/Append result results
-            result["stdout"] = stdout
-            result["stderr"].append(stderr)
-            result["resultcode"].append(resultcode)
+        # Map/Append result results
+        result["stdout"] = stdout
+        result["stderr"].append(stderr)
+        result["resultcode"].append(resultcode)
 
         return result
 
-    def install_bootloader_Packages(self, dir_Mount="/mnt", bootloader="grub", partition_Table="msdos"):
+    def prepare_bootloader_Packages(self, bootloader="grub", partition_Table="msdos"):
         """
-        Install bootloader packages
+        Prepare and consolidate the bootloader packages and return the command to install/execute
         """
         # Initialize Variables
         chroot_commands = []
-        result = {
-            "stdout" : [],
-            "stderr" : [],
-            "resultcode" : [],
-            "command-string" : ""
-        }
 
         # Switch Case bootloader between grub and syslinux
-        chroot_commands.append("echo \"(+) Installing Bootloader : {}\"".format(bootloader))
-        if (bootloader == "grub"):
-            # Setup bootloader
-            chroot_commands.append("sudo pacman -S grub") # Install Grub Package
+        match bootloader:
+            case "grub":
+                # Setup bootloader
+                chroot_commands.append("pacman -S grub") # Install Grub Package
 
-            # Check if partition table is GPT
-            if partition_Table == "gpt":
-                # Install GPT/(U)EFI dependencies
-                chroot_commands.append("sudo pacman -S efibootmgr")
-        elif bootloader == "syslinux":
-            ### Syslinux bootloader support is currently still a WIP and Testing
-            chroot_commands.append("sudo pacman -S syslinux")
+                # Check if partition table is GPT
+                if partition_Table == "gpt":
+                    # Install GPT/(U)EFI dependencies
+                    chroot_commands.append("pacman -S efibootmgr")
+            case "syslinux":
+                ### Syslinux bootloader support is currently still a WIP and Testing
+                chroot_commands.append("pacman -S syslinux")
 
         # --- Processing
 
-        # Combine into a string
-        cmd_str = ";\n".join(chroot_commands)
+        # Return/output
+        return chroot_commands
 
-        # Map/Append Command String
-        result["command-string"] = cmd_str
+    def install_bootloader_Packages(self, chroot_commands, dir_Mount="/mnt"):
+        """
+        Install bootloader packages using the prepared command string
+        """
+        # Initialize Variables
+        result = []
 
-        for i in range(len(chroot_commands)):
-            # Get current command
-            curr_cmd = chroot_commands[i]
+        # Check if commands are provided
+        if len(chroot_commands) > 0:
+            # Iterate through the chroot commands to be executedd
+            for i in range(len(chroot_commands)):
+                # Get current command
+                curr_cmd = chroot_commands[i]
 
-            # Begin
-            print("Executing: {}".format(curr_cmd))
-            if self.env.MODE != "DEBUG":
+                # Initialize result for current command
+                curr_cmd_res = {
+                    "stdout" : [],
+                    "stderr" : [],
+                    "resultcode" : [],
+                    "command-string" : ""
+                }
+
+                # Combine into a string
+                cmd_str = ";\n".join(chroot_commands)
+
+                # Begin
                 stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
 
                 # Map/Append result results
-                result["stdout"].append(stdout)
-                result["stderr"].append(stderr)
-                result["resultcode"].append(resultcode)
+                curr_cmd_res["stdout"].append(stdout)
+                curr_cmd_res["stderr"].append(stderr)
+                curr_cmd_res["resultcode"].append(resultcode)
+                curr_cmd_res["command-string"] = cmd_str
+
+                # Append current command to the results list
+                result.append(curr_cmd_res)
 
         return result
 
-    def prepare_Bootloader(self, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub"):
+    def format_boot_dir_cmds(self, bootloader="grub", bootloader_directory="/boot/grub"):
         """
-        Prepare Bootloader directories and Pre-Requisites
+        Prepare the Bootloader directories and Pre-Requisites, as well as the system commands to execute in the new system
         """
         # Initialize Variables
         chroot_commands = []
-        result = {
-            "stdout" : [],
-            "stderr" : [],
-            "resultcode" : [],
-            "command-string" : ""
-        }
+
         # Switch Case bootloader between grub and syslinux
-        if (bootloader == "grub"):
-            chroot_commands.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
-        elif bootloader == "syslinux":
-            ### Syslinux bootloader support is currently still a WIP and Testing
-            chroot_commands.append("mkdir -p /boot/syslinux")
-            chroot_commands.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
+        match bootloader:
+            case "grub":
+                # Create boot partition directory
+                # TODO: This can honestly be a non-subproces command, just use os.mkdir
+                chroot_commands.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
+            case "syslinux":
+                ### Syslinux bootloader support is currently still a WIP and Testing
+                # TODO: This can honestly be a non-subproces command, just use os.mkdir and os.copy
+                chroot_commands.append("mkdir -p /boot/syslinux")
+                chroot_commands.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
 
-        # --- Processing
+        # Return/output
+        return chroot_commands
 
-        # Combine into a string
-        cmd_str = ";\n".join(chroot_commands)
+    def setup_boot_dir(self, cmd_list, dir_Mount="/mnt", ):
+        """
+        Install and setup the bootloader using the prepared command string
+        """
+        # Initialize Variables
+        result = []
 
-        # Map/Append Command String
-        result["command-string"] = cmd_str
+        # Check if commands are provided
+        if len(cmd_list) > 0:
+            # Iterate through the chroot commands to be executedd
+            for i in range(len(cmd_list)):
+                # Get current command
+                curr_cmd = cmd_list[i]
 
-        for i in range(len(chroot_commands)):
-            # Get current command
-            curr_cmd = chroot_commands[i]
+                # Initialize result for current command
+                curr_cmd_res = {
+                    "stdout" : [],
+                    "stderr" : [],
+                    "resultcode" : [],
+                    "command-string" : ""
+                }
 
-            # Begin
-            print("Executing: {}".format(curr_cmd))
-            if self.env.MODE != "DEBUG":
+                # Combine into a string
+                cmd_str = ";\n".join(cmd_list)
+
+                # Begin
                 stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
 
                 # Map/Append result results
-                result["stdout"].append(stdout)
-                result["stderr"].append(stderr)
-                result["resultcode"].append(resultcode)
+                curr_cmd_res["stdout"].append(stdout)
+                curr_cmd_res["stderr"].append(stderr)
+                curr_cmd_res["resultcode"].append(resultcode)
+                curr_cmd_res["command-string"] = cmd_str
+
+                # Append current command to the results list
+                result.append(curr_cmd_res)
 
         return result
 
-    def install_Bootloader(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
+    def prepare_bootloader_installation(self, disk_Label, bootloader="grub", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
         """
-        Install Bootloader to the Partition Table
+        Prepare the commands required to begin performing a full install of the Bootloader to the new system's Partition Table
         """
         # Initialize Variables
         chroot_commands = []
-        result = {
-            "stdout" : [],
-            "stderr" : [],
-            "resultcode" : [],
-            "command-string" : ""
-        }
+
         # Switch Case bootloader between grub and syslinux
-        if (bootloader == "grub"):
-            # Install Bootloader
-            chroot_commands.append("grub-install --target={} {} {}".format(bootloader_target_Architecture, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
-        elif bootloader == "syslinux":
-            ### Syslinux bootloader support is currently still a WIP and Testing
-            chroot_commands.append("extlinux --install /boot/syslinux")
+        match bootloader:
+            case "grub":
+                # Install Bootloader
+                chroot_commands.append("grub-install --target={} {} {}".format(bootloader_target_Architecture, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
+            case "syslinux":
+                ### Syslinux bootloader support is currently still a WIP and Testing
+                chroot_commands.append("extlinux --install /boot/syslinux")
 
-        # --- Processing
+        # Return/output
+        return chroot_commands
 
-        # Combine into a string
-        cmd_str = ";\n".join(chroot_commands)
+    def begin_bootloader_installation(self, cmd_list, dir_Mount="/mnt"):
+        """
+        Start the installation of the bootloade to the new system's partition table
+        """
+        # Initialize Variables
+        result = []
 
-        # Map/Append Command String
-        result["command-string"] = cmd_str
+        # Check if commands are provided
+        if len(cmd_list) > 0:
+            # Iterate through the chroot commands to be executedd
+            for i in range(len(cmd_list)):
+                # Get current command
+                curr_cmd = cmd_list[i]
 
-        for i in range(len(chroot_commands)):
-            # Get current command
-            curr_cmd = chroot_commands[i]
+                # Initialize result for current command
+                curr_cmd_res = {
+                    "stdout" : [],
+                    "stderr" : [],
+                    "resultcode" : [],
+                    "command-string" : ""
+                }
 
-            # Begin
-            print("Executing: {}".format(curr_cmd))
-            if self.env.MODE != "DEBUG":
+                # Combine into a string
+                cmd_str = ";\n".join(cmd_list)
+
+                # Begin
                 stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
 
                 # Map/Append result results
-                result["stdout"].append(stdout)
-                result["stderr"].append(stderr)
-                result["resultcode"].append(resultcode)
+                curr_cmd_res["stdout"].append(stdout)
+                curr_cmd_res["stderr"].append(stderr)
+                curr_cmd_res["resultcode"].append(resultcode)
+                curr_cmd_res["command-string"] = cmd_str
+
+                # Append current command to the results list
+                result.append(curr_cmd_res)
 
         return result
 
-    def generate_bootloader_Configs(self, disk_Label, dir_Mount="/mnt", bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
+    def prepare_generate_bootloader_configurations(self, disk_Label, bootloader="grub", bootloader_directory="/boot/grub", partition_Table="msdos"):
+        """
+        Prepare the commands required for the generating of the bootloader configuration files in the new root filesystem
+        """
+
         # Initialize Variables
         chroot_commands = []
-        result = {
-            "stdout" : [],
-            "stderr" : [],
-            "resultcode" : [],
-            "command-string" : ""
-        }
 
         # Switch Case bootloader between grub and syslinux
-        if (bootloader == "grub"):
-            # Generate bootloader configuration file
-            chroot_commands.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
-        elif bootloader == "syslinux":
-            ### Syslinux bootloader support is currently still a WIP and Testing
-            # Check partition table
-            if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                chroot_commands.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
-            elif (partition_Table == "gpt"):
-                chroot_commands.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
-                chroot_commands.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
+        match bootloader:
+            case "grub":
+                # Generate bootloader configuration file
+                chroot_commands.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
+            case "syslinux":
+                ### Syslinux bootloader support is currently still a WIP and Testing
+                # Check partition table
+                if (partition_Table == "msdos") or (partition_Table == "mbr"):
+                    chroot_commands.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
+                elif (partition_Table == "gpt"):
+                    chroot_commands.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
+                    chroot_commands.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
 
-        # --- Processing
+        # Return/output
+        return chroot_commands
 
-        # Combine into a string
-        cmd_str = ";\n".join(chroot_commands)
+    def generate_bootloader_Configs(self, cmd_list, dir_Mount="/mnt", bootloader_optional_Params="", bootloader_target_Architecture="i386-pc"):
+        """
+        Begin generating the bootloader configuration files in the new rootfs boot directory
+        """
+        # Initialize Variables
+        result = []
 
-        # Map/Append Command String
-        result["command-string"] = cmd_str
+        # Check if commands are provided
+        if len(cmd_list) > 0:
+            # Iterate through the chroot commands to be executedd
+            for i in range(len(cmd_list)):
+                # Get current command
+                curr_cmd = cmd_list[i]
 
-        for i in range(len(chroot_commands)):
-            # Get current command
-            curr_cmd = chroot_commands[i]
+                # Initialize result for current command
+                curr_cmd_res = {
+                    "stdout" : [],
+                    "stderr" : [],
+                    "resultcode" : [],
+                    "command-string" : ""
+                }
 
-            # Begin
-            print("Executing: {}".format(curr_cmd))
-            if self.env.MODE != "DEBUG":
+                # Combine into a string
+                cmd_str = ";\n".join(cmd_list)
+
+                # Begin
                 stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
 
                 # Map/Append result results
-                result["stdout"].append(stdout)
-                result["stderr"].append(stderr)
-                result["resultcode"].append(resultcode)
+                curr_cmd_res["stdout"].append(stdout)
+                curr_cmd_res["stderr"].append(stderr)
+                curr_cmd_res["resultcode"].append(resultcode)
+                curr_cmd_res["command-string"] = cmd_str
+
+                # Append current command to the results list
+                result.append(curr_cmd_res)
 
         return result
 
@@ -1296,59 +1369,73 @@ Include = /etc/pacman.d/mirrorlist
         # Initialize Variables
         combined_res = []
 
-        # Install bootloader packages
-        res = self.install_bootloader_Packages(dir_Mount, bootloader, partition_Table)
-        combined_res.append(res)
+        # Install Bootloader dependencies and packages
+        if self.env.MODE != "DEBUG":
+            # Prepare and format the bootloader packages into a command list
+            print("(+) Installing Bootloader : {}".format(bootloader))
+            cmd_list = self.prepare_bootloader_Packages(bootloader, partition_Table)
 
-        # Prepare Bootloader dependencies
-        res = self.prepare_Bootloader(dir_Mount, bootloader, bootloader_directory)
-        combined_res.append(res)
+            # Install bootloader packages
+            res = self.install_bootloader_Packages(cmd_list, dir_Mount)
+            combined_res.append({"commands" : cmd_list, "results" : res})
+
+        # Prepare Boot directory
+        if self.env.MODE != "DEBUG":
+            # Format and obtain the commands required to create boot directory
+            cmd_list = self.format_boot_dir_cmds(bootloader, bootloader_directory)
+
+            # Begin creating boot directory
+            res = self.setup_boot_dir(cmd_list, dir_Mount)
+            combined_res.append({"commands" : cmd_list, "results" : res})
 
         # Install Bootloader to partition table
-        res = self.install_Bootloader(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)
-        combined_res.append(res)
+        if self.env.MODE != "DEBUG":
+            # Format and obtain the commands required to install the bootloader to the new disk's partition table
+            cmd_list = self.prepare_bootloader_installation(disk_Label, bootloader, bootloader_optional_Params, bootloader_target_Architecture)
+            # Begin the installation of the bootloader to the new partition table
+            res = self.begin_bootloader_installation(cmd_list, dir_Mount)
+            combined_res.append({"commands" : cmd_list, "results" : res})
 
         # Generate Bootloader configurations
-        res = self.generate_bootloader_Configs(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_Architecture)
-        combined_res.append(res)
+        if self.env.MODE != "DEBUG":
+            # Format and obtain the commands required to generate the bootloader configurations to the new rootfs
+            cmd_list = self.prepare_generate_bootloader_configurations(disk_Label, bootloader, bootloader_directory, partition_Table)
+            # Begin the generating of the bootloader configurations to the new rootfs
+            res = self.generate_bootloader_Configs(cmd_list, dir_Mount, bootloader_optional_Params, bootloader_target_Architecture)
+            combined_res.append({"commands" : cmd_list, "results" : res})
 
         # Return output
         return combined_res
 
-    def archive_command_Str(self, cmd_str, dir_Mount="/mnt"):
+    def archive_command_Str(self, cmd_str, dir_Mount="/mnt", archive_script_file="chroot-commas.sh"):
         """
         Output command string into a file for archiving
         """
         # Initialize Variables
         mount_Root="{}/root".format(dir_Mount)
-        script_to_exe="chroot-comms.sh"
-        target_directory = "{}/{}".format(mount_Root, script_to_exe)
+        target_directory = "{}/{}".format(mount_Root, archive_script_file)
 
         # Write commands into file for reusing
-        print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
-        if self.env.MODE != "DEBUG":
-            with open(target_directory, "a+") as write_chroot_Commands:
-                # Write to file
-                write_chroot_Commands.write(cmd_str)
+        with open(target_directory, "a+") as write_chroot_Commands:
+            # Write to file
+            write_chroot_Commands.write(cmd_str)
 
-                # Close file after usage
-                write_chroot_Commands.close()
+            # Close file after usage
+            write_chroot_Commands.close()
 
-        # Execute in arch-chroot
-        # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
-        # for debugging
-        self.default_Var["external_scripts"].append(
-            ### Append all external scripts used ###
-            "{}/{}".format(mount_Root, script_to_exe)
-        )
+    """
+    Stage Installation Logic
+    """
 
-    def arch_chroot_Exec(self):
+    def begin_chroot_execution(self):
         """
         Execute commands using arch-chroot due to limitations with shellscripting
         """
 
         # --- Input
         # Local Variables
+        cmd_str = ""
+
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"] # MBR|MSDOS / GPT
@@ -1368,51 +1455,83 @@ Include = /etc/pacman.d/mirrorlist
         # Chroot Execute
         ## Synchronize Hardware Clock
         print("(+) Time Zones : Synchronize Hardware Clock")
-        self.sync_Timezone(dir_Mount, region, city)
+
+        if self.env.MODE != "DEBUG":
+            results = self.sync_Timezone(dir_Mount, region, city)
+
+            # Iterate through the list of command results
+            for i in range(len(results)):
+                # Get current command's output
+                curr_cmd_out = results[i]
+
+                # Process result
+                stdout = curr_cmd_out["stdout"]
+                stderr = curr_cmd_out["stderr"]
+                resultcode = curr_cmd_out["resultcode"]
+                if resultcode == 0:
+                    # Success
+                    print("Standard Output: {}".format(stdout))
+                else:
+                    # Error
+                    print("Error: {}".format(stderr))
 
         print("")
 
         ## Enable locale/region
         print("(+) Enable Location/Region")
-        self.enable_Locale(dir_Mount, language)
+        if self.env.MODE != "DEBUG":
+            self.enable_Locale(dir_Mount, language)
 
         print("")
 
         ## Append Network Host file
         print("(+) Network Configuration")
-        self.network_Management(dir_Mount, hostname)
+        if self.env.MODE != "DEBUG":
+            self.network_Management(dir_Mount, hostname)
 
         print("")
 
         ## Format initial ramdisk
         print("(+) Making Initial Ramdisk")
-        self.initialize_Ramdisk(dir_Mount, default_Kernel)
+        if self.env.MODE != "DEBUG":
+            self.initialize_Ramdisk(dir_Mount, default_Kernel)
 
         print("")
 
         # Step 14: User Information - Set Root password
         print("======= Change Root Password =======")
-        res = self.set_root_Password(dir_Mount)
-        stdout = res["stdout"]
-        stderr = res["stderr"]
-        resultcode = res["resultcode"] 
-        cmd_str = res["command-string"]
+        if self.env.MODE != "DEBUG":
+            res = self.set_root_Password(dir_Mount)
+            stdout = res["stdout"]
+            stderr = res["stderr"]
+            resultcode = res["resultcode"] 
+            cmd_str = res["command-string"]
 
         print("")
         
         # Step 15: Install Bootloader
-        combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+        if self.env.MODE != "DEBUG":
+            combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
         
         print("")
 
         # Archive the command string into a file
-        self.archive_command_Str(cmd_str, dir_Mount)
+        if self.env.MODE != "DEBUG":
+            target_directory = "/root/chroot-commas.sh"
+            print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
+            chroot_files.write(cmd_str, dir_Mount, target_directory)
+
+        # Execute in the chroot utility
+        # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
+        # for debugging
+        mount_Root="{}/root".format(dir_Mount)
+        target_directory = "{}/{}".format(mount_Root, "chroot-commas.sh")
+        self.default_Var["external_scripts"].append(
+            ### Append all external scripts used ###
+            target_directory
+        )
 
         print("")
-
-    """
-    Stage Installation Logic
-    """
 
     def installer(self):
         """
@@ -1546,7 +1665,7 @@ Include = /etc/pacman.d/mirrorlist
         print("===========================")
 
         print("(S) Executing chroot commands")
-        success_Flag = self.arch_chroot_Exec() # Execute commands in arch-chroot
+        success_Flag = self.begin_chroot_execution() # Execute commands in arch-chroot
         if success_Flag == False:
             print("(X) Error executing commands in chroot")
         print("(D) Commands executed")

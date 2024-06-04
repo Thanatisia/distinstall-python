@@ -81,6 +81,7 @@
 - [2024-06-04](#2024-06-04)
     + 1211H
     + 1539H
+    + 2158H
 
 ## Entries
 
@@ -1090,4 +1091,39 @@
         + Migrated functions to 'src/pydistinstall/utils/chroot/execution.py'
     - Updated module 'process.py' in 'src/pydistinstall/utils'
         + Added DEVNULL to subprocess import
+
+#### 2158H
+- New
+    - Added new submodule directory 'io' in 'src/pydistinstall/utils/chroot' for I/O Processing-handling within another rootfs/chroot virtual environment helper/wrapper functions
+        + Added new module 'files.py' for chroot Virtual Environment File I/O-related functions 
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        + Added new dependency import 'pydistinstall.utils.chroot.io.files'
+        + Updated usages of 'chroot_execute_command_List()' to return the results list
+        - Cleaned up and sanitized functions to only do 1 operation per functions
+            + If a function is a compilation of various operations, split into N functions for every action/purpose
+            + Goal: Make every function in the base installation framework standalone
+            + Remove any 'physical/application/presentation' layer functions from The Business Logic Layer/Data Layer modules in the framework/template libraries 
+        - Split function 'install_bootloader_Packages()' => 'prepare_bootloader_Packages()' and 'install_bootloader_Packages()'
+            + 'prepare_bootloader_Packages()': For formatting and processing the bootloader packages and dependencies (that the user wishes to install) into a list of commands for execution in the chroot virtual environment
+            + 'install_bootloader_Packages()': For executing the command list in the root partition mount point via chroot and returning the results
+        - Split function 'prepare_Bootloader()' => 'format_boot_dir_cmds()' and 'setup_boot_dir()'
+            - 'format_boot_dir_cmds()': For formatting and processing the setting up of the target rootfs' boot directory into a list of commands for execution in the chroot virtual environment
+                + TODO: This can honestly be a non-subproces command, just use os.mkdir() for directories, so i'll look into this
+            + 'setup_boot_dir()': For executing the command list in the root partition mount point via chroot and returning the results
+        - Split function 'install_Bootloader()' => 'prepare_bootloader_installation()' and 'begin_bootloader_installation()'
+            + 'prepare_bootloader_installation()': For formatting and processing the bootloader installation specifications into a list of commands for execution in the chroot virtual environment
+            + 'begin_bootloader_installation()': For executing the command list in the root partition mount point via chroot and returning the results
+        - Split function 'generate_bootloader_Configs()' => 'prepare_generate_bootloader_configurations()' and 'generate_bootloader_Configs()'
+            + 'prepare_generate_bootloader_configurations()': For formatting and processing the generating of the bootloader's configurations into a list of commands for execution in the chroot virtual environment
+            + 'generate_bootloader_Configs()': For executing the command list in the root partition mount point via chroot and returning the results
+        + Moved the presentation layer functionalities (i.e. prints) to the compiled, multi-stage class functions that executes multiple stages/purposes in a single function
+        + Refactored the references to the new function names
+        + Renamed function 'arch_chroot_Exec()' => 'begin_chroot_execution()'
+        + Added debug mode checks to begin_chroot_execution()
+        + Replacing 'archive_command_Str()' with '.write()' from 'pydistinstall.utils.chroot.files'
+    - Updated module 'execution.py' in 'src/pydistinstall/utils/chroot'
+        + Reformatted function layout
+        + Removed presentation layer functionalities (print) from functions
+        + Updated 'chroot_execute_command_List()': the results dictionary will hold a list of dictionaries, where each entry contains the results and standard stream of the commands
 
