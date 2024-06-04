@@ -1127,3 +1127,10 @@
         + Removed presentation layer functionalities (print) from functions
         + Updated 'chroot_execute_command_List()': the results dictionary will hold a list of dictionaries, where each entry contains the results and standard stream of the commands
 
+#### 2215H
+- Updates
+    - Updated core ArchLinux base installation module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        + Added prints into the mounting functions for consistency, to be removed
+    - Updated module 'runner.py' in 'src/pydistinstall/app'
+        + Replaced  function 'arch_chroot_Exec()' => 'begin_chroot_execution()'
+

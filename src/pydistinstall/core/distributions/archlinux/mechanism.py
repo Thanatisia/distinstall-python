@@ -640,6 +640,7 @@ Include = /etc/pacman.d/mirrorlist
         curr_part_Number = partition_Number
 
         ##### Search for partition number of the Root partition
+        print("Partition Scheme: {}".format(partition_Scheme))
         for k,v in partition_Scheme.items():
             # Get key-value
             part_ID = k
@@ -712,6 +713,7 @@ Include = /etc/pacman.d/mirrorlist
         curr_part_Number = partition_Number
 
         ##### Search for partition number of the Root partition
+        print("Partition Scheme: {}".format(partition_Scheme))
         for k,v in partition_Scheme.items():
             # Get key-value
             part_ID = k

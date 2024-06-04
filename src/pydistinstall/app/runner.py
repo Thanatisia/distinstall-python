@@ -139,7 +139,7 @@ class App():
                 5 : self.installer_class.mount_Disks,
                 6 : self.installer_class.bootstrap_Install,
                 7 : self.installer_class.fstab_Generate,
-                8 : self.installer_class.arch_chroot_Exec,
+                8 : self.installer_class.begin_chroot_execution,
                 9 : self.installer_class_PostInstall.postinstallation,
                 10 : self.installer_class_PostInstall.postinstall_sanitize,
             }
