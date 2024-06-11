@@ -52,10 +52,10 @@ def chroot_execute_command_List(cmd_List, mount_Dir="/mnt", chroot_Command="arch
 
             # Initialize result for current command
             curr_cmd_res = {
-                "stdout" : [],
-                "stderr" : [],
-                "resultcode" : [],
-                "command-string" : []
+                "stdout" : "",
+                "stderr" : "",
+                "resultcode" : -1,
+                "command-string" : ""
             }
 
             # Formulate chroot command
@@ -64,9 +64,9 @@ def chroot_execute_command_List(cmd_List, mount_Dir="/mnt", chroot_Command="arch
             stdout, stderr, resultcode = subprocess_Sync(chroot_cmd_fmt, stdin=PIPE)
 
             # Map the results for the current command
-            curr_cmd_res["stdout"].append(stdout)
-            curr_cmd_res["stderr"].append(stderr)
-            curr_cmd_res["resultcode"].append(resultcode)
+            curr_cmd_res["stdout"] = stdout
+            curr_cmd_res["stderr"] = stderr
+            curr_cmd_res["resultcode"] = resultcode
             curr_cmd_res["command-string"] = chroot_cmd_fmt
 
             # Append current command to the results list

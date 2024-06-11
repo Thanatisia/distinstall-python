@@ -81,7 +81,7 @@ class App():
 
         # Process
         if dist_Name == "arch":
-            self.installer_class = mechanism.BaseInstallation(self.setup) # Import the distribution of choice's installation mechanism
+            self.installer_class = mechanism.BaseInstallation(setup=self.setup) # Import the distribution of choice's installation mechanism
             print("Base Installation class initialized.")
             self.installer_class_PostInstall = mechanism.PostInstallation(self.setup, self.installer_class) # Import the distribution of choice's postinstallation class
             print("Post Installation class initialized.")

@@ -48,8 +48,11 @@ def writelines(contents, dir_Mount="/mnt", destination="new-file.txt"):
 
     # Write commands into file for reusing
     with open(target_directory, "a+") as write_chroot_Commands:
-        # Write to file
-        write_chroot_Commands.write(contents)
+        # Iterate through the contents
+        for line in contents:
+            # Write to file
+            write_chroot_Commands.write(line)
+            write_chroot_Commands.write("\n")
 
         # Close file after usage
         write_chroot_Commands.close()

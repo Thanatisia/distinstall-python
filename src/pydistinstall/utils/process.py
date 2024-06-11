@@ -34,6 +34,51 @@ def subprocess_Open(cmd_str, **opts):
 """
 Process/Subprocess Execution functions
 """
+def subprocess_realtime_print(cmd_str, verbose=False, **opts):
+    """
+    Open a subprocess and read the stdout line by line in real time, and prints the output verbosely
+
+    :: Params
+    - cmd_str : The command string to execute
+        Type: String
+
+    - opts : All Key=Value parameters you wish to parse into Popen
+        Type: kwargs (Keyword Arguments) aka Dictionary
+    """
+    # Initialize Variables
+    stdout = []
+    stderr = ""
+    line = ""
+    ret_Code = 0
+
+    # Open process and Perform action
+    # with Popen(cmd_str.split(), stdout=PIPE, **opts) as proc:
+    with subprocess_Open(cmd_str, stdout=PIPE, stderr=PIPE, **opts) as proc:
+        if proc != None:
+            if proc.stdout != None:
+                # Loop until there are no more lines
+                for line in proc.stdout:
+                    ## Sanitize current line
+                    line = line.rstrip().decode("utf-8")
+
+                    ## Print if verbose is set to true
+                    if verbose == True:
+                        print(line)
+
+                    ## Operate data and store in list
+                    stdout.append(line)
+
+                ## Obtain standard eror
+                stderr = proc.stderr
+
+                # Close standard output after usage
+                proc.stdout.close()
+
+                # Wait until the process has been completed and returned a status/return/result code
+                ret_Code = proc.returncode
+
+    return stdout, stderr, ret_Code
+
 def subprocess_Realtime(cmd_str, **opts):
     """
     Open a subprocess and read the stdout line by line in real time
@@ -182,6 +227,13 @@ def chroot_exec(cmd_str, chroot_exec="arch-chroot", dir_Mount="/mnt", shell="/bi
     - opts : All Key=Value parameters you wish to parse into Popen
         Type: kwargs (Keyword Arguments) aka Dictionary
     """
+    # Initialize Variables
+    result = {
+        "stdout" : "",
+        "stderr" : "",
+        "resultcode" : -1,
+        "command" : ""
+    }
     cmd = [chroot_exec, dir_Mount, shell, "-c", cmd_str]
 
     ## Open process and Perform action
@@ -193,6 +245,8 @@ def chroot_exec(cmd_str, chroot_exec="arch-chroot", dir_Mount="/mnt", shell="/bi
     # Decode and clean-up output
     if stdout != None:
         stdout = stdout.decode("utf-8")
+    else:
+        stdout = ""
 
     if stderr != None:
         stderr = stderr.decode("utf-8")
@@ -202,7 +256,13 @@ def chroot_exec(cmd_str, chroot_exec="arch-chroot", dir_Mount="/mnt", shell="/bi
     # Get result code from process pipe
     resultcode = proc.returncode
 
-    return stdout, stderr, resultcode
+    # Set return value
+    result["stdout"] = stdout
+    result["stderr"] = stderr
+    result["resultcode"] = resultcode
+    result["command"] = cmd
+
+    return result
 
 """
 subprocess stdin (Standard Input) handlers

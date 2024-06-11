@@ -82,6 +82,8 @@
     + 1211H
     + 1539H
     + 2158H
+- [2024-06-11](#2024-06-11)
+    + 1446H
 
 ## Entries
 
@@ -1133,4 +1135,44 @@
         + Added prints into the mounting functions for consistency, to be removed
     - Updated module 'runner.py' in 'src/pydistinstall/app'
         + Replaced  function 'arch_chroot_Exec()' => 'begin_chroot_execution()'
+
+### 2024-06-11
+#### 1446H
+- New
+    - Added new directory 'usages' in 'docs/' containing usages for the various components in the project
+        + Added new document 'ui.md' : Usage syntax and documentations for the pydistinstall base installer CLI utility
+- Updates
+    - Updated document 'requirements.txt'
+        + Added pyright into the requirements file for local development
+    - Updated module 'runner.py' in 'src/pydistinstall/app/'
+        + Explicit specified argument key 'setup=' in 'self.installer_class = mechanism.BaseInstallation(setup=self.setup)'
+    - Updated ArchLinux core mechanism module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        + Modified description of library/module
+        - Added parameter signature/headers to the 'init()' function in class BaseInstallation() to accept either 
+            + setup : a preconfigured dictionary object initialized from Setup() that contains the configuration components, or 
+            + Explicitly specify the individual components of the settings configuration file
+        - Updated 'update_configs()'
+            + Adjusted parameter alignment (aesthetic and readability)
+        + self.cfg = {} : Added comments
+        + Added new function 'get_cfg_keys()' for getting all keys in the global configuration variable (self.cfg)
+        + Added new function 'get_cfg()' for obtaining the value of all specified keys in either a string (1-layered key) or a list (multi-layered nested subkeys)
+        + Removed mode verificiation for customizability (Each function should perform 1 particular purpose unless it is an application logic function)
+        - Separated the merged functions into individual standalone purposes
+            + The separated functions will be merged only in dedicated multi-purpose 'staged' functions
+        + Replaced the system command executions to be in a list where each element is the command and the arguments to be passed into Subprocess Popen()
+        - Modified the functions to generally be usable on their own
+            + Specifiy multistaged functions will use the above standalone functions as an example on how to use them (if you wish to make your own functions)
+        + Testing: Library is usable on its own without dependencies on the CLI
+    - Updated chroot module 'execution.py' in 'src/pydistinstall/utils/chroot/'
+        - Updated function 'chroot_execute_command_List()'
+            + Replaced 'curr_cmd_res' key value types
+            + Replaced containing of values in 'curr_cmd_res' with taking the values of the results instead of appending
+    - Updated chroot-io module 'files.py' in 'src/pydistinstall/utils/chroot/io/'
+        - Updated function 'writelines()'
+            + Fixed writing of a list of contents
+    - Updated module 'process.py' in 'src/pydistinstall/utils/'
+        + Added new function 'subprocess_realtime_print()' for opening a subprocess pipe and read the stdout line by line in real time and print it verbosely (if enabled)
+        - Updated function 'subprocess_Realtime()'
+            + Initialize variables for storing the results container
+
 

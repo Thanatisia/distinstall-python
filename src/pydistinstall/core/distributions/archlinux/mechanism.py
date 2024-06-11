@@ -1,5 +1,5 @@
 """
-Primary Installation Mechanism
+The universal linux distribution bootstrap installation template framework/library core 
 """
 import os
 import sys
@@ -11,9 +11,30 @@ from pydistinstall.utils.chroot.io import files as chroot_files
 from pydistinstall.utils.io.disk import disk_partition_table_Format, partition_make, partition_filesystem_format, partition_set_Bootable, partition_swap_Enable
 
 class BaseInstallation():
-    def __init__(self, setup):
-        # Initialize Environment variable class 
-        self.update_setup(setup)
+    """
+    Core Base Installation class
+    """
+    def __init__(self,
+                 disk_label="", disk_max_size="", partition_scheme=None, mount_paths=None, location=None, user_profile=None,
+                 distribution_name="arch", disk_type="hdd", storage_controller="sata", disk_part_table="msdos", bootloader_firmware="bios", base_pkgs=["base","linux","linux-firmware","linux-lts","linux-lts-headers","base-devel","nano","vim","networkmanager","os-prober"],
+                 network_cfg_hostname="hostname", bootloader="grub", bootloader_directory="/boot/grub", bootloader_params="", default_kernel="linux", platform="i386-pc",
+                 setup=None):
+        # Check if a setup configuration dictionary is provided
+        if setup == None:
+            # Data Validation: Null Value Check
+            if partition_scheme == None: partition_scheme = {}
+            if mount_paths == None: mount_paths = {}
+            if location == None: location = {}
+            if user_profile == None: user_profile = {}
+
+            # Update the configuration settings 
+            self.update_configs(disk_label, disk_max_size, partition_scheme, mount_paths, location, user_profile, 
+                            distribution_name, disk_type, storage_controller, disk_part_table, bootloader_firmware, base_pkgs,
+                            network_cfg_hostname, bootloader, bootloader_directory, bootloader_params, default_kernel, platform)
+        else:
+            # Initialize Environment variable setup class 
+            self.update_setup(setup)
+        # Initialize Variables
         self.package_manager_config_Path = "/etc/pacman.d"
         self.mirrorlist_file_Name = "{}/mirrorlist".format(self.package_manager_config_Path)
         self.package_manager_Configurations = """
@@ -126,7 +147,7 @@ Include = /etc/pacman.d/mirrorlist
 
     # Callback/Event Utility functions
     def update_configs(self, disk_label:str, disk_max_size:str, partition_scheme:dict, mount_paths:dict, location:dict, user_profile:dict, 
-                     distribution_name="arch", disk_type="hdd", storage_controller="sata", disk_part_table="msdos", bootloader_firmware="bios", base_pkgs=["base","linux","linux-firmware","linux-lts","linux-lts-headers","base-devel","nano","vim","networkmanager","os-prober"],
+                       distribution_name="arch", disk_type="hdd", storage_controller="sata", disk_part_table="msdos", bootloader_firmware="bios", base_pkgs=["base","linux","linux-firmware","linux-lts","linux-lts-headers","base-devel","nano","vim","networkmanager","os-prober"],
                        network_cfg_hostname="hostname", bootloader="grub", bootloader_directory="/boot/grub", bootloader_params="", default_kernel="linux", platform="i386-pc"):
         """
         Update the setup configurations with updated information
@@ -224,7 +245,7 @@ Include = /etc/pacman.d/mirrorlist
         self.cfg = {
             "distribution-name" : distribution_name,
             "device_Type" : disk_type, # Your disk/device/file type; i.e. VHD|HDD|SSD|Flashdrive|Microsd etc
-            "storage-controller": storage_controller,
+            "storage-controller": storage_controller, # Your disk's storage controller (i.e. SATA/AHCI for HDD/VHD/VDI/VMDK, NVME for SSD, loop for loopback devices)
             "device_Size" : disk_max_size, # The total disk size
             "disk_Label" : disk_label, # The disk's name/label (i.e. /dev/sdX for SATA, /dev/nvme0np1 for NVME); Default: uses the environment variable '$TARGET_DISK_NAME'
             "disk_partition_Table" : disk_part_table, # mbr/msdos | gpt
@@ -241,6 +262,79 @@ Include = /etc/pacman.d/mirrorlist
             "default_kernel" : default_kernel, # Your Default Linux Kernel
             "platform_Arch" : platform, # Your Platform Architecture i.e. [ i386-pc | x86_64-efi (for UEFI|GPT)]
         }
+
+    def get_cfg_keys(self):
+        """
+        Get all keys in the 'cfg' global configurations variable
+        """
+        return list(self.cfg.keys())
+
+    def get_cfg(self, *cfg_keys):
+        """
+        Get the currently set configurations ccording to the specified keys
+
+        :: Params
+        - cfg_keys : List of all configuration keys to pull from the set configs
+            + Type: vargs
+            - Format
+                + String key (1 layer) : get_cfg("key-name")
+                + nested Keys (multi-layer) : get_cfg["parent-root-key", "nested-key-1", "nested-key-2", ...])
+        """
+        # Initialize Variables
+        cfg = self.cfg
+        results = [cfg]
+        disk_Label = cfg["disk_Label"]
+        partition_Table = cfg["disk_partition_Table"] # MBR|MSDOS / GPT
+        bootloader_firmware = cfg["bootloader_firmware"] # BIOS / UEFI
+        dir_Mount = cfg["mount_Paths"]["Root"]
+        region = cfg["location"]["Region"]
+        city = cfg["location"]["City"]
+        language = cfg["location"]["Language"]
+        keyboard_mapping = cfg["location"]["KeyboardMapping"]
+        hostname = cfg["networkConfig_hostname"]
+        default_Kernel = cfg["default_kernel"]
+        bootloader = cfg["bootloader"]
+        bootloader_directory = cfg["bootloader_directory"]
+        bootloader_optional_Params = cfg["bootloader_Params"]
+        bootloader_target_device_Type = cfg["platform_Arch"]
+
+        # Iterate through passed configuration keys
+        for i in range(len(cfg_keys)):
+            # Get current key
+            curr_key = cfg_keys[i]
+
+            # Check the type of the key
+            match curr_key:
+                case list():
+                    ## List element
+                    parent_key = curr_key[0] # Get the root key
+                    parent_root_val = self.cfg[parent_key] # Get the value mapped to the root key
+                    nested_subkeys = curr_key[1:] # Get the child subkeys under the parent key
+
+                    curr_res_val = ""
+                    curr_subkey_val = parent_root_val
+
+                    # Iterate the key and subkeys
+                    for j in range(len(nested_subkeys)):
+                        # Get current subkey
+                        curr_subkey = nested_subkeys[j]
+
+                        # Get value of of subkey
+                        curr_subkey_val = curr_subkey_val[curr_subkey]
+
+                        # Set the previous value as the current value
+                        curr_res_val = curr_subkey_val
+                case str():
+                    ## String element
+                    curr_res_val = self.cfg[curr_key]
+                case _:
+                    # Invalid type; Default
+                    curr_res_val = ""
+
+            # Append into results
+            results.append(curr_res_val)
+
+        return results
 
     def update_setup(self, setup):
         self.setup = setup
@@ -269,14 +363,11 @@ Include = /etc/pacman.d/mirrorlist
         cmd_str = "ping -c {} {}".format(ping_Count, ipv4_address)
         res = False
 
-        if self.env.MODE == "DEBUG":
-            print(cmd_str)
-            res = True
-        else:
-            ret_Code:int = os.system(cmd_str)
-            if ret_Code != 0:
-                # Success
-                res=True
+        # Begin pinging a network and check if there's a response
+        ret_Code:int = os.system(cmd_str)
+        if ret_Code != 0:
+            # Success
+            res=True
 
         # Output
         return res
@@ -327,32 +418,27 @@ Include = /etc/pacman.d/mirrorlist
         stderr = ""
         returncode = 0
 
-        if self.env.MODE == "DEBUG":
-            # Set NTP
-            print(cmd_set_NTP)
+        # Set NTP
+        stdout, stderr, returncode = process.subprocess_Sync(cmd_set_NTP)
+
+        if stderr == "":
             # To check system clock
-            print(cmd_check_NTP)
-            success_flag = True
-        else:
-            # Set NTP
-            stdout, stderr, returncode = process.subprocess_Sync(cmd_set_NTP)
+            stdout, stderr, returncode = process.subprocess_Sync(cmd_check_NTP)
 
-            if stderr == "":
-                # To check system clock
-                stdout, stderr, returncode = process.subprocess_Sync(cmd_check_NTP)
-
-                if returncode == 0:
-                    # Successfully set system clock
-                    success_flag = True
-                else:
-                    # Error setting system clock
-                    success_flag = False
+            if returncode == 0:
+                # Successfully set system clock
+                success_flag = True
+            else:
+                # Error setting system clock
+                success_flag = False
 
         return stdout, stderr, returncode, success_flag
 
     def disk_get_information(self, cfg):
         """
-        Get the user's input - Device Information
+        Get the currently-set disk and partition information, such as
+        - disk: disk label, disk device type, storage controller
+        - partition: partition table, partition scheme
         """
         # Obtain Configuration Key-Values
         disk_Label = cfg["disk_Label"]
@@ -437,24 +523,14 @@ Include = /etc/pacman.d/mirrorlist
         # Output/Return
         return res
 
-    def device_partition_Manager(self):
+    def format_disk_partition_table(self, disk_Label, partition_Table, uInput_fmt_query="> Would you like to format the disk's partition table? [Y|N]: "):
         """
-        Device & Partition Manager
+        Format the partition table of the provided disk lable
         """
         # Initialize Variables
-        cfg = self.cfg
-        cmd_str = ""
 
-        # Begin Filesystem Management
-        print("[+] Get User Input - Device Information")
-        disk_Label, partition_Table, partition_Scheme, device_medium_Type, storage_controller = self.disk_get_information(cfg)
-
-        print("[+] Get User Input - Partition Information")
-
-        """
-        Formatting Partition Table
-        """
-        format_conf = input("> Would you like to format the disk's partition table? [Y|N]: ")
+        # Get user's confirmation
+        format_conf = input(uInput_fmt_query)
         # Process confirmation
         if (format_conf == "Y") or (format_conf == ""):
             ## Format
@@ -472,8 +548,11 @@ Include = /etc/pacman.d/mirrorlist
         else:
             print("[INFO] Skipping disk partition table label formatting")
 
-        print("")
-
+    def make_partition_scheme(self, disk_Label, storage_controller, partition_Scheme, partition_Table):
+        """
+        Create the partitions specified in the partition scheme dictionary for the provided disk label and
+        Format the filesystems of the partitions specified in the partition scheme
+        """
         format_conf = input("> Would you like to format the disk's partition scheme/layout? [Y|N]: ")
         if (format_conf == "Y") or (format_conf == ""):
             ## Format
@@ -525,10 +604,6 @@ Include = /etc/pacman.d/mirrorlist
                     else:
                         # Error
                         print("[X] Error executing [{}]: {}".format(cmd_str, stderr))
-
-        print("")
-
-        print("(D) Partition Completed. ")
 
     def make_partition_mount_dir_Root(self, root_Dir):
         """
@@ -854,7 +929,7 @@ Include = /etc/pacman.d/mirrorlist
         print("Select Mirrors")
         print("==============")
         print("(S) Selecting mirrors...")
-        print("{}".format(self.env.EDITOR))
+        print("{} {}".format(self.env.EDITOR, mirrorlist_Path))
         print("(D) Mirror selected.")
 
     def check_package_manager_Configurations(self, mount_Dir):
@@ -908,29 +983,25 @@ Include = /etc/pacman.d/mirrorlist
         success_Flag = False
 
         # --- Processing
-        cmd_str = "pacstrap {} {}".format(mount_Point, ' '.join(base_packages))
+        cmd_str = ["pacstrap", mount_Point, *base_packages]
 
-        print("Executing: {}".format(cmd_str))
-        if self.env.MODE != "DEBUG":
-            ## Begin bootstrapping
-            # stdout, stderr, resultcode = process.subprocess_Realtime(cmd_str)
-            resultcode = os.system(cmd_str)
-
-        print("")
-
-        # Select Mirror List
-        self.select_Mirrors(self.mirrorlist_file_Name)
-
-        print("")
-
-        # Check package manager configuration file
-        self.check_package_manager_Configurations(mount_Point)
+        ## Begin bootstrapping
+        stdout, stderr, resultcode = process.subprocess_realtime_print(cmd_str, verbose=True)
+        # resultcode = os.system(cmd_str)
 
         # Check result code
         if resultcode == 0:
             success_Flag = True
 
         return stdout, stderr, resultcode
+
+    def verify_package_manager_configurations(self):
+        """
+        Verify Package Manager Configurations
+        """
+        mount_Point = self.cfg["mount_Paths"]["Root"]
+        # Check package manager configuration file
+        self.check_package_manager_Configurations(mount_Point)
 
     def fstab_Generate(self):
         """
@@ -945,41 +1016,41 @@ Include = /etc/pacman.d/mirrorlist
         dir_Mount = mount_Points["Root"] # Look for root/mount partition
         fstab_Contents = []
         success_Flag = False
+        stderr = ""
 
         # Generate an fstab file (use -U or -L to define by UUID or labels, respectively):
         # cmd_str = "genfstab -U {}".format(dir_Mount)
 
         # Execute and get fstab content from command and write into /etc/fstab
-        if self.env.MODE != "DEBUG":
-            try:
-                # Obtain disk block information
-                block_Info:dict = device_management.get_block_Information(disk_Label)
-                curr_disk_block_info = block_Info[disk_Label]
+        try:
+            # Obtain disk block information
+            block_Info:dict = device_management.get_block_Information(disk_Label)
+            curr_disk_block_info = block_Info[disk_Label]
 
-                ## Begin generating filesystems table
-                if len(curr_disk_block_info) > 0:
-                    # Success
-                    # Generate filesystems table
-                    fstab_Contents = device_management.design_filesystems_Table(disk_Label, \
-                            dir_Mount, \
-                            curr_disk_block_info, \
-                            partition_Scheme, \
-                            mount_Points \
-                    )
+            ## Begin generating filesystems table
+            if len(curr_disk_block_info) > 0:
+                # Success
+                # Generate filesystems table
+                fstab_Contents = device_management.design_filesystems_Table(disk_Label, \
+                        dir_Mount, \
+                        curr_disk_block_info, \
+                        partition_Scheme, \
+                        mount_Points \
+                )
 
-                    # Write into [mount-point]/etc/fstab
-                    with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
-                        # Write fstab content into file
-                        write_fstab.writelines(fstab_Contents)
+                # Write into [mount-point]/etc/fstab
+                with open("{}/etc/fstab".format(dir_Mount), "a+") as write_fstab:
+                    # Write fstab content into file
+                    write_fstab.writelines(fstab_Contents)
 
-                        # Close file after usage
-                        write_fstab.close()
+                    # Close file after usage
+                    write_fstab.close()
 
-                success_Flag = True
-            except Exception as ex:
-                print("Exception : {}".format(ex))
+            success_Flag = True
+        except Exception as ex:
+            stderr = ex
 
-        return success_Flag
+        return [success_Flag, stderr]
 
     """
     Chroot Actions
@@ -1065,7 +1136,7 @@ Include = /etc/pacman.d/mirrorlist
         result = {
             "stdout" : [],
             "stderr" : [],
-            "resultcode" : [],
+            "resultcode" : -1,
             "command-string" : ""
         }
 
@@ -1080,10 +1151,12 @@ Include = /etc/pacman.d/mirrorlist
 
             # Check if standard output stream is empty
             if proc.stdout != None:
-                line = proc.stdout.readline()
+                line = proc.stdout.readline().decode("utf-8")
 
-                # Append line to standard output
-                stdout.append(line.decode("utf-8"))
+                # Check if line is empty
+                if line != "":
+                    # Append line to standard output
+                    stdout.append(line)
 
             # Check if standard input stream is empty
             if proc.stdin != None:
@@ -1110,10 +1183,40 @@ Include = /etc/pacman.d/mirrorlist
 
         # Map/Append result results
         result["stdout"] = stdout
-        result["stderr"].append(stderr)
-        result["resultcode"].append(resultcode)
+        result["stderr"] = stderr
+        result["resultcode"] = resultcode
+        result["command-string"] = cmd_root_passwd_change
 
         return result
+
+    def format_cmds_for_subprocess_exec(self, *cmds):
+        """
+        Format the provided command strings into a chroot command string and return in a accumulated list of command lists
+        """
+        # Initialize Variables
+        results = []
+
+        # Check number of commands provided
+        if len(cmds) == 1:
+            # String
+            # Get current command
+            curr_cmd_str = cmds[0]
+            # Split the commands into a list
+            curr_cmd_spl = curr_cmd_str.split()
+            # Set the split list into result
+            results = curr_cmd_spl
+        else:
+            # List of commands
+            for i in range(len(cmds)):
+                # Get current command
+                curr_cmd_str = cmds[i]
+                # Split the commands into a list
+                curr_cmd_spl = curr_cmd_str.split()
+                # Append result into the results list
+                results.append(curr_cmd_spl)
+
+        # Return
+        return results
 
     def prepare_bootloader_Packages(self, bootloader="grub", partition_Table="msdos"):
         """
@@ -1126,15 +1229,15 @@ Include = /etc/pacman.d/mirrorlist
         match bootloader:
             case "grub":
                 # Setup bootloader
-                chroot_commands.append("pacman -S grub") # Install Grub Package
+                chroot_commands.append(["pacman", "-S", "grub"]) # Install Grub Package
 
                 # Check if partition table is GPT
                 if partition_Table == "gpt":
                     # Install GPT/(U)EFI dependencies
-                    chroot_commands.append("pacman -S efibootmgr")
+                    chroot_commands.append(["pacman", "-S", "efibootmgr"])
             case "syslinux":
                 ### Syslinux bootloader support is currently still a WIP and Testing
-                chroot_commands.append("pacman -S syslinux")
+                chroot_commands.append(["pacman", "-S", "syslinux"])
 
         # --- Processing
 
@@ -1157,23 +1260,30 @@ Include = /etc/pacman.d/mirrorlist
 
                 # Initialize result for current command
                 curr_cmd_res = {
-                    "stdout" : [],
-                    "stderr" : [],
-                    "resultcode" : [],
+                    "stdout" : "",
+                    "stderr" : "",
+                    "resultcode" : -1,
                     "command-string" : ""
                 }
 
                 # Combine into a string
-                cmd_str = ";\n".join(chroot_commands)
+                cmd_str = ";\n".join(curr_cmd)
 
                 # Begin
-                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
+                curr_cmd_strfmt = ' '.join(curr_cmd)
+                results = process.chroot_exec(curr_cmd_strfmt, dir_Mount=dir_Mount)
+
+                # Obtain results value 
+                stdout = results["stdout"]
+                stderr = results["stderr"]
+                resultcode = results["resultcode"]
+                cmd_fmt = results["command"]
 
                 # Map/Append result results
-                curr_cmd_res["stdout"].append(stdout)
-                curr_cmd_res["stderr"].append(stderr)
-                curr_cmd_res["resultcode"].append(resultcode)
-                curr_cmd_res["command-string"] = cmd_str
+                curr_cmd_res["stdout"] = stdout
+                curr_cmd_res["stderr"] = stderr
+                curr_cmd_res["resultcode"] = resultcode
+                curr_cmd_res["command-string"] = cmd_fmt
 
                 # Append current command to the results list
                 result.append(curr_cmd_res)
@@ -1192,17 +1302,17 @@ Include = /etc/pacman.d/mirrorlist
             case "grub":
                 # Create boot partition directory
                 # TODO: This can honestly be a non-subproces command, just use os.mkdir
-                chroot_commands.append("mkdir -p {}".format(bootloader_directory))                  # Create grub folder
+                chroot_commands.append(["mkdir", "-p", bootloader_directory]) # Create grub folder
             case "syslinux":
                 ### Syslinux bootloader support is currently still a WIP and Testing
                 # TODO: This can honestly be a non-subproces command, just use os.mkdir and os.copy
-                chroot_commands.append("mkdir -p /boot/syslinux")
-                chroot_commands.append("cp -r /usr/lib/syslinux/bios/*.c32 /boot/syslinux")
+                chroot_commands.append(["mkdir", "-p", "/boot/syslinux"])
+                chroot_commands.append(["cp", "-r", "/usr/lib/syslinux/bios/*.c32", "/boot/syslinux"])
 
         # Return/output
         return chroot_commands
 
-    def setup_boot_dir(self, cmd_list, dir_Mount="/mnt", ):
+    def setup_boot_dir(self, cmd_list, dir_Mount="/mnt"):
         """
         Install and setup the bootloader using the prepared command string
         """
@@ -1218,23 +1328,30 @@ Include = /etc/pacman.d/mirrorlist
 
                 # Initialize result for current command
                 curr_cmd_res = {
-                    "stdout" : [],
-                    "stderr" : [],
-                    "resultcode" : [],
+                    "stdout" : "",
+                    "stderr" : "",
+                    "resultcode" : -1,
                     "command-string" : ""
                 }
 
                 # Combine into a string
-                cmd_str = ";\n".join(cmd_list)
+                cmd_str = ";\n".join(curr_cmd)
 
                 # Begin
-                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
+                curr_cmd_strfmt = ' '.join(curr_cmd)
+                results = process.chroot_exec(curr_cmd_strfmt, dir_Mount=dir_Mount, stderr=process.PIPE)
+
+                # Obtain results value 
+                stdout = results["stdout"]
+                stderr = results["stderr"]
+                resultcode = results["resultcode"]
+                cmd_fmt = results["command"]
 
                 # Map/Append result results
-                curr_cmd_res["stdout"].append(stdout)
-                curr_cmd_res["stderr"].append(stderr)
-                curr_cmd_res["resultcode"].append(resultcode)
-                curr_cmd_res["command-string"] = cmd_str
+                curr_cmd_res["stdout"] = stdout
+                curr_cmd_res["stderr"] = stderr
+                curr_cmd_res["resultcode"] = resultcode
+                curr_cmd_res["command-string"] = cmd_fmt
 
                 # Append current command to the results list
                 result.append(curr_cmd_res)
@@ -1252,10 +1369,10 @@ Include = /etc/pacman.d/mirrorlist
         match bootloader:
             case "grub":
                 # Install Bootloader
-                chroot_commands.append("grub-install --target={} {} {}".format(bootloader_target_Architecture, bootloader_optional_Params, disk_Label))	# Install Grub Bootloader
+                chroot_commands.append(["grub-install", "--target={}".format(bootloader_target_Architecture), bootloader_optional_Params, disk_Label])	# Install Grub Bootloader
             case "syslinux":
                 ### Syslinux bootloader support is currently still a WIP and Testing
-                chroot_commands.append("extlinux --install /boot/syslinux")
+                chroot_commands.append(["extlinux", "--install", "/boot/syslinux"])
 
         # Return/output
         return chroot_commands
@@ -1276,23 +1393,30 @@ Include = /etc/pacman.d/mirrorlist
 
                 # Initialize result for current command
                 curr_cmd_res = {
-                    "stdout" : [],
-                    "stderr" : [],
-                    "resultcode" : [],
+                    "stdout" : "",
+                    "stderr" : "",
+                    "resultcode" : -1,
                     "command-string" : ""
                 }
 
                 # Combine into a string
-                cmd_str = ";\n".join(cmd_list)
+                cmd_str = ";\n".join(curr_cmd)
 
                 # Begin
-                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
+                curr_cmd_strfmt = ' '.join(curr_cmd)
+                results = process.chroot_exec(curr_cmd_strfmt, dir_Mount=dir_Mount, stderr=process.PIPE)
+
+                # Obtain results value 
+                stdout = results["stdout"]
+                stderr = results["stderr"]
+                resultcode = results["resultcode"]
+                cmd_fmt = results["command"]
 
                 # Map/Append result results
-                curr_cmd_res["stdout"].append(stdout)
-                curr_cmd_res["stderr"].append(stderr)
-                curr_cmd_res["resultcode"].append(resultcode)
-                curr_cmd_res["command-string"] = cmd_str
+                curr_cmd_res["stdout"] = stdout
+                curr_cmd_res["stderr"] = stderr
+                curr_cmd_res["resultcode"] = resultcode
+                curr_cmd_res["command-string"] = cmd_fmt
 
                 # Append current command to the results list
                 result.append(curr_cmd_res)
@@ -1311,15 +1435,15 @@ Include = /etc/pacman.d/mirrorlist
         match bootloader:
             case "grub":
                 # Generate bootloader configuration file
-                chroot_commands.append("grub-mkconfig -o {}/grub.cfg".format(bootloader_directory)) # Create grub config
+                chroot_commands.append(["grub-mkconfig", "-o", "{}/grub.cfg".format(bootloader_directory)]) # Create grub config
             case "syslinux":
                 ### Syslinux bootloader support is currently still a WIP and Testing
                 # Check partition table
                 if (partition_Table == "msdos") or (partition_Table == "mbr"):
-                    chroot_commands.append("dd bs=440 count=1 conv=notrunc if=/usr/lib/syslinux/bios/mbr.bin of={}".format(disk_Label))
+                    chroot_commands.append(["dd", "bs=440", "count=1", "conv=notrunc", "if=/usr/lib/syslinux/bios/mbr.bin", "of={}".format(disk_Label)])
                 elif (partition_Table == "gpt"):
-                    chroot_commands.append("sgdisk {} --attributes=1:set:2".format(disk_Label))
-                    chroot_commands.append("dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/bios/gptmbr.bin of={}".format(disk_Label))
+                    chroot_commands.append(["sgdisk", disk_Label, "--attributes=1:set:2"])
+                    chroot_commands.append(["dd", "bs=440", "conv=notrunc", "count=1", "if=/usr/lib/syslinux/bios/gptmbr.bin", "of={}".format(disk_Label)])
 
         # Return/output
         return chroot_commands
@@ -1340,23 +1464,30 @@ Include = /etc/pacman.d/mirrorlist
 
                 # Initialize result for current command
                 curr_cmd_res = {
-                    "stdout" : [],
-                    "stderr" : [],
-                    "resultcode" : [],
+                    "stdout" : "",
+                    "stderr" : "",
+                    "resultcode" : -1,
                     "command-string" : ""
                 }
 
                 # Combine into a string
-                cmd_str = ";\n".join(cmd_list)
+                cmd_str = ";\n".join(curr_cmd)
 
                 # Begin
-                stdout, stderr, resultcode = process.chroot_exec(curr_cmd, dir_Mount=dir_Mount)
+                curr_cmd_strfmt = ' '.join(curr_cmd)
+                results = process.chroot_exec(curr_cmd_strfmt, dir_Mount=dir_Mount, stderr=process.PIPE)
+
+                # Obtain results value 
+                stdout = results["stdout"]
+                stderr = results["stderr"]
+                resultcode = results["resultcode"]
+                cmd_fmt = results["command"]
 
                 # Map/Append result results
-                curr_cmd_res["stdout"].append(stdout)
-                curr_cmd_res["stderr"].append(stderr)
-                curr_cmd_res["resultcode"].append(resultcode)
-                curr_cmd_res["command-string"] = cmd_str
+                curr_cmd_res["stdout"] = stdout
+                curr_cmd_res["stderr"] = stderr
+                curr_cmd_res["resultcode"] = resultcode
+                curr_cmd_res["command-string"] = cmd_fmt
 
                 # Append current command to the results list
                 result.append(curr_cmd_res)
@@ -1374,21 +1505,18 @@ Include = /etc/pacman.d/mirrorlist
         # Install Bootloader dependencies and packages
         if self.env.MODE != "DEBUG":
             # Prepare and format the bootloader packages into a command list
-            print("(+) Installing Bootloader : {}".format(bootloader))
             cmd_list = self.prepare_bootloader_Packages(bootloader, partition_Table)
-
             # Install bootloader packages
             res = self.install_bootloader_Packages(cmd_list, dir_Mount)
-            combined_res.append({"commands" : cmd_list, "results" : res})
+            combined_res.append({"title" : "Installing Bootloader Dependencies : {}".format(bootloader), "commands" : cmd_list, "results" : res})
 
         # Prepare Boot directory
         if self.env.MODE != "DEBUG":
             # Format and obtain the commands required to create boot directory
             cmd_list = self.format_boot_dir_cmds(bootloader, bootloader_directory)
-
             # Begin creating boot directory
             res = self.setup_boot_dir(cmd_list, dir_Mount)
-            combined_res.append({"commands" : cmd_list, "results" : res})
+            combined_res.append({"title" : "Generating boot directory : {}".format(bootloader_directory), "commands" : cmd_list, "results" : res})
 
         # Install Bootloader to partition table
         if self.env.MODE != "DEBUG":
@@ -1396,7 +1524,7 @@ Include = /etc/pacman.d/mirrorlist
             cmd_list = self.prepare_bootloader_installation(disk_Label, bootloader, bootloader_optional_Params, bootloader_target_Architecture)
             # Begin the installation of the bootloader to the new partition table
             res = self.begin_bootloader_installation(cmd_list, dir_Mount)
-            combined_res.append({"commands" : cmd_list, "results" : res})
+            combined_res.append({"title" : "Installing bootloader to partition table : {}".format(bootloader), "commands" : cmd_list, "results" : res})
 
         # Generate Bootloader configurations
         if self.env.MODE != "DEBUG":
@@ -1404,7 +1532,7 @@ Include = /etc/pacman.d/mirrorlist
             cmd_list = self.prepare_generate_bootloader_configurations(disk_Label, bootloader, bootloader_directory, partition_Table)
             # Begin the generating of the bootloader configurations to the new rootfs
             res = self.generate_bootloader_Configs(cmd_list, dir_Mount, bootloader_optional_Params, bootloader_target_Architecture)
-            combined_res.append({"commands" : cmd_list, "results" : res})
+            combined_res.append({"title" : "Generating bootloader configurations : {}".format(bootloader), "commands" : cmd_list, "results" : res})
 
         # Return output
         return combined_res
@@ -1418,26 +1546,110 @@ Include = /etc/pacman.d/mirrorlist
         target_directory = "{}/{}".format(mount_Root, archive_script_file)
 
         # Write commands into file for reusing
-        with open(target_directory, "a+") as write_chroot_Commands:
-            # Write to file
-            write_chroot_Commands.write(cmd_str)
-
-            # Close file after usage
-            write_chroot_Commands.close()
+        chroot_files.writelines(cmd_str, dir_Mount, archive_script_file)
 
     """
     Stage Installation Logic
     """
-
-    def begin_chroot_execution(self):
+    def device_partition_Manager(self):
         """
-        Execute commands using arch-chroot due to limitations with shellscripting
+        Device & Partition Manager
         """
+        # Initialize Variables
+        cfg = self.cfg
 
-        # --- Input
-        # Local Variables
-        cmd_str = ""
+        # Begin Filesystem Management
+        print("[+] Get User Input - Device Information")
+        disk_Label, partition_Table, partition_Scheme, device_medium_Type, storage_controller = self.disk_get_information(cfg)
 
+        print("[+] Format the disk's partition table")
+        self.format_disk_partition_table(disk_Label, partition_Table)
+
+        print("[+] Create the partitions in the partition scheme and Format the partition's filesystem types")
+        self.make_partition_scheme(disk_Label, storage_controller, partition_Scheme, partition_Table)
+
+        print("(D) Partition Completed. ")
+
+    def chroot_sync_timezone(self):
+        """
+        Sync the timezone NTP in the chroot rootfs virtual environment
+        """
+        # Initialize Variables
+        cfg = self.cfg
+        dir_mount = cfg["mount_Paths"]["Root"]
+        region = cfg["location"]["Region"]
+        city = cfg["location"]["City"]
+
+        # Synchronize the timezone
+        results = self.sync_Timezone(dir_mount, region, city)
+
+        # Return result
+        return results
+
+    def chroot_enable_locale(self):
+        """
+        Enable the locale in the chroot rootfs virtual environment
+        """
+        # Initialize Variables
+        cfg = self.cfg
+        dir_mount = cfg["mount_Paths"]["Root"]
+        language = cfg["location"]["Language"]
+
+        # Enable locale
+        results = self.enable_Locale(dir_mount, language)
+
+        # Output/Return
+        return results
+
+    def chroot_network_management(self):
+        """
+        Perform Network Management in the chroot rootfs virtual environment
+        """
+        # Initialize Variables
+        cfg = self.cfg
+        dir_mount = cfg["mount_Paths"]["Root"]
+        hostname = cfg["networkConfig_hostname"]
+
+        # Perform Network Management
+        results = self.network_Management(dir_mount, hostname)
+
+        # Output/Return
+        return results
+
+    def chroot_init_ramdisk(self):
+        """
+        Initialize I/O Ramdisk in the chroot rootfs virtual environment
+        """
+        # Initialize Variables
+        cfg = self.cfg
+        dir_mount = cfg["mount_Paths"]["Root"]
+        default_Kernel = cfg["default_kernel"]
+
+        # Initialize ramdisk
+        results = self.initialize_Ramdisk(dir_mount, default_Kernel)
+
+        # Output/Return
+        return results
+
+    def chroot_set_root_passwd(self):
+        """
+        Set the root password in the chroot rootfs virtual environment
+        """
+        # Initialize Variables
+        cfg = self.cfg
+        dir_mount = cfg["mount_Paths"]["Root"]
+
+        # Set root password
+        results = self.set_root_Password(dir_mount)
+
+        # Output/Return
+        return results
+
+    def chroot_bootloader_management(self):
+        """
+        Perform Bootloader Management in the chroot rootfs virtual environment
+        """
+        # Initialize Variables
         cfg = self.cfg
         disk_Label = cfg["disk_Label"]
         partition_Table = cfg["disk_partition_Table"] # MBR|MSDOS / GPT
@@ -1454,12 +1666,30 @@ Include = /etc/pacman.d/mirrorlist
         bootloader_optional_Params = cfg["bootloader_Params"]
         bootloader_target_device_Type = cfg["platform_Arch"]
 
+        # Perform Bootloader Managemnt in chroot
+        combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+
+        # Output/Return
+        return combined_res
+
+    def begin_chroot_execution(self):
+        """
+        Execute commands using arch-chroot due to limitations with shellscripting
+        """
+
+        # --- Input
+        # Local Variables
+        cmd_str = []
+
+        cfg = self.cfg
+        dir_Mount = cfg["mount_Paths"]["Root"]
+
         # Chroot Execute
         ## Synchronize Hardware Clock
         print("(+) Time Zones : Synchronize Hardware Clock")
 
         if self.env.MODE != "DEBUG":
-            results = self.sync_Timezone(dir_Mount, region, city)
+            results = self.chroot_sync_timezone()
 
             # Iterate through the list of command results
             for i in range(len(results)):
@@ -1467,77 +1697,202 @@ Include = /etc/pacman.d/mirrorlist
                 curr_cmd_out = results[i]
 
                 # Process result
-                stdout = curr_cmd_out["stdout"]
-                stderr = curr_cmd_out["stderr"]
+                command = curr_cmd_out["command-string"]
+                stdout = curr_cmd_out["stdout"].rstrip()
+                stderr = curr_cmd_out["stderr"].rstrip()
                 resultcode = curr_cmd_out["resultcode"]
                 if resultcode == 0:
                     # Success
-                    print("Standard Output: {}".format(stdout))
+                    if stdout != "":
+                        print("{}".format(stdout))
                 else:
                     # Error
-                    print("Error: {}".format(stderr))
+                    if stderr != "":
+                        print("Error [{}] running command [{}]: {}".format(resultcode, command, stderr))
+
+                # Append command string to compilation
+                cmd_str.append(' '.join(command))
 
         print("")
 
         ## Enable locale/region
         print("(+) Enable Location/Region")
         if self.env.MODE != "DEBUG":
-            self.enable_Locale(dir_Mount, language)
+            results = self.chroot_enable_locale()
+
+            # Iterate through the list of command results
+            for i in range(len(results)):
+                # Get current command's output
+                curr_cmd_out = results[i]
+
+                # Process result
+                command = curr_cmd_out["command-string"]
+                stdout = curr_cmd_out["stdout"].rstrip()
+                stderr = curr_cmd_out["stderr"].rstrip()
+                resultcode = curr_cmd_out["resultcode"]
+                if resultcode == 0:
+                    # Success
+                    if stdout != "":
+                        print("{}".format(stdout))
+                else:
+                    # Error
+                    if stderr != "":
+                        print("Error [{}] running command [{}]: {}".format(resultcode, command, stderr))
+
+                # Append command string to compilation
+                cmd_str.append(' '.join(command))
 
         print("")
 
         ## Append Network Host file
         print("(+) Network Configuration")
         if self.env.MODE != "DEBUG":
-            self.network_Management(dir_Mount, hostname)
+            results = self.chroot_network_management()
+
+            # Iterate through the list of command results
+            for i in range(len(results)):
+                # Get current command's output
+                curr_cmd_out = results[i]
+
+                # Process result
+                command = curr_cmd_out["command-string"]
+                stdout = curr_cmd_out["stdout"].rstrip()
+                stderr = curr_cmd_out["stderr"].rstrip()
+                resultcode = curr_cmd_out["resultcode"]
+                if resultcode == 0:
+                    # Success
+                    if stdout != "":
+                        print("{}".format(stdout))
+                else:
+                    # Error
+                    if stderr != "":
+                        print("Error [{}] running command [{}]: {}".format(resultcode, command, stderr))
+
+                # Append command string to compilation
+                cmd_str.append(' '.join(command))
 
         print("")
 
         ## Format initial ramdisk
         print("(+) Making Initial Ramdisk")
         if self.env.MODE != "DEBUG":
-            self.initialize_Ramdisk(dir_Mount, default_Kernel)
+            results = self.chroot_init_ramdisk()
+
+            # Iterate through the list of command results
+            for i in range(len(results)):
+                # Get current command's output
+                curr_cmd_out = results[i]
+
+                # Process result
+                command = curr_cmd_out["command-string"]
+                stdout = curr_cmd_out["stdout"].rstrip()
+                stderr = curr_cmd_out["stderr"].rstrip()
+                resultcode = curr_cmd_out["resultcode"]
+                if resultcode == 0:
+                    # Success
+                    if stdout != "":
+                        print("{}".format(stdout))
+                else:
+                    # Error
+                    if stderr != "":
+                        print("Error [{}] running command [{}]: {}".format(resultcode, command, stderr))
+
+                # Append command string to compilation
+                cmd_str.append(' '.join(command))
 
         print("")
 
         # Step 14: User Information - Set Root password
-        print("======= Change Root Password =======")
+        print("(+) Change Root Password")
         if self.env.MODE != "DEBUG":
-            res = self.set_root_Password(dir_Mount)
-            stdout = res["stdout"]
-            stderr = res["stderr"]
-            resultcode = res["resultcode"] 
-            cmd_str = res["command-string"]
+            results = self.chroot_set_root_passwd()
+
+            # Process result
+            command = results["command-string"]
+            stdout = results["stdout"]
+            stderr = results["stderr"]
+            resultcode = results["resultcode"] 
+            if resultcode == 0:
+                # Success
+                if len(stdout) > 0:
+                    for i in range(len(stdout)):
+                        # Get current message
+                        curr_line = stdout[i]
+                        print("{}".format(curr_line))
+            else:
+                # Error
+                if stderr != "":
+                    print("Error [{}] running command [{}]: {}".format(resultcode, command, stderr))
+
+            # Append command string to compilation
+            cmd_str.append(' '.join(command))
 
         print("")
         
         # Step 15: Install Bootloader
+        print("(+) Install Bootloader in Chroot")
         if self.env.MODE != "DEBUG":
-            combined_res = self.bootloader_Management(disk_Label, dir_Mount, bootloader, bootloader_directory, partition_Table, bootloader_optional_Params, bootloader_target_device_Type)
+            results = self.chroot_bootloader_management()
+
+            # Iterate through the list of command results
+            for i in range(len(results)):
+                # Get current command's output
+                curr_cmd_out = results[i]
+
+                curr_cmd_title = curr_cmd_out["title"]
+                curr_cmd = curr_cmd_out["commands"]
+                curr_cmd_res = curr_cmd_out["results"]
+
+                print("(+) {}".format(curr_cmd_title))
+                for j in range(len(curr_cmd_res)):
+                    # Get the individual substeps results
+                    curr_substep_res = curr_cmd_res[j]
+
+                    # Process result
+                    command = curr_substep_res["command-string"]
+                    stdout = curr_substep_res["stdout"].rstrip()
+                    stderr = curr_substep_res["stderr"].rstrip()
+                    resultcode = curr_substep_res["resultcode"] 
+
+                    # Success
+                    if stdout != "":
+                        print("{}".format(stdout))
+
+                    # Error
+                    if stderr != "":
+                        if resultcode == 0:
+                            print("{}".format(stderr))
+                        else:
+                            print("Error [{}] running command [{}]: {}".format(resultcode, command, stderr))
+
+                    # Append command string to compilation
+                    cmd_str.append(' '.join(command))
+
+                # Print newline
+                print("")
         
         print("")
 
         # Archive the command string into a file
+        print("(+) Archiving command strings into a file for re-usage")
         if self.env.MODE != "DEBUG":
-            target_directory = "/root/chroot-commas.sh"
-            print("Writing [\n{}\n] => {}".format(cmd_str, target_directory))
-            chroot_files.write(cmd_str, dir_Mount, target_directory)
+            target_directory = "/root/chroot-comms.sh"
+            print("Writing {} => {}".format(cmd_str, target_directory))
+            self.archive_command_Str(cmd_str, dir_Mount, target_directory)
 
-        # Execute in the chroot utility
-        # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
-        # for debugging
-        mount_Root="{}/root".format(dir_Mount)
-        target_directory = "{}/{}".format(mount_Root, "chroot-commas.sh")
-        self.default_Var["external_scripts"].append(
-            ### Append all external scripts used ###
-            target_directory
-        )
+            # Execute in the chroot utility
+            # Future Codes deemed stable *enough*, thanks Past self for retaining legacy codes
+            # for debugging
+            self.default_Var["external_scripts"].append(
+                ### Append all external scripts used ###
+                target_directory
+            )
 
         print("")
 
     def installer(self):
         """
-        Main setup installer
+        Complete setup installer
         """
         print("(S) Starting Base Installation...")
 
@@ -1546,30 +1901,31 @@ Include = /etc/pacman.d/mirrorlist
         print("========================")
 
         print("(S) 1. Testing Network...")
-        network_Enabled = self.verify_network()
-        if network_Enabled == False:
-            cmd_str = "dhcpcd"
-            print("")
-            print("Executing: {}".format(cmd_str))
-            if self.env.MODE != "DEBUG":
+        if self.env.MODE != "DEBUG":
+            network_Enabled = self.verify_network()
+            if network_Enabled == False:
+                cmd_str = "dhcpcd"
+                print("")
+                print("Executing: {}".format(cmd_str))
+
                 ## Begin executing commands
                 stdout, stderr, returncode = process.subprocess_Sync(cmd_str)
                 print("Standard Output: {}".format(stdout))
                 print("Standard Error: {}".format(stderr))
 
+                # Verify execution status
                 if returncode == 0:
                     # Success
                     print("(+) Network is activated")
                 else:
                     # Error
                     print("(-) Error starting Network")
+            else:
+                print("(+) Network is active")
         else:
-            print("(+) Network is active")
+            tmp = input("Press anything to continue...")
 
         print("(D) Network testing completed.")
-
-        if self.env.MODE == "DEBUG":
-            tmp = input("Press anything to continue...")
 
         print("")
 
@@ -1578,13 +1934,13 @@ Include = /etc/pacman.d/mirrorlist
         print("==========================================")
         
         print("(S) Verifying Boot Mode...")
-        boot_Mode = self.verify_boot_Mode()
-        print("(+) Motherboard bootloader firmware boot mode (bios/uefi): {}".format(boot_Mode))
+        if self.env.MODE != "DEBUG":
+            boot_Mode = self.verify_boot_Mode()
+            print("(+) Motherboard bootloader firmware boot mode (bios/uefi): {}".format(boot_Mode))
+        else:
+            tmp = input("Press anything to continue...")
 
         print("(D) Boot Mode verification completed.")
-
-        if self.env.MODE == "DEBUG":
-            tmp = input("Press anything to continue...")
 
         print("")
 
@@ -1593,13 +1949,13 @@ Include = /etc/pacman.d/mirrorlist
         print("============================")
         
         print("(S) Updating System Clock...")
-        stdout, stderr, resultcode, success_Flag = self.update_system_Clock()
-        if success_Flag == False:
-            print("(X) Error updating system clock via Network Time Protocol (NTP)")
+        if self.env.MODE != "DEBUG":
+            stdout, stderr, resultcode, success_Flag = self.update_system_Clock()
+            if success_Flag == False:
+                print("(X) Error updating system clock via Network Time Protocol (NTP)")
+            else:
+                print("(D) System clock updated.")
         else:
-            print("(D) System clock updated.")
-
-        if self.env.MODE == "DEBUG":
             tmp = input("Press anything to continue...")
 
         print("")
@@ -1609,13 +1965,13 @@ Include = /etc/pacman.d/mirrorlist
         print("============================")
         
         print("(S) Starting Disk Management...")
-        success_Flag = self.device_partition_Manager()
-        if success_Flag == False:
-            print("(X) Error formatting disk and partitions")
-        print("(D) Disk Management completed.")
-
-        if self.env.MODE == "DEBUG":
+        if self.env.MODE != "DEBUG":
+            success_Flag = self.device_partition_Manager()
+            if success_Flag == False:
+                print("(X) Error formatting disk and partitions")
+        else:
             tmp = input("Press anything to continue...")
+        print("(D) Disk Management completed.")
 
         print("")
 
@@ -1624,12 +1980,12 @@ Include = /etc/pacman.d/mirrorlist
         print("====================")
         
         print("(S) Mounting disks...")
-        success_Flag = self.mount_Disks()
-        if success_Flag == False:
-            print("(X) Error mounting disks")
-        print("(D) Disks mounted.")
-
-        if self.env.MODE == "DEBUG":
+        if self.env.MODE != "DEBUG":
+            success_Flag = self.mount_Disks()
+            if success_Flag == False:
+                print("(X) Error mounting disks")
+            print("(D) Disks mounted.")
+        else:
             tmp = input("Press anything to continue...")
 
         print("")
@@ -1638,12 +1994,26 @@ Include = /etc/pacman.d/mirrorlist
         print("Stage 6: Install essential packages")
         print("===================================")
         print("(S) Strapping packages to mount point...")
-        success_Flag = self.bootstrap_Install()
-        if success_Flag == False:
-            print("(X) Errors bootstrapping packages")
-        print("(D) Packages strapped.")
+        if self.env.MODE != "DEBUG":
+            success_Flag = self.bootstrap_Install()
+            if success_Flag == False:
+                print("(X) Errors bootstrapping packages")
+            print("(D) Packages strapped.")
+        else:
+            tmp = input("Press anything to continue...")
 
-        if self.env.MODE == "DEBUG":
+        # Select Mirror List
+        print("Selecting Mirror List (IGNORE)")
+        if self.env.MODE != "DEBUG":
+            self.select_Mirrors(self.mirrorlist_file_Name)
+        else:
+            tmp = input("Press anything to continue...")
+
+        # Verify Package Manager Configurations
+        print("Verifying Package Manager Configurations")
+        if self.env.MODE != "DEBUG":
+            self.verify_package_manager_configurations()
+        else:
             tmp = input("Press anything to continue...")
 
         print("")
@@ -1652,12 +2022,12 @@ Include = /etc/pacman.d/mirrorlist
         print("Stage 7: Generate fstab (File System Table)")
         print("===========================================")
         print("(S) Generating Filesystems Table in /etc/fstab")
-        success_Flag = self.fstab_Generate()
-        if success_Flag == False:
-            print("(X) Error generating filesystems table")
-        print("(D) Filesystems Table generated.")
-
-        if self.env.MODE == "DEBUG":
+        if self.env.MODE != "DEBUG":
+            success_Flag, stderr = self.fstab_Generate()
+            if success_Flag == False:
+                print("(X) Error generating filesystems table: {}".format(stderr))
+            print("(D) Filesystems Table generated.")
+        else:
             tmp = input("Press anything to continue...")
 
         print("")
@@ -1667,12 +2037,12 @@ Include = /etc/pacman.d/mirrorlist
         print("===========================")
 
         print("(S) Executing chroot commands")
-        success_Flag = self.begin_chroot_execution() # Execute commands in arch-chroot
-        if success_Flag == False:
-            print("(X) Error executing commands in chroot")
-        print("(D) Commands executed")
-
-        if self.env.MODE == "DEBUG":
+        if self.env.MODE != "DEBUG":
+            success_Flag = self.begin_chroot_execution() # Execute commands in arch-chroot
+            if success_Flag == False:
+                print("(X) Error executing commands in chroot")
+            print("(D) Commands executed")
+        else:
             tmp = input("Press anything to continue...")
 
         print("")
@@ -1681,6 +2051,17 @@ Include = /etc/pacman.d/mirrorlist
         print("Installation Completed.")
         print("=======================")
 
+    class Host():
+        """
+        Host-layer utilities class containing functionalities pertaining to the host system operations while generating the root filesystem
+        """
+
+    class Chroot():
+        """
+        Chroot utilities class containing functionalities pertaining to chroot operations used in the base/root filessystem installation
+        """
+        def __init__(self, cs_base_install):
+            self.cs_base_install = cs_base_install
 
 # =========================== #
 # Post-Installation Functions #
@@ -2063,7 +2444,12 @@ class PostInstallation():
             else:
                 # Check if user exists | Empty if Not Found
                 cmd_get_Entry = "getent passwd {}".format(u_Name)
-                u_Exists, stderr, returncode = process.chroot_exec(cmd_get_Entry, dir_Mount=dir_Mount)
+                results = process.chroot_exec(cmd_get_Entry, dir_Mount=dir_Mount)
+                # Obtain results value 
+                u_Exists = results["stdout"]
+                stderr = results["stderr"]
+                resultcode = results["resultcode"]
+                cmd_fmt = results["command"]
 
             if u_Exists == "":
                 # 0 : Does not exist
