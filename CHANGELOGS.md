@@ -86,6 +86,7 @@
     + 1446H
 - [2024-06-12](#2024-06-12)
     + 1526H
+    + 2135H
 
 ## Entries
 
@@ -1202,4 +1203,12 @@
             - Updated function 'init_Config()'
                 + Added cfg and MODE as parameter signature/headers for updating the distribution settings
             + Removed 'self.env' from the environment variable objects as the environment variables are no longer tied to the Environment() class object 'self.env'
+
+#### 2135H
+- Updates
+    - Updated pydistinstall CLI module 'runner.py' in 'src/pydistinstall/app/'
+        + Renamed function 'self.installer_class.update_setup(self.setup)' => 'self.installer_class.set_config_map(self.setup.cfg)'
+        + Renamed function 'self.installer_class_PostInstall.update_setup(self.setup)' => 'self.installer_class_PostInstall.update_setup(self.setup.cfg, self.env.MODE)'
+        + Updated parameter signature/header in function call 'self.installer_class = mechanism.BaseInstallation()' from 'setup' => 'cfg' to reflect the API changes
+        + Updated parameter signature/header in function call 'self.installer_class_PostInstall = mechanism.PostInstallation(self.setup, self.installer_class)' => 'self.installer_class_PostInstall = mechanism.PostInstallation(self.installer_class, self.setup.cfg, self.env.MODE)'
 

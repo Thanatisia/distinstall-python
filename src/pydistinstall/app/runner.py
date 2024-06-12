@@ -64,8 +64,8 @@ class App():
         Update the setup variables according to that of the target platform's installer mechanism class
         """
         if self.installer_class != None:
-            self.installer_class.update_setup(self.setup)
-            self.installer_class_PostInstall.update_setup(self.setup)
+            self.installer_class.set_config_map(self.setup.cfg)
+            self.installer_class_PostInstall.update_setup(self.setup.cfg, self.env.MODE)
         else:
             print("Installation mechanics class is not initialized, possible issues could be")
             print("\t1. Distribution name is invalid: please refer to the list of valid naming conventions")
@@ -81,9 +81,12 @@ class App():
 
         # Process
         if dist_Name == "arch":
-            self.installer_class = mechanism.BaseInstallation(setup=self.setup) # Import the distribution of choice's installation mechanism
+            # Import the distribution of choice's installation mechanism
+            self.installer_class = mechanism.BaseInstallation(cfg=self.setup.cfg, 
+                                                              MODE=self.env.MODE, EDITOR=self.env.EDITOR, TARGET_DISK_NAME=self.env.TARGET_DISK_NAME, USER=self.env.USER, SUDO_USER=self.env.SUDO_USER
+                                                              )
             print("Base Installation class initialized.")
-            self.installer_class_PostInstall = mechanism.PostInstallation(self.setup, self.installer_class) # Import the distribution of choice's postinstallation class
+            self.installer_class_PostInstall = mechanism.PostInstallation(self.installer_class, self.setup.cfg, self.env.MODE) # Import the distribution of choice's postinstallation class
             print("Post Installation class initialized.")
         else:
             self.installer_class = None
