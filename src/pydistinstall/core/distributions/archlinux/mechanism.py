@@ -18,9 +18,9 @@ class BaseInstallation():
                  disk_label="", disk_max_size="", partition_scheme=None, mount_paths=None, location=None, user_profile=None,
                  distribution_name="arch", disk_type="hdd", storage_controller="sata", disk_part_table="msdos", bootloader_firmware="bios", base_pkgs=["base","linux","linux-firmware","linux-lts","linux-lts-headers","base-devel","nano","vim","networkmanager","os-prober"],
                  network_cfg_hostname="hostname", bootloader="grub", bootloader_directory="/boot/grub", bootloader_params="", default_kernel="linux", platform="i386-pc",
-                 setup=None):
+                 cfg=None, MODE="DEBUG", EDITOR="", TARGET_DISK_NAME="", USER="", SUDO_USER=""):
         # Check if a setup configuration dictionary is provided
-        if setup == None:
+        if cfg == None:
             # Data Validation: Null Value Check
             if partition_scheme == None: partition_scheme = {}
             if mount_paths == None: mount_paths = {}
@@ -32,11 +32,38 @@ class BaseInstallation():
                             distribution_name, disk_type, storage_controller, disk_part_table, bootloader_firmware, base_pkgs,
                             network_cfg_hostname, bootloader, bootloader_directory, bootloader_params, default_kernel, platform)
         else:
-            # Initialize Environment variable setup class 
-            self.update_setup(setup)
+            # Initialize  configurations
+            self.set_config_map(cfg)
+        # Initialize Environment Variables
+        self.update_env_variables(MODE, EDITOR, TARGET_DISK_NAME, USER, SUDO_USER)
         # Initialize Variables
         self.package_manager_config_Path = "/etc/pacman.d"
         self.mirrorlist_file_Name = "{}/mirrorlist".format(self.package_manager_config_Path)
+        self.default_Var = {
+            ## Lists
+            ### Stores all external scripts created
+            "external_scripts" : [],
+            ## Associative Array/Dictionaries
+            ### Device and Partitions
+            "device_Parameters" : {},
+            "partition_Configuration" : {},
+            "partition_Parameters" : {},
+            "partition_Layout" : {},
+            ### Mounts
+            "mount_Group" : {},
+            ### Region & Location
+            "location" : {},
+            ### Packages
+            "pkgs" : {},
+            ### User Control
+            "user_Info" : {},
+            ### Network Configurations
+            "network_config" : {},
+            ### Operating System Definitions
+            "osdef" : {},
+            ### Linux Definitions
+            "linux" : {},
+        }
         self.package_manager_Configurations = """
 #
 # /etc/pacman.conf
@@ -336,11 +363,40 @@ Include = /etc/pacman.d/mirrorlist
 
         return results
 
-    def update_setup(self, setup):
-        self.setup = setup
-        self.env = setup.env
-        self.cfg = setup.cfg.copy()
-        self.default_Var = setup.default_Var.copy()
+    def set_config_map(self, cfg):
+        """
+        Update the configurations dictionary (Key-value mapping) with an updated configuration
+        """
+        self.cfg = cfg.copy()
+
+    def update_env_variables(self, MODE="DEBUG", EDITOR="", TARGET_DISK_NAME="", USER="", SUDO_USER=""):
+        """
+        Update Environment Variables
+        """
+        if MODE != "": 
+            self.MODE = MODE
+        else:
+            self.MODE = os.environ.get("MODE") # Runtime boot mode - DEBUG|RELEASE
+
+        if EDITOR != "": 
+            self.EDITOR = EDITOR
+        else:
+            self.EDITOR = os.environ.get("EDITOR")
+
+        if TARGET_DISK_NAME != "": # The target disk's label (i.e. /dev/sdX for SATA|AHCI, or /dev/nvme0np1 for NVME)
+            self.TARGET_DISK_NAME = TARGET_DISK_NAME
+        else:
+            self.TARGET_DISK_NAME = os.environ.get("TARGET_DISK_NAME")
+
+        if USER != "": # Name of regular user
+            self.USER = USER
+        else:
+            self.USER = os.environ.get("USER") 
+
+        if SUDO_USER != "": # Name of superuser
+            self.SUDO_USER = SUDO_USER
+        else:
+            self.SUDO_USER = os.environ.get("SUDO_USER")
 
     def print_configurations(self):
         print(self.cfg)
@@ -535,7 +591,7 @@ Include = /etc/pacman.d/mirrorlist
         if (format_conf == "Y") or (format_conf == ""):
             ## Format
             print("(+) Formatting [{}] to [{}]...".format(disk_Label, partition_Table))
-            if self.env.MODE != "DEBUG":
+            if self.MODE != "DEBUG":
                 cmd_str, stdout, stderr, returncode = disk_partition_table_Format(disk_Label, partition_Table)
 
                 # Process status/return code
@@ -620,7 +676,7 @@ Include = /etc/pacman.d/mirrorlist
             ### Directory does not exist
             stdout = "Directory {} does not exist, creating directory...".format(root_Dir)
 
-            if self.env.MODE != "DEBUG":
+            if self.MODE != "DEBUG":
                 # Make root mount directory
                 cmd_str, stdout, stderr, returncode = make_mount_dir(root_Dir)
         else:
@@ -644,7 +700,7 @@ Include = /etc/pacman.d/mirrorlist
             ### Directory does not exist
             stdout = "Directory {} does not exist, creating directory...".format(boot_Dir)
 
-            if self.env.MODE != "DEBUG":
+            if self.MODE != "DEBUG":
                 # Make root mount directory
                 cmd_str, stdout, stderr, returncode = make_mount_dir(boot_Dir)
         else:
@@ -668,7 +724,7 @@ Include = /etc/pacman.d/mirrorlist
             ### Directory does not exist
             stdout = "Directory {} does not exist, creating directory...".format(mount_Dir)
 
-            if self.env.MODE != "DEBUG":
+            if self.MODE != "DEBUG":
                 # Make root mount directory
                 cmd_str, stdout, stderr, returncode = make_mount_dir(mount_Dir)
         else:
@@ -736,7 +792,7 @@ Include = /etc/pacman.d/mirrorlist
         ### Prepare and Format Partition according to Device Storage Controller Type for Root partition
         target_disk_root_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
 
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             print("Current Filesystem [Root] => [{}]".format(curr_filesystem))
             cmd_str, stdout, stderr, returncode = mount_partition(curr_filesystem, root_Dir, target_disk_root_Part)
             # Process status/return code
@@ -811,7 +867,7 @@ Include = /etc/pacman.d/mirrorlist
         target_disk_boot_Part = device_management.format_partition_str(disk_Label, curr_part_Number, storage_controller)
 
         print("Current Filesystem [Boot] => [{}]".format(curr_filesystem))
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             cmd_str, stdout, stderr, returncode = mount_partition(curr_filesystem, boot_Dir, target_disk_boot_Part)
             # Process status/return code
             if returncode == 0:
@@ -871,7 +927,7 @@ Include = /etc/pacman.d/mirrorlist
 
             ### Mount the volume to the path
             print("Current Filesystem [{}] => [{}]".format(part_Name, part_filesystem))
-            if self.env.MODE != "DEBUG":
+            if self.MODE != "DEBUG":
                 cmd_str, stdout, stderr, returncode = mount_partition(part_filesystem, part_mount_dir, target_disk_curr_Part)
                 # Process status/return code
                 if returncode == 0:
@@ -929,7 +985,7 @@ Include = /etc/pacman.d/mirrorlist
         print("Select Mirrors")
         print("==============")
         print("(S) Selecting mirrors...")
-        print("{} {}".format(self.env.EDITOR, mirrorlist_Path))
+        print("{} {}".format(self.EDITOR, mirrorlist_Path))
         print("(D) Mirror selected.")
 
     def check_package_manager_Configurations(self, mount_Dir):
@@ -946,7 +1002,7 @@ Include = /etc/pacman.d/mirrorlist
             # pacman.conf does not exists
             print("Obtaining configuration file {}...".format(package_manager_conf_Name))
             # Copy from host into system
-            if self.env.MODE != "DEBUG":
+            if self.MODE != "DEBUG":
                 shutil.copy2("/etc/pacman.conf", package_manager_conf_File) # Copy script from host to the bootstrapped root filesystem
 
             # Check if file exists now
@@ -1503,7 +1559,7 @@ Include = /etc/pacman.d/mirrorlist
         combined_res = []
 
         # Install Bootloader dependencies and packages
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             # Prepare and format the bootloader packages into a command list
             cmd_list = self.prepare_bootloader_Packages(bootloader, partition_Table)
             # Install bootloader packages
@@ -1511,7 +1567,7 @@ Include = /etc/pacman.d/mirrorlist
             combined_res.append({"title" : "Installing Bootloader Dependencies : {}".format(bootloader), "commands" : cmd_list, "results" : res})
 
         # Prepare Boot directory
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             # Format and obtain the commands required to create boot directory
             cmd_list = self.format_boot_dir_cmds(bootloader, bootloader_directory)
             # Begin creating boot directory
@@ -1519,7 +1575,7 @@ Include = /etc/pacman.d/mirrorlist
             combined_res.append({"title" : "Generating boot directory : {}".format(bootloader_directory), "commands" : cmd_list, "results" : res})
 
         # Install Bootloader to partition table
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             # Format and obtain the commands required to install the bootloader to the new disk's partition table
             cmd_list = self.prepare_bootloader_installation(disk_Label, bootloader, bootloader_optional_Params, bootloader_target_Architecture)
             # Begin the installation of the bootloader to the new partition table
@@ -1527,7 +1583,7 @@ Include = /etc/pacman.d/mirrorlist
             combined_res.append({"title" : "Installing bootloader to partition table : {}".format(bootloader), "commands" : cmd_list, "results" : res})
 
         # Generate Bootloader configurations
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             # Format and obtain the commands required to generate the bootloader configurations to the new rootfs
             cmd_list = self.prepare_generate_bootloader_configurations(disk_Label, bootloader, bootloader_directory, partition_Table)
             # Begin the generating of the bootloader configurations to the new rootfs
@@ -1688,7 +1744,7 @@ Include = /etc/pacman.d/mirrorlist
         ## Synchronize Hardware Clock
         print("(+) Time Zones : Synchronize Hardware Clock")
 
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             results = self.chroot_sync_timezone()
 
             # Iterate through the list of command results
@@ -1717,7 +1773,7 @@ Include = /etc/pacman.d/mirrorlist
 
         ## Enable locale/region
         print("(+) Enable Location/Region")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             results = self.chroot_enable_locale()
 
             # Iterate through the list of command results
@@ -1746,7 +1802,7 @@ Include = /etc/pacman.d/mirrorlist
 
         ## Append Network Host file
         print("(+) Network Configuration")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             results = self.chroot_network_management()
 
             # Iterate through the list of command results
@@ -1775,7 +1831,7 @@ Include = /etc/pacman.d/mirrorlist
 
         ## Format initial ramdisk
         print("(+) Making Initial Ramdisk")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             results = self.chroot_init_ramdisk()
 
             # Iterate through the list of command results
@@ -1804,7 +1860,7 @@ Include = /etc/pacman.d/mirrorlist
 
         # Step 14: User Information - Set Root password
         print("(+) Change Root Password")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             results = self.chroot_set_root_passwd()
 
             # Process result
@@ -1831,7 +1887,7 @@ Include = /etc/pacman.d/mirrorlist
         
         # Step 15: Install Bootloader
         print("(+) Install Bootloader in Chroot")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             results = self.chroot_bootloader_management()
 
             # Iterate through the list of command results
@@ -1875,7 +1931,7 @@ Include = /etc/pacman.d/mirrorlist
 
         # Archive the command string into a file
         print("(+) Archiving command strings into a file for re-usage")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             target_directory = "/root/chroot-comms.sh"
             print("Writing {} => {}".format(cmd_str, target_directory))
             self.archive_command_Str(cmd_str, dir_Mount, target_directory)
@@ -1885,7 +1941,7 @@ Include = /etc/pacman.d/mirrorlist
             # for debugging
             self.default_Var["external_scripts"].append(
                 ### Append all external scripts used ###
-                target_directory
+                os.path.join(dir_Mount, target_directory)
             )
 
         print("")
@@ -1901,7 +1957,7 @@ Include = /etc/pacman.d/mirrorlist
         print("========================")
 
         print("(S) 1. Testing Network...")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             network_Enabled = self.verify_network()
             if network_Enabled == False:
                 cmd_str = "dhcpcd"
@@ -1934,7 +1990,7 @@ Include = /etc/pacman.d/mirrorlist
         print("==========================================")
         
         print("(S) Verifying Boot Mode...")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             boot_Mode = self.verify_boot_Mode()
             print("(+) Motherboard bootloader firmware boot mode (bios/uefi): {}".format(boot_Mode))
         else:
@@ -1949,7 +2005,7 @@ Include = /etc/pacman.d/mirrorlist
         print("============================")
         
         print("(S) Updating System Clock...")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             stdout, stderr, resultcode, success_Flag = self.update_system_Clock()
             if success_Flag == False:
                 print("(X) Error updating system clock via Network Time Protocol (NTP)")
@@ -1965,7 +2021,7 @@ Include = /etc/pacman.d/mirrorlist
         print("============================")
         
         print("(S) Starting Disk Management...")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             success_Flag = self.device_partition_Manager()
             if success_Flag == False:
                 print("(X) Error formatting disk and partitions")
@@ -1980,7 +2036,7 @@ Include = /etc/pacman.d/mirrorlist
         print("====================")
         
         print("(S) Mounting disks...")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             success_Flag = self.mount_Disks()
             if success_Flag == False:
                 print("(X) Error mounting disks")
@@ -1994,7 +2050,7 @@ Include = /etc/pacman.d/mirrorlist
         print("Stage 6: Install essential packages")
         print("===================================")
         print("(S) Strapping packages to mount point...")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             success_Flag = self.bootstrap_Install()
             if success_Flag == False:
                 print("(X) Errors bootstrapping packages")
@@ -2004,14 +2060,14 @@ Include = /etc/pacman.d/mirrorlist
 
         # Select Mirror List
         print("Selecting Mirror List (IGNORE)")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             self.select_Mirrors(self.mirrorlist_file_Name)
         else:
             tmp = input("Press anything to continue...")
 
         # Verify Package Manager Configurations
         print("Verifying Package Manager Configurations")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             self.verify_package_manager_configurations()
         else:
             tmp = input("Press anything to continue...")
@@ -2022,7 +2078,7 @@ Include = /etc/pacman.d/mirrorlist
         print("Stage 7: Generate fstab (File System Table)")
         print("===========================================")
         print("(S) Generating Filesystems Table in /etc/fstab")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             success_Flag, stderr = self.fstab_Generate()
             if success_Flag == False:
                 print("(X) Error generating filesystems table: {}".format(stderr))
@@ -2037,7 +2093,7 @@ Include = /etc/pacman.d/mirrorlist
         print("===========================")
 
         print("(S) Executing chroot commands")
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             success_Flag = self.begin_chroot_execution() # Execute commands in arch-chroot
             if success_Flag == False:
                 print("(X) Error executing commands in chroot")
@@ -2070,30 +2126,31 @@ class PostInstallation():
     """
     Class for the Post-Installation functions in the installation library/framework
     """
-    def __init__(self, setup, base_mechanism_Obj=None):
+    def __init__(self, cs_base_install=None, cfg=None, MODE="DEBUG"):
         # Local Variables
-        self.setup = setup
-        self.cfg = self.setup.cfg
+        if cs_base_install != None:
+            self.cfg = cs_base_install.cfg
+            self.default_Var = cs_base_install.default_Var
+            self.external_scripts = self.default_Var["external_scripts"]
+            number_of_external_scripts = len(self.external_scripts)
+            # Initialize defaults from configuration file settings if no base installation object is specified
+            self.init_Config(self.cfg, MODE)
+        else:
+            # Initialize defaults from configuration file settings if no base installation object is specified
+            self.init_Config(cfg, MODE)
         dir_Mount = self.cfg["mount_Paths"]["Root"]
-        number_of_external_scripts = len(base_mechanism_Obj.default_Var["external_scripts"])
 
-        if base_mechanism_Obj == None:
-            # Initialize defaults from configuration file if no base installation object is specified
-            self.init_Config()
-
-    def init_Config(self):
+    def init_Config(self, cfg, MODE="DEBUG"):
         """
         Initialize defaults from configuration file if base installation is not used
         """
         # Update setup to the latest
-        self.update_setup(self.setup)
+        self.update_setup(cfg, MODE)
 
     # Callback/Event Utility functions
-    def update_setup(self, setup):
-        self.setup = setup
-        self.env = setup.env
-        self.cfg = setup.cfg
-        self.default_Var = setup.default_Var
+    def update_setup(self, cfg, MODE="DEBUG"):
+        self.MODE = MODE
+        self.cfg = cfg.copy()
 
     def print_configurations(self):
         print(self.cfg)
@@ -2216,7 +2273,7 @@ class PostInstallation():
                     for i in range(number_of_external_scripts):
                         curr_script = self.default_Var["external_scripts"][i]
                         print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                        if self.env.MODE != "DEBUG":
+                        if self.MODE != "DEBUG":
                             shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
             elif (users == "S") or (users == "Select"):
                 # User Input
@@ -2243,7 +2300,7 @@ class PostInstallation():
                         for i in range(number_of_external_scripts):
                             curr_script = self.default_Var["external_scripts"][i]
                             print("Copying from [{}] : {} => {}/{}".format(dir_Mount, curr_script, dir_Mount, u_home_Dir))
-                            if self.env.MODE != "DEBUG":
+                            if self.MODE != "DEBUG":
                                 shutil.copy2(curr_script, "{}/{}".format(dir_Mount, u_home_Dir)) # Copy script from root to user
                     else:
                         ## Directory does not exist
@@ -2263,7 +2320,7 @@ class PostInstallation():
             if (del_conf == "Y") or (del_conf == "Yes"):
                 # Delete all
                 for i in range(number_of_external_scripts):
-                    if self.env.MODE == "DEBUG":
+                    if self.MODE == "DEBUG":
                         print("Deleting: {}".format(self.default_Var["external_scripts"][i]))
                     else:
                         os.remove(self.default_Var["external_scripts"][i])
@@ -2280,7 +2337,7 @@ class PostInstallation():
                 if del_selections != "":
                     for sel in arr_Selected:
                         # Delete selected files
-                        if self.env.MODE == "DEBUG":
+                        if self.MODE == "DEBUG":
                             print("Deleting: [{}]".format(self.default_Var["external_scripts"][sel]))
                         else:
                             os.remove(self.default_Var["external_scripts"][sel])
@@ -2384,7 +2441,7 @@ class PostInstallation():
             chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
 
             print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-            if self.env.MODE != "DEBUG":
+            if self.MODE != "DEBUG":
                 # Execute command line-by-line
                 stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
 
@@ -2439,7 +2496,7 @@ class PostInstallation():
 
             # Check if user exists
             print("(+) Checking for user {}...".format(u_Name))
-            if self.env.MODE == "DEBUG":
+            if self.MODE == "DEBUG":
                 u_Exists = ""
             else:
                 # Check if user exists | Empty if Not Found
@@ -2488,7 +2545,7 @@ class PostInstallation():
                     chroot_cmd_fmt = ["arch-chroot", dir_Mount, "/bin/bash", "-c", curr_cmd]
 
                     print("Executing: {}".format(' '.join(chroot_cmd_fmt)))
-                    if self.env.MODE != "DEBUG":
+                    if self.MODE != "DEBUG":
                         stdout, stderr, resultcode = process.subprocess_Line(chroot_cmd_fmt, stdin=process.PIPE)
                         if resultcode == 0:
                             # Success
@@ -2501,7 +2558,7 @@ class PostInstallation():
                             cmd_user_passwd_change = ["arch-chroot", dir_Mount, "/bin/bash", "-c", passwd_change]
 
                             print("Executing: {}".format(' '.join(cmd_user_passwd_change)))
-                            if self.env.MODE != "DEBUG":
+                            if self.MODE != "DEBUG":
                                 proc = process.subprocess_Open(cmd_user_passwd_change, stdout=process.PIPE)
 
                                 # While the process is still working
@@ -2560,7 +2617,7 @@ class PostInstallation():
         target_file = "{}/{}".format(mount_Root, script_to_exe)
 
         print("Executing: {}".format(cmd_str))
-        if self.env.MODE != "DEBUG":
+        if self.MODE != "DEBUG":
             # echo "echo -e "$cmd_str" > $mount_Root/$script_to_exe"
             with open(target_file, "a+") as write_postinstall_Commands:
                 write_postinstall_Commands.write(cmd_str)
@@ -2594,7 +2651,7 @@ class PostInstallation():
             print("(-) Error detected in post-installation process")
         print("(+) Post-Installation execution completed")
 
-        if self.env.MODE == "DEBUG":
+        if self.MODE == "DEBUG":
             tmp = input("Press anything to continue...")
 
         print("")
@@ -2609,7 +2666,7 @@ class PostInstallation():
 
         print("(+) Sanitization completed")
 
-        if self.env.MODE == "DEBUG":
+        if self.MODE == "DEBUG":
             tmp = input("Press anything to continue...")
 
         print("")

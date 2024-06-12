@@ -84,6 +84,8 @@
     + 2158H
 - [2024-06-11](#2024-06-11)
     + 1446H
+- [2024-06-12](#2024-06-12)
+    + 1526H
 
 ## Entries
 
@@ -1175,4 +1177,29 @@
         - Updated function 'subprocess_Realtime()'
             + Initialize variables for storing the results container
 
+### 2024-06-12
+#### 1526H
+- New
+    + Added new document 'api.md' in 'docs/usages/' containing steps on how to utilise and implement the base/post-installation using the core modules
+    + Added new unit test 'test_archlinux_baseinstall.py' in 'tests/' for testing the ArchLinux Core Bootstrap installation mechanism library
+- Updates 
+    - Updated ArchLinux core mechanism module 'mechanism.py' in 'src/pydistinstall/core/distributions/archlinux/'
+        - BaseInstallation()
+            - Replaced 'setup' => 'cfg': Removed dependency on external caller objects (i.e. setup was the Setup() class which was used by the Setup() class and Environment() class by the CLI utility)
+                + This is so that the framework can work with more varieties of CLI utility layouts (Customizability, Modularity and Reusability)
+            + Added the Environment Variables into the 'BaseInstallation()' class initialization as optional arguments for communication between the caller and the library
+            + Added new class variable 'self.default_Var' to store various data that are to be used between the various modules in the framework
+            + Renamed function 'update_setup()' => 'set_config_map()'
+            + Added new function 'update_env_variables()' to update the provided Environment Variable value
+            + Removed 'self.env' from the environment variable objects as the environment variables are no longer tied to the Environment() class object 'self.env'
+        - PostInstallation()
+            - Replaced 'setup' => 'cfg': Removed dependency on external caller objects (i.e. setup was the Setup() class which was used by the Setup() class and Environment() class by the CLI utility)
+                + This is so that the framework can work with more varieties of CLI utility layouts (Customizability, Modularity and Reusability)
+            - Added a 'cs_base_install' parameter into the class constructor function to take in the BaseInstallation() class object if used
+                + For continuity and usability
+            - Added data validation: Null Value Check for if 'cs_base_install' is found 
+                + Standard initialization is applied if the BaseInstallation() class object is not provided
+            - Updated function 'init_Config()'
+                + Added cfg and MODE as parameter signature/headers for updating the distribution settings
+            + Removed 'self.env' from the environment variable objects as the environment variables are no longer tied to the Environment() class object 'self.env'
 
